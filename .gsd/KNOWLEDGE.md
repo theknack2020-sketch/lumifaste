@@ -13,6 +13,9 @@ Agents read this before every unit. Add entries when you discover something wort
 | K004 | data | Kullanıcı sağlık verisi cihazda kalır, sunucuya gitmez | Privacy-first, App Review compliance, GDPR | 2026-03-22 |
 | K005 | design | Logo ve görsel asset üretimi için Google Gemini API (Nano Banana 2 modeli) kullan — bedava, yüksek kalite | ~/.env'de GEMINI_API_KEY mevcut, imagen-3.0-generate-002 veya gemini-2.0-flash ile | 2026-03-22 |
 | K006 | naming | App ismi: Lumifaste (onaylandı) — lumifaste.com domain alınacak | App Store boş, trademark güçlü, .com müsait | 2026-03-22 |
+| K007 | monetization | Free: sadece 16:8, son 3 oruç, stage ismi. Premium: tüm planlar, sınırsız history, streak, stage detay, fast report | Rakiplerden fark: free tier gerçekten kullanılabilir ama premium değer açık | 2026-03-22 |
+| K008 | monetization | Fast completion anı en güçlü conversion moment — kullanıcı başarmış, adrenalin yüksek | FastCompleteView'da premium teaser göster | 2026-03-22 |
+| K009 | legal | Privacy/support/terms sayfaları GitHub Pages üzerinden serve ediliyor (docs/ klasörü) | theknack2020-sketch.github.io/lumifaste/ pattern'ı, Rolldark ile aynı | 2026-03-22 |
 
 ## Patterns
 
