@@ -5,6 +5,7 @@ import SwiftData
 struct LumifasteApp: App {
     let modelContainer: ModelContainer
     @State private var subscriptionManager = SubscriptionManager()
+    @AppStorage("lf_onboarding_complete") private var hasCompletedOnboarding = false
     
     init() {
         do {
@@ -16,11 +17,15 @@ struct LumifasteApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(subscriptionManager)
-                .task {
-                    await subscriptionManager.checkSubscriptionStatus()
-                }
+            if hasCompletedOnboarding {
+                ContentView()
+                    .environment(subscriptionManager)
+                    .task {
+                        await subscriptionManager.checkSubscriptionStatus()
+                    }
+            } else {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+            }
         }
         .modelContainer(modelContainer)
     }
