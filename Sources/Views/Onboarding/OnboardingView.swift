@@ -236,6 +236,7 @@ private struct GoalCard: View {
             HStack(spacing: 14) {
                 Image(systemName: goal.icon)
                     .font(.system(size: 20))
+                    .scaleEffect(x: goal.icon == "leaf.fill" ? -1 : 1)
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
                     .frame(width: 32)
                 
