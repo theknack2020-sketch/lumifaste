@@ -20,7 +20,7 @@
 
 - [ ] **S01: UI Polish + Bug Fixes** `risk:medium` `depends:[]`
   > After this: Tüm ekranlar görsel olarak polish edilmiş, animasyonlar smooth, edge case'ler handle edilmiş
-- [ ] **S02: App Store Metadata + ASO** `risk:low` `depends:[S01]`
+- [x] **S02: App Store Metadata + ASO** `risk:low` `depends:[S01]`
   > After this: App Store description, keywords, subtitle, kategori hazır. Submission yapılabilir.
 - [ ] **S03: Final Build + Archive** `risk:low` `depends:[S01,S02]`
   > After this: Clean archive build, App Store Connect'e upload edilmeye hazır

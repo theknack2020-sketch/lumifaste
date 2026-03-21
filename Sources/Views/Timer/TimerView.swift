@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 /// Ana timer ekranı — oruç başlat/bitir, circular progress, stage tracking.
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
@@ -51,6 +52,8 @@ struct TimerView: View {
             .navigationBarTitleDisplayMode(.inline)
             .confirmationDialog("End Fast?", isPresented: $showEndConfirm) {
                 Button("End & Save", role: .destructive) {
+                    let notif = UINotificationFeedbackGenerator()
+                    notif.notificationOccurred(.success)
                     withAnimation(.spring(duration: 0.4)) {
                         _ = manager.endFast(context: modelContext)
                     }
@@ -120,6 +123,8 @@ struct TimerView: View {
             if manager.isActive {
                 showEndConfirm = true
             } else {
+                let impact = UIImpactFeedbackGenerator(style: .medium)
+                impact.impactOccurred()
                 withAnimation(.spring(duration: 0.5)) {
                     manager.startFast(plan: manager.currentPlan)
                 }

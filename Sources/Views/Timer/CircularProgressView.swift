@@ -41,13 +41,15 @@ struct CircularProgressView: View {
             
             // Glow at progress tip
             if progress > 0.01 {
-                Circle()
-                    .fill(stage.color)
-                    .frame(width: lineWidth * 0.6, height: lineWidth * 0.6)
-                    .shadow(color: stage.color.opacity(0.6), radius: 6)
-                    .offset(y: -UIScreen.main.bounds.width * 0.35 / 2)
-                    .rotationEffect(.degrees(360 * progress - 90))
-                    .animation(.easeInOut(duration: 0.3), value: progress)
+                GeometryReader { geo in
+                    Circle()
+                        .fill(stage.color)
+                        .frame(width: lineWidth * 0.6, height: lineWidth * 0.6)
+                        .shadow(color: stage.color.opacity(0.6), radius: 6)
+                        .position(x: geo.size.width / 2, y: lineWidth / 2)
+                        .rotationEffect(.degrees(360 * progress - 90), anchor: .center)
+                }
+                .animation(.easeInOut(duration: 0.3), value: progress)
             }
         }
     }

@@ -10,7 +10,19 @@ Reklamsız, güvenilir, basit bir oruç takip deneyimi. Timer başlar, timer bit
 
 ## Current State
 
-Proje başlangıç aşamasında. Market araştırması (app-idea-finder taramalarından 5 taramada tutarlı 9/10 skor) tamamlanmış. GSD altyapısı kuruluyor, devasa araştırma milestone'u başlatılıyor.
+MVP tamamlanmış, App Store submission hazırlığı devam ediyor. Çalışan özellikler:
+- Circular timer (count-up, timestamp-based)
+- 6 fasting plan (12:12 → OMAD)
+- Fasting stages görselleştirme (5 aşama)
+- Progress history + streaks
+- StoreKit 2 IAP (monthly $3.99, yearly $29.99)
+- Paywall + restore purchases
+- 4-sayfa onboarding
+- Local notifications (milestone alerts)
+- Settings + health disclaimer
+- App icon (SF Symbol leaf.fill'den render)
+- Dark mode ready
+- Simulatörde çalışır durumda (iOS 18.2, iPhone 16)
 
 ## Architecture / Key Patterns
 
