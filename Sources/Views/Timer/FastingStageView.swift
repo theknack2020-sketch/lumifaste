@@ -1,13 +1,15 @@
 import SwiftUI
 
 /// Fasting stage badge — şu anki aşamayı gösterir.
+/// Free: stage ismi + icon. Premium: subtitle + next stage hint.
 struct FastingStageView: View {
     let stage: FastingStage
     let elapsed: TimeInterval
+    var isPremium: Bool = false
     
     var body: some View {
         VStack(spacing: 8) {
-            // Stage badge
+            // Stage badge — always visible
             HStack(spacing: 6) {
                 Image(systemName: stage.icon)
                     .font(.system(size: 14, weight: .semibold))
@@ -20,19 +22,30 @@ struct FastingStageView: View {
             .background(stage.color.opacity(0.12))
             .clipShape(Capsule())
             
-            // Stage description
-            Text(stage.subtitle)
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-            
-            // Next stage hint
-            if let next = stage.next {
-                let hoursUntilNext = max(0, (next.startHour * 3600 - elapsed) / 3600)
-                if hoursUntilNext > 0 {
-                    Text("\(next.rawValue) in \(formatHours(hoursUntilNext))")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
+            if isPremium {
+                // Premium: stage description
+                Text(stage.subtitle)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+                
+                // Premium: next stage hint
+                if let next = stage.next {
+                    let hoursUntilNext = max(0, (next.startHour * 3600 - elapsed) / 3600)
+                    if hoursUntilNext > 0 {
+                        Text("\(next.rawValue) in \(formatHours(hoursUntilNext))")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
+            } else {
+                // Free: teaser
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 10))
+                    Text("Upgrade for stage details")
+                        .font(.system(size: 12))
+                }
+                .foregroundStyle(.secondary)
             }
         }
     }
@@ -49,9 +62,8 @@ struct FastingStageView: View {
 
 #Preview {
     VStack(spacing: 20) {
-        FastingStageView(stage: .fed, elapsed: 2 * 3600)
-        FastingStageView(stage: .fatBurning, elapsed: 14 * 3600)
-        FastingStageView(stage: .autophagy, elapsed: 26 * 3600)
+        FastingStageView(stage: .fatBurning, elapsed: 14 * 3600, isPremium: true)
+        FastingStageView(stage: .fatBurning, elapsed: 14 * 3600, isPremium: false)
     }
     .padding()
 }

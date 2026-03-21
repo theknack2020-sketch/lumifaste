@@ -76,15 +76,15 @@ struct PaywallView: View {
     
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // Free features - always available
+            // Free features
             Text("ALWAYS FREE")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 2)
             
-            FeatureRow(icon: "timer", title: "Fasting Timer", subtitle: "Start, track, and complete fasts", isFree: true)
-            FeatureRow(icon: "leaf.fill", title: "All Fasting Plans", subtitle: "16:8, 18:6, OMAD, and more", isFree: true)
+            FeatureRow(icon: "timer", title: "16:8 Fasting Timer", subtitle: "The most popular plan, always free", isFree: true)
             FeatureRow(icon: "bell.badge", title: "Milestone Alerts", subtitle: "Notifications at key fasting hours", isFree: true)
+            FeatureRow(icon: "clock.arrow.circlepath", title: "Recent History", subtitle: "Your last 3 fasting sessions", isFree: true)
             
             Divider().padding(.vertical, 4)
             
@@ -94,9 +94,11 @@ struct PaywallView: View {
                 .foregroundStyle(.purple)
                 .padding(.bottom, 2)
             
-            FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Advanced Insights", subtitle: "Weekly trends and correlations", isFree: false)
-            FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "Access all past sessions (free: last 7)", isFree: false)
-            FeatureRow(icon: "sparkles", title: "Detailed Fasting Stages", subtitle: "Deep dive into each phase", isFree: false)
+            FeatureRow(icon: "leaf.fill", title: "All Fasting Plans", subtitle: "18:6, 20:4, OMAD, 14:10, 12:12", isFree: false)
+            FeatureRow(icon: "flame.fill", title: "Stage Details", subtitle: "What's happening in your body right now", isFree: false)
+            FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "All your fasts, forever", isFree: false)
+            FeatureRow(icon: "bolt.fill", title: "Streak Tracking", subtitle: "Daily streak counter and motivation", isFree: false)
+            FeatureRow(icon: "chart.bar.fill", title: "Fast Reports", subtitle: "Detailed breakdown after each fast", isFree: false)
         }
         .padding(20)
         .background(

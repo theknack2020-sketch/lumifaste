@@ -6,9 +6,12 @@ import UIKit
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
 struct TimerView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var manager = FastingManager()
     @State private var showPlanPicker = false
     @State private var showEndConfirm = false
+    @State private var showPaywall = false
+    @State private var completedSession: FastingSession?
     
     var body: some View {
         NavigationStack {
@@ -27,7 +30,8 @@ struct TimerView: View {
                     if manager.isActive {
                         FastingStageView(
                             stage: manager.currentStage,
-                            elapsed: manager.elapsedTime
+                            elapsed: manager.elapsedTime,
+                            isPremium: subscriptionManager.isSubscribed
                         )
                         .transition(.opacity.combined(with: .scale))
                     }
@@ -55,7 +59,7 @@ struct TimerView: View {
                     let notif = UINotificationFeedbackGenerator()
                     notif.notificationOccurred(.success)
                     withAnimation(.spring(duration: 0.4)) {
-                        _ = manager.endFast(context: modelContext)
+                        completedSession = manager.endFast(context: modelContext)
                     }
                 }
                 Button("Cancel Fast", role: .destructive) {
@@ -66,6 +70,16 @@ struct TimerView: View {
                 Button("Continue", role: .cancel) {}
             } message: {
                 Text("Save this fasting session to your history?")
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
+            .sheet(item: $completedSession) { session in
+                FastCompleteView(
+                    session: session,
+                    isPremium: subscriptionManager.isSubscribed,
+                    onUpgrade: { showPaywall = true }
+                )
             }
         }
     }
@@ -79,28 +93,23 @@ struct TimerView: View {
                 stage: manager.isActive ? manager.currentStage : .fed
             )
             
-            // Center content
             VStack(spacing: 6) {
                 if manager.isActive {
-                    // Elapsed time (count-up)
                     Text(formatDuration(manager.elapsedTime))
                         .font(.system(size: 44, weight: .light, design: .rounded))
                         .monospacedDigit()
                         .contentTransition(.numericText())
                     
-                    // Target time
                     Text("of \(formatDuration(manager.currentPlan.fastingDuration))")
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
                     
-                    // Overtime indicator
                     if manager.isOvertime {
                         Text("🎉 Goal reached!")
                             .font(.system(size: 13, weight: .medium))
                             .foregroundStyle(.green)
                     }
                 } else {
-                    // Idle state
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 36))
                         .scaleEffect(x: -1)
@@ -147,7 +156,7 @@ struct TimerView: View {
         .padding(.horizontal, 20)
     }
     
-    // MARK: - Plan Selector
+    // MARK: - Plan Selector (16:8 free, rest premium)
     
     private var planSelector: some View {
         VStack(spacing: 8) {
@@ -158,12 +167,20 @@ struct TimerView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
                     ForEach(FastingPlan.allCases.filter { $0 != .custom && $0 != .fiveTwo }) { plan in
+                        let isFree = plan == .sixteenEight
+                        let isLocked = !isFree && !subscriptionManager.isSubscribed
+                        
                         PlanChip(
                             plan: plan,
-                            isSelected: manager.currentPlan == plan
+                            isSelected: manager.currentPlan == plan,
+                            isLocked: isLocked
                         ) {
-                            withAnimation(.spring(duration: 0.3)) {
-                                manager.setPlan(plan)
+                            if isLocked {
+                                showPaywall = true
+                            } else {
+                                withAnimation(.spring(duration: 0.3)) {
+                                    manager.setPlan(plan)
+                                }
                             }
                         }
                     }
@@ -172,8 +189,6 @@ struct TimerView: View {
             }
         }
     }
-    
-    // MARK: - Helpers
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600
@@ -188,13 +203,21 @@ struct TimerView: View {
 private struct PlanChip: View {
     let plan: FastingPlan
     let isSelected: Bool
+    var isLocked: Bool = false
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             VStack(spacing: 2) {
-                Text(plan.rawValue)
-                    .font(.system(size: 15, weight: isSelected ? .bold : .medium))
+                HStack(spacing: 3) {
+                    Text(plan.rawValue)
+                        .font(.system(size: 15, weight: isSelected ? .bold : .medium))
+                    if isLocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Text("\(Int(plan.fastingHours))h")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -209,6 +232,7 @@ private struct PlanChip: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
+            .opacity(isLocked ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)
     }
@@ -217,4 +241,5 @@ private struct PlanChip: View {
 #Preview {
     TimerView()
         .modelContainer(for: FastingSession.self, inMemory: true)
+        .environment(SubscriptionManager())
 }

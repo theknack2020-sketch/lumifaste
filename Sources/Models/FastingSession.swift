@@ -4,7 +4,7 @@ import SwiftData
 /// Tamamlanmış veya devam eden bir oruç oturumu.
 /// Timestamp-based: startDate/endDate persist edilir, elapsed time Date.now'dan hesaplanır.
 @Model
-final class FastingSession {
+final class FastingSession: @unchecked Sendable {
     var id: UUID
     var startDate: Date
     var endDate: Date?

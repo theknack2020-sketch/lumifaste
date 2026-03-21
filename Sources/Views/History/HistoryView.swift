@@ -2,22 +2,24 @@ import SwiftUI
 import SwiftData
 
 /// Geçmiş oruçların listesi — tarih sıralı, en yeni üstte.
-/// Free: son 7 oruç. Premium: sınırsız.
+/// Free: son 3 oruç, streak yok. Premium: sınırsız + streak.
 struct HistoryView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var showPaywall = false
     
+    private let freeLimit = 3
+    
     private var visibleSessions: [FastingSession] {
         if subscriptionManager.isSubscribed {
             return sessions
         }
-        return Array(sessions.prefix(7))
+        return Array(sessions.prefix(freeLimit))
     }
     
     private var hasLockedSessions: Bool {
-        !subscriptionManager.isSubscribed && sessions.count > 7
+        !subscriptionManager.isSubscribed && sessions.count > freeLimit
     }
     
     var body: some View {
@@ -86,7 +88,7 @@ struct HistoryView: View {
                                 Text("Unlock Full History")
                                     .font(.system(size: 15, weight: .semibold))
                                     .foregroundStyle(.primary)
-                                Text("\(sessions.count - 7) more fasts · Upgrade to Premium")
+                                Text("\(sessions.count - freeLimit) more fasts · Upgrade to Premium")
                                     .font(.system(size: 13))
                                     .foregroundStyle(.secondary)
                             }
@@ -116,12 +118,23 @@ struct HistoryView: View {
                     color: .orange
                 )
                 
-                StatCard(
-                    title: "Current Streak",
-                    value: "\(currentStreak)",
-                    icon: "bolt.fill",
-                    color: .yellow
-                )
+                // Streak — premium only
+                if subscriptionManager.isSubscribed {
+                    StatCard(
+                        title: "Current Streak",
+                        value: "\(currentStreak)",
+                        icon: "bolt.fill",
+                        color: .yellow
+                    )
+                } else {
+                    LockedStatCard(
+                        title: "Streak",
+                        icon: "bolt.fill",
+                        color: .yellow
+                    ) {
+                        showPaywall = true
+                    }
+                }
                 
                 StatCard(
                     title: "Avg Duration",
@@ -193,6 +206,36 @@ private struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
+    }
+}
+
+// MARK: - Locked Stat Card (Premium teaser)
+
+private struct LockedStatCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(color.opacity(0.4))
+                
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                
+                Text(title)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 }
 
