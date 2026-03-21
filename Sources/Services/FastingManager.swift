@@ -77,6 +77,12 @@ final class FastingManager {
         targetEndDate = now.addingTimeInterval(plan.fastingDuration)
         currentPlan = plan
         isActive = true
+        
+        // Schedule milestone notifications
+        Task { @MainActor in
+            _ = await NotificationManager.shared.requestPermission()
+            NotificationManager.shared.scheduleFastingNotifications(startDate: now, plan: plan)
+        }
     }
     
     /// Orucu bitir ve SwiftData'ya kaydet
@@ -92,6 +98,11 @@ final class FastingManager {
         session.complete()
         context.insert(session)
         
+        // Cancel pending notifications
+        Task { @MainActor in
+            NotificationManager.shared.cancelAllFastingNotifications()
+        }
+        
         // State temizle
         isActive = false
         startDate = nil
@@ -105,6 +116,10 @@ final class FastingManager {
         isActive = false
         startDate = nil
         targetEndDate = nil
+        
+        Task { @MainActor in
+            NotificationManager.shared.cancelAllFastingNotifications()
+        }
     }
     
     /// Plan değiştir (aktif oruç yokken)
