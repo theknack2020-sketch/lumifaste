@@ -100,6 +100,7 @@ struct TimerView: View {
                     // Idle state
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 36))
+                        .scaleEffect(x: -1)
                         .foregroundStyle(Color.accentColor)
                     
                     Text("Ready to fast")
