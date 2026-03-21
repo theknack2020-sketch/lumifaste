@@ -76,11 +76,27 @@ struct PaywallView: View {
     
     private var featuresSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Advanced Insights", subtitle: "Weekly trends, averages, and correlations")
-            FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "Access all your past fasting sessions")
-            FeatureRow(icon: "star.fill", title: "Detailed Stages", subtitle: "Deep dive into each fasting phase")
-            FeatureRow(icon: "bell.badge", title: "Smart Reminders", subtitle: "Personalized notification timing")
-            FeatureRow(icon: "heart.fill", title: "No Ads. Ever.", subtitle: "Clean, distraction-free experience")
+            // Free features - always available
+            Text("ALWAYS FREE")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.secondary)
+                .padding(.bottom, 2)
+            
+            FeatureRow(icon: "timer", title: "Fasting Timer", subtitle: "Start, track, and complete fasts", isFree: true)
+            FeatureRow(icon: "leaf.fill", title: "All Fasting Plans", subtitle: "16:8, 18:6, OMAD, and more", isFree: true)
+            FeatureRow(icon: "bell.badge", title: "Milestone Alerts", subtitle: "Notifications at key fasting hours", isFree: true)
+            
+            Divider().padding(.vertical, 4)
+            
+            // Premium features
+            Text("PREMIUM")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.purple)
+                .padding(.bottom, 2)
+            
+            FeatureRow(icon: "chart.line.uptrend.xyaxis", title: "Advanced Insights", subtitle: "Weekly trends and correlations", isFree: false)
+            FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "Access all past sessions (free: last 7)", isFree: false)
+            FeatureRow(icon: "sparkles", title: "Detailed Fasting Stages", subtitle: "Deep dive into each phase", isFree: false)
         }
         .padding(20)
         .background(
@@ -188,14 +204,14 @@ struct PaywallView: View {
     
     private var legalSection: some View {
         VStack(spacing: 6) {
-            Text("7-day free trial, then auto-renews. Cancel anytime in Settings.")
+            Text("Try all Premium features free for 7 days. After trial, auto-renews. Cancel anytime in Settings.")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
             
             HStack(spacing: 16) {
-                Link("Terms of Use", destination: URL(string: "https://lumifaste.com/terms")!)
-                Link("Privacy Policy", destination: URL(string: "https://lumifaste.com/privacy")!)
+                Link("Terms of Use", destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/terms/")!)
+                Link("Privacy Policy", destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/privacy/")!)
             }
             .font(.system(size: 11))
             .foregroundStyle(.tertiary)
@@ -209,17 +225,28 @@ private struct FeatureRow: View {
     let icon: String
     let title: String
     let subtitle: String
+    var isFree: Bool = false
     
     var body: some View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 18))
-                .foregroundStyle(.purple)
+                .foregroundStyle(isFree ? .green : .purple)
                 .frame(width: 28)
             
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                HStack(spacing: 6) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .semibold))
+                    if isFree {
+                        Text("FREE")
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(.green)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 1)
+                            .background(Capsule().fill(.green.opacity(0.15)))
+                    }
+                }
                 Text(subtitle)
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)

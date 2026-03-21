@@ -60,13 +60,13 @@ Your honest fasting companion. No ads, no tricks — just a beautiful timer, rea
 (147 chars ✅)
 
 ## Privacy Policy URL
-https://lumifaste.com/privacy
+https://theknack2020-sketch.github.io/lumifaste/privacy/
 
 ## Support URL
-https://lumifaste.com/support
+https://theknack2020-sketch.github.io/lumifaste/support/
 
 ## Marketing URL
-https://lumifaste.com
+https://theknack2020-sketch.github.io/lumifaste/
 
 ## Copyright
 © 2026 The Knack

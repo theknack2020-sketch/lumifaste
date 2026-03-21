@@ -49,7 +49,7 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     
-                    Link(destination: URL(string: "https://lumifaste.com/privacy")!) {
+                    Link(destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/privacy/")!) {
                         HStack {
                             Text("Privacy Policy")
                             Spacer()
@@ -59,7 +59,7 @@ struct SettingsView: View {
                         }
                     }
                     
-                    Link(destination: URL(string: "https://lumifaste.com/terms")!) {
+                    Link(destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/terms/")!) {
                         HStack {
                             Text("Terms of Use")
                             Spacer()

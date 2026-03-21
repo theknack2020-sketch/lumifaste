@@ -2,9 +2,23 @@ import SwiftUI
 import SwiftData
 
 /// Geçmiş oruçların listesi — tarih sıralı, en yeni üstte.
+/// Free: son 7 oruç. Premium: sınırsız.
 struct HistoryView: View {
+    @Environment(SubscriptionManager.self) private var subscriptionManager
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
+    @State private var showPaywall = false
+    
+    private var visibleSessions: [FastingSession] {
+        if subscriptionManager.isSubscribed {
+            return sessions
+        }
+        return Array(sessions.prefix(7))
+    }
+    
+    private var hasLockedSessions: Bool {
+        !subscriptionManager.isSubscribed && sessions.count > 7
+    }
     
     var body: some View {
         NavigationStack {
@@ -16,6 +30,9 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
+            }
         }
     }
     
@@ -47,11 +64,41 @@ struct HistoryView: View {
             
             // Sessions
             Section {
-                ForEach(sessions) { session in
+                ForEach(visibleSessions) { session in
                     FastingSessionRow(session: session)
                 }
             } header: {
                 Text("Recent Fasts")
+            }
+            
+            // Premium upsell for locked history
+            if hasLockedSessions {
+                Section {
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.purple)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Unlock Full History")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundStyle(.primary)
+                                Text("\(sessions.count - 7) more fasts · Upgrade to Premium")
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
             }
         }
         .listStyle(.insetGrouped)
@@ -152,4 +199,5 @@ private struct StatCard: View {
 #Preview {
     HistoryView()
         .modelContainer(for: FastingSession.self, inMemory: true)
+        .environment(SubscriptionManager())
 }
