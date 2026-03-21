@@ -1,0 +1,103 @@
+{
+  "identifier" : "A1B2C3D4-E5F6-7890-ABCD-LF1234567890",
+  "type" : "com.apple.product-type.storekit",
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  },
+  "products" : [
+    {
+      "displayPrice" : "3.99",
+      "familyShareable" : true,
+      "internalID" : "LF-MONTHLY-001",
+      "localizations" : [
+        {
+          "description" : "Advanced fasting insights, detailed stats & unlimited history",
+          "displayName" : "Monthly Premium",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Gelişmiş oruç analizleri, detaylı istatistikler ve sınırsız geçmiş",
+          "displayName" : "Aylık Premium",
+          "locale" : "tr"
+        }
+      ],
+      "productID" : "com.theknack.lumifaste.premium.monthly",
+      "referenceName" : "Lumifaste Premium Monthly",
+      "subscriptionGroupID" : "lumifaste_premium",
+      "type" : "RecurringSubscription",
+      "subscription" : {
+        "adHocOffers" : [],
+        "groupNumber" : 1,
+        "introductoryOffer" : {
+          "internalID" : "LF-TRIAL-MONTHLY-001",
+          "paymentMode" : "free",
+          "numberOfPeriods" : 1,
+          "subscriptionPeriod" : "P1W"
+        },
+        "subscriptionPeriod" : "P1M"
+      }
+    },
+    {
+      "displayPrice" : "29.99",
+      "familyShareable" : true,
+      "internalID" : "LF-YEARLY-001",
+      "localizations" : [
+        {
+          "description" : "All premium features for a full year — save 37%",
+          "displayName" : "Yearly Premium",
+          "locale" : "en_US"
+        },
+        {
+          "description" : "Tüm yıl premium özellikler — %37 tasarruf",
+          "displayName" : "Yıllık Premium",
+          "locale" : "tr"
+        }
+      ],
+      "productID" : "com.theknack.lumifaste.premium.yearly",
+      "referenceName" : "Lumifaste Premium Yearly",
+      "subscriptionGroupID" : "lumifaste_premium",
+      "type" : "RecurringSubscription",
+      "subscription" : {
+        "adHocOffers" : [],
+        "groupNumber" : 1,
+        "introductoryOffer" : {
+          "internalID" : "LF-TRIAL-YEARLY-001",
+          "paymentMode" : "free",
+          "numberOfPeriods" : 1,
+          "subscriptionPeriod" : "P1W"
+        },
+        "subscriptionPeriod" : "P1Y"
+      }
+    }
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "lumifaste_premium",
+      "localizations" : [
+        {
+          "description" : "Lumifaste Premium features",
+          "displayName" : "Lumifaste Premium",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Lumifaste Premium",
+      "subscriptions" : [
+        "com.theknack.lumifaste.premium.monthly",
+        "com.theknack.lumifaste.premium.yearly"
+      ]
+    }
+  ]
+}

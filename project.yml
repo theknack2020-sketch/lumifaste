@@ -46,8 +46,10 @@ schemes:
         Lumifaste: all
     run:
       config: Debug
+      storeKitConfiguration: Products.storekit
     test:
       config: Debug
+      storeKitConfiguration: Products.storekit
     profile:
       config: Release
     analyze:

@@ -12,6 +12,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("History", systemImage: "clock.arrow.circlepath")
                 }
+            
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
         }
         .tint(Color.accentColor)
     }
@@ -20,4 +25,5 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .modelContainer(for: FastingSession.self, inMemory: true)
+        .environment(SubscriptionManager())
 }

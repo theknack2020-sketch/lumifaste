@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct LumifasteApp: App {
     let modelContainer: ModelContainer
+    @State private var subscriptionManager = SubscriptionManager()
     
     init() {
         do {
@@ -16,6 +17,10 @@ struct LumifasteApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(subscriptionManager)
+                .task {
+                    await subscriptionManager.checkSubscriptionStatus()
+                }
         }
         .modelContainer(modelContainer)
     }

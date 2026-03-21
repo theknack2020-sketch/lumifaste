@@ -53,7 +53,7 @@ This milestone is complete only when all are true:
 
 ## Slices
 
-- [ ] **S01: Core Timer + Data + Fasting Stages** `risk:high` `depends:[]`
+- [x] **S01: Core Timer + Data + Fasting Stages** `risk:high` `depends:[]`
   > After this: Kullanıcı oruç başlatır, circular timer ilerler, fasting stages gösterilir, oruç bitirilir ve SwiftData'da saklanır. App restart'ta geçmiş oruçlar görünür.
 - [ ] **S02: IAP + Paywall + StoreKit 2** `risk:high` `depends:[S01]`
   > After this: Premium abonelik satın alınabilir, paywall gösterilir, restore çalışır, premium/free feature gate'leri aktif. Build ile IAP paralel — ayrılmaz.
