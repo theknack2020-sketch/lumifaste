@@ -55,15 +55,15 @@ This milestone is complete only when all are true:
 
 - [x] **S01: Core Timer + Data + Fasting Stages** `risk:high` `depends:[]`
   > After this: Kullanıcı oruç başlatır, circular timer ilerler, fasting stages gösterilir, oruç bitirilir ve SwiftData'da saklanır. App restart'ta geçmiş oruçlar görünür.
-- [ ] **S02: IAP + Paywall + StoreKit 2** `risk:high` `depends:[S01]`
+- [x] **S02: IAP + Paywall + StoreKit 2** `risk:high` `depends:[S01]`
   > After this: Premium abonelik satın alınabilir, paywall gösterilir, restore çalışır, premium/free feature gate'leri aktif. Build ile IAP paralel — ayrılmaz.
-- [ ] **S03: Onboarding + Plans + Settings** `risk:medium` `depends:[S01]`
+- [x] **S03: Onboarding + Plans + Settings** `risk:medium` `depends:[S01]`
   > After this: İlk açılışta onboarding akışı, plan seçimi (16:8, 18:6, 20:4, OMAD, 5:2, custom), ayarlar ekranı çalışır.
-- [ ] **S04: Notifications + History Dashboard** `risk:medium` `depends:[S01,S02]`
+- [x] **S04: Notifications + History Dashboard** `risk:medium` `depends:[S01,S02]`
   > After this: Oruç milestone'larında local notification, geçmiş oruçlar listesi, streak sayacı, temel istatistikler çalışır.
-- [ ] **S05: Branding + App Icon + Dark Mode + Legal** `risk:low` `depends:[S01]`
+- [x] **S05: Branding + App Icon + Dark Mode + Legal** `risk:low` `depends:[S01]`
   > After this: Gemini API ile üretilmiş app icon, tutarlı renk paleti, tam dark mode, privacy policy, health disclaimer yerinde.
-- [ ] **S06: Integration + Polish + App Store Ready** `risk:low` `depends:[S01,S02,S03,S04,S05]`
+- [x] **S06: Integration + Polish + App Store Ready** `risk:low` `depends:[S01,S02,S03,S04,S05]`
   > After this: Tüm parçalar birleşik, full flow çalışır, App Store Connect'e yüklenebilir, screenshots hazır.
 
 ## Boundary Map
