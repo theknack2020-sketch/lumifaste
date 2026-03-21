@@ -38,9 +38,10 @@ struct OnboardingView: View {
             
             Image(systemName: "leaf.fill")
                 .font(.system(size: 64))
+                .scaleEffect(x: -1, y: 1)
                 .foregroundStyle(
                     .linearGradient(
-                        colors: [Color.accentColor, .purple],
+                        colors: [Color(red: 0.46, green: 0.44, blue: 0.78), .purple],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
