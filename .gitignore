@@ -21,3 +21,5 @@ build/
 # Secrets
 .env
 *.storekit-local
+fastlane/AuthKey_*.p8
+fastlane/api_key.json
