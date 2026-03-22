@@ -5,7 +5,7 @@ import StoreKit
 /// Araştırma: $3.99/ay, $29.99/yıl (%37 tasarruf), 7 gün free trial
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var subscriptionManager = SubscriptionManager()
+    @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var selectedProduct: Product?
     
     var body: some View {

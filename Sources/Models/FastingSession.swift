@@ -39,8 +39,9 @@ final class FastingSession {
     
     /// Orucu tamamla — gerçek süreyi kaydet
     func complete() {
-        endDate = Date.now
-        actualDuration = endDate!.timeIntervalSince(startDate)
+        let end = Date.now
+        endDate = end
+        actualDuration = end.timeIntervalSince(startDate)
         stageReached = FastingStage.stage(for: actualDuration).rawValue
         isCompleted = true
     }

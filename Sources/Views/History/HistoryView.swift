@@ -162,13 +162,23 @@ struct HistoryView: View {
         let calendar = Calendar.current
         var streak = 0
         var checkDate = calendar.startOfDay(for: .now)
-        
-        for session in sessions where session.isCompleted {
-            let sessionDay = calendar.startOfDay(for: session.startDate)
-            if sessionDay == checkDate || sessionDay == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+
+        // Get unique days with completed fasts
+        let completedDays = Set(
+            sessions
+                .filter { $0.isCompleted }
+                .map { calendar.startOfDay(for: $0.startDate) }
+        )
+        .sorted(by: >)
+
+        for day in completedDays {
+            if day == checkDate {
                 streak += 1
-                checkDate = sessionDay
-            } else if sessionDay < calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+            } else {
                 break
             }
         }

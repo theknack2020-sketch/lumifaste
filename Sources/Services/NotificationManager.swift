@@ -47,6 +47,8 @@ final class NotificationManager {
         for milestone in milestones {
             // Sadece plan süresine kadar olan milestone'ları planla
             guard milestone.hours <= targetHours + 2 else { continue }
+            // Skip if milestone coincides with target completion (avoid double notification)
+            guard abs(milestone.hours - targetHours) > 0.5 else { continue }
             
             let triggerDate = startDate.addingTimeInterval(milestone.hours * 3600)
             guard triggerDate > Date.now else { continue }
