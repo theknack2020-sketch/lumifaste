@@ -5,6 +5,7 @@ import SwiftData
 /// Free: son 3 oruç, streak yok. Premium: sınırsız + streak.
 struct HistoryView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var showPaywall = false
@@ -68,6 +69,13 @@ struct HistoryView: View {
             Section {
                 ForEach(visibleSessions) { session in
                     FastingSessionRow(session: session)
+                }
+                .onDelete { indexSet in
+                    for index in indexSet {
+                        let session = visibleSessions[index]
+                        modelContext.delete(session)
+                    }
+                    try? modelContext.save()
                 }
             } header: {
                 Text("Recent Fasts")
