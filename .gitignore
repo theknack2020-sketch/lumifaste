@@ -1,2 +1,23 @@
+# Xcode
+*.xcodeproj/
+xcuserdata/
+*.xcworkspace/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+*.swp
+*~
+
+# GSD runtime
 .gsd/runtime/
-*.xcodeproj
+.gsd/activity/
+.gsd/browser-state/
+
+# Secrets
+.env
+*.storekit-local
