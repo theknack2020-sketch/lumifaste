@@ -26,3 +26,4 @@ Agents read this before every unit. Add entries when you discover something wort
 
 | # | What Happened | Root Cause | Fix | Scope |
 |---|--------------|------------|-----|-------|
+| L001 | AuthKey_*.p8 dosyası public GitHub repo'ya push edildi, GitGuardian uyarı gönderdi | Key fastlane/ altına kopyalanıp .gitignore'a eklenmeden commit edildi | Key revoke edildi, git history filter-repo ile temizlendi, .gitignore'a eklendi. KURAL: .p8, .p12, AuthKey_*, api_key.json dosyaları ASLA repo'ya eklenmez | security |
