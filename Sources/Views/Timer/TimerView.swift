@@ -156,7 +156,7 @@ struct TimerView: View {
         .padding(.horizontal, 20)
     }
     
-    // MARK: - Plan Selector (16:8 free, rest premium)
+    // MARK: - Plan Selector (preset plans free, custom premium)
     
     private var planSelector: some View {
         VStack(spacing: 8) {
@@ -166,9 +166,8 @@ struct TimerView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 10) {
-                    ForEach(FastingPlan.allCases.filter { $0 != .custom && $0 != .fiveTwo }) { plan in
-                        let isFree = plan == .sixteenEight
-                        let isLocked = !isFree && !subscriptionManager.isSubscribed
+                    ForEach(FastingPlan.allCases.filter { $0 != .fiveTwo }) { plan in
+                        let isLocked = plan == .custom && !subscriptionManager.isSubscribed
                         
                         PlanChip(
                             plan: plan,

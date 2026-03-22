@@ -9,7 +9,7 @@ struct HistoryView: View {
     private var sessions: [FastingSession]
     @State private var showPaywall = false
     
-    private let freeLimit = 3
+    private let freeLimit = 7
     
     private var visibleSessions: [FastingSession] {
         if subscriptionManager.isSubscribed {
