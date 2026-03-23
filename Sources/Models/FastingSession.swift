@@ -14,6 +14,20 @@ final class FastingSession {
     var actualDuration: TimeInterval
     var stageReached: String
     
+    // MARK: - New fields
+    
+    /// User's mood/energy at fast end (emoji string: 😴😐😊🔥)
+    var mood: String?
+    
+    /// User note attached to the completed fast
+    var note: String?
+    
+    /// Water intake count during fast (simple counter)
+    var waterCount: Int
+    
+    /// Total paused duration (seconds) — subtracted from elapsed for accurate tracking
+    var totalPausedDuration: TimeInterval
+    
     init(
         startDate: Date,
         targetEndDate: Date,
@@ -27,6 +41,10 @@ final class FastingSession {
         self.isCompleted = false
         self.actualDuration = 0
         self.stageReached = FastingStage.fed.rawValue
+        self.mood = nil
+        self.note = nil
+        self.waterCount = 0
+        self.totalPausedDuration = 0
     }
     
     var plan: FastingPlan {
@@ -41,7 +59,7 @@ final class FastingSession {
     func complete() {
         let end = Date.now
         endDate = end
-        actualDuration = end.timeIntervalSince(startDate)
+        actualDuration = end.timeIntervalSince(startDate) - totalPausedDuration
         stageReached = FastingStage.stage(for: actualDuration).rawValue
         isCompleted = true
     }

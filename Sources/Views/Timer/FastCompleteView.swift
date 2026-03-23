@@ -1,57 +1,167 @@
 import SwiftUI
+import SwiftData
 
 /// Oruç tamamlama raporu — doğal premium conversion moment.
 /// Free: tebrik + basit özet. Premium: detaylı breakdown.
+/// Now includes mood picker (#6), fast note (#10), and share button.
 struct FastCompleteView: View {
     let session: FastingSession
     let isPremium: Bool
     let onUpgrade: () -> Void
+    var streak: Int = 0
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
+    @Environment(ThemeManager.self) private var themeManager
+    @State private var showConfetti = false
+    @State private var selectedMood: String?
+    @State private var noteText: String = ""
+    @State private var showShareSheet = false
+    @State private var shareImage: UIImage?
+    
+    private let moods = ["😴", "😐", "😊", "🔥"]
+    private let moodLabels = ["Tired", "Okay", "Good", "Energized"]
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Celebration header
-                    celebrationHeader
-                    
-                    // Basic stats — always visible
-                    basicStats
-                    
-                    // Premium breakdown
-                    if isPremium {
-                        premiumBreakdown
-                    } else {
-                        premiumTeaser
+            ZStack {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Celebration header
+                        celebrationHeader
+                            .entranceAnimation(delay: 0.1)
+                        
+                        // Basic stats — always visible
+                        basicStats
+                            .entranceAnimation(delay: 0.25)
+                        
+                        // Mood picker (#6)
+                        moodPicker
+                            .entranceAnimation(delay: 0.3)
+                        
+                        // Fast note (#10)
+                        noteSection
+                            .entranceAnimation(delay: 0.35)
+                        
+                        // Share My Fast button
+                        shareButton
+                            .entranceAnimation(delay: 0.38)
+                        
+                        // Premium breakdown
+                        if isPremium {
+                            premiumBreakdown
+                                .entranceAnimation(delay: 0.4)
+                        } else {
+                            premiumTeaser
+                                .entranceAnimation(delay: 0.4)
+                        }
+                        
+                        // Done button
+                        Button {
+                            HapticManager.shared.lightTap()
+                            saveMoodAndNote()
+                            dismiss()
+                        } label: {
+                            Text("Done")
+                                .font(.system(.body, weight: .semibold))
+                                .foregroundStyle(.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(Color.accentColor)
+                                )
+                        }
+                        .buttonStyle(.bounce)
+                        .entranceAnimation(delay: 0.5)
+                        .accessibilityLabel("Done")
+                        .accessibilityHint("Dismiss the fast completion report")
                     }
-                    
-                    // Done button
-                    Button {
-                        dismiss()
-                    } label: {
-                        Text("Done")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color.accentColor)
-                            )
-                    }
+                    .padding(24)
                 }
-                .padding(24)
+                
+                // Confetti overlay
+                ConfettiView(isActive: showConfetti)
+                    .ignoresSafeArea()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { dismiss() } label: {
+                    Button {
+                        saveMoodAndNote()
+                        dismiss()
+                    } label: {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityLabel("Close")
+                }
+            }
+            .onAppear {
+                HapticManager.shared.fastCompleted()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    showConfetti = true
+                }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let image = shareImage {
+                    ActivityShareSheet(
+                        image: image,
+                        caption: "I just completed a \(formatDuration(session.actualDuration)) fast with Lumifaste! 🍃 #Lumifaste #IntermittentFasting"
+                    )
                 }
             }
         }
+    }
+    
+    // MARK: - Share My Fast
+    
+    private var shareButton: some View {
+        Button {
+            HapticManager.shared.lightTap()
+            shareImage = ShareImageRenderer.renderFastCard(
+                duration: session.actualDuration,
+                stage: session.stage,
+                plan: session.plan,
+                streak: streak
+            )
+            if shareImage != nil {
+                showShareSheet = true
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Share My Fast")
+                    .font(.system(size: 15, weight: .semibold))
+            }
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+        }
+        .buttonStyle(.bounce)
+        .accessibilityLabel("Share my fast results")
+        .accessibilityHint("Creates a shareable image card of your fasting results")
+    }
+    
+    // MARK: - Save mood and note to session
+    
+    private func saveMoodAndNote() {
+        if let mood = selectedMood {
+            session.mood = mood
+        }
+        let trimmed = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            // Validate note length
+            if InputValidator.validateNote(trimmed) == nil {
+                session.note = String(trimmed.prefix(500))
+            }
+        }
+        DataController.shared.save(modelContext, operation: "save fast mood/note")
+        ReviewRequestManager.recordCompletedFast()
     }
     
     // MARK: - Celebration
@@ -60,15 +170,18 @@ struct FastCompleteView: View {
         VStack(spacing: 12) {
             Text("🎉")
                 .font(.system(size: 56))
+                .accessibilityHidden(true)
             
             Text("Fast Complete!")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(.title, weight: .bold))
             
             Text("Great discipline — you did it.")
-                .font(.system(size: 16))
+                .font(.system(.body))
                 .foregroundStyle(.secondary)
         }
         .padding(.top, 8)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Congratulations! Fast complete. Great discipline.")
     }
     
     // MARK: - Basic Stats (Free)
@@ -80,6 +193,89 @@ struct FastCompleteView: View {
                 StatItem(title: "Plan", value: session.plan.rawValue, icon: "calendar", color: .orange)
                 StatItem(title: "Stage", value: session.stage.rawValue, icon: session.stage.icon, color: session.stage.color)
             }
+            
+            // Water count display (#5)
+            if session.waterCount > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "drop.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.cyan)
+                    Text("\(session.waterCount) glasses of water")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Duration \(formatDuration(session.actualDuration)), Plan \(session.plan.rawValue), Reached \(session.stage.rawValue) stage")
+    }
+    
+    // MARK: - Mood Picker (#6)
+    
+    private var moodPicker: some View {
+        VStack(spacing: 10) {
+            Text("How do you feel?")
+                .font(.system(size: 15, weight: .semibold))
+            
+            HStack(spacing: 16) {
+                ForEach(Array(zip(moods, moodLabels)), id: \.0) { emoji, label in
+                    Button {
+                        HapticManager.shared.selectionChanged()
+                        withAnimation(.tapSpring) {
+                            selectedMood = emoji
+                        }
+                    } label: {
+                        VStack(spacing: 4) {
+                            Text(emoji)
+                                .font(.system(size: 32))
+                            Text(label)
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(selectedMood == emoji ? Color.accentColor.opacity(0.15) : Color.clear)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(selectedMood == emoji ? Color.accentColor : Color.clear, lineWidth: 1.5)
+                        )
+                        .scaleEffect(selectedMood == emoji ? 1.1 : 1.0)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(label) mood")
+                }
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+    
+    // MARK: - Fast Note (#10)
+    
+    private var noteSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Add a note")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.secondary)
+            
+            TextField("How was this fast?", text: $noteText, axis: .vertical)
+                .textFieldStyle(.plain)
+                .lineLimit(2...4)
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color(.tertiarySystemBackground))
+                )
         }
         .padding(16)
         .background(
@@ -93,32 +289,35 @@ struct FastCompleteView: View {
     private var premiumBreakdown: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Stage Breakdown")
-                .font(.system(size: 17, weight: .bold))
+                .font(.system(.body, weight: .bold))
             
-            ForEach(FastingStage.allCases) { stage in
+            ForEach(Array(FastingStage.allCases.enumerated()), id: \.element.id) { index, stage in
                 let timeInStage = stageTime(for: stage)
                 if timeInStage > 0 {
                     HStack(spacing: 12) {
                         Image(systemName: stage.icon)
-                            .font(.system(size: 14))
+                            .font(.system(.footnote))
                             .foregroundStyle(stage.color)
                             .frame(width: 24)
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(stage.rawValue)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.system(.footnote, weight: .medium))
                             Text(stage.subtitle)
-                                .font(.system(size: 12))
+                                .font(.system(.caption))
                                 .foregroundStyle(.secondary)
                         }
                         
                         Spacer()
                         
                         Text(formatDurationShort(timeInStage))
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.system(.footnote, design: .rounded, weight: .semibold))
                             .monospacedDigit()
                     }
                     .padding(.vertical, 4)
+                    .staggeredAppear(index: index)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("\(stage.rawValue): \(formatDurationShort(timeInStage)). \(stage.subtitle)")
                 }
             }
         }
@@ -136,18 +335,19 @@ struct FastCompleteView: View {
             HStack(spacing: 12) {
                 Image(systemName: "chart.bar.fill")
                     .font(.system(size: 24))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(themeManager.selectedTheme.accent)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("See Your Full Report")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(.body, weight: .semibold))
                     Text("Stage breakdown, time in each phase, and trends over time")
-                        .font(.system(size: 13))
+                        .font(.system(.footnote))
                         .foregroundStyle(.secondary)
                 }
             }
             
             Button {
+                saveMoodAndNote()
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     onUpgrade()
@@ -155,24 +355,21 @@ struct FastCompleteView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 14))
+                        .font(.system(.footnote))
                     Text("Try Premium Free")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 46)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(
-                            .linearGradient(
-                                colors: [.purple, .blue],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .fill(themeManager.selectedTheme.accentGradient)
                 )
             }
+            .accessibilityLabel("Try Premium Free")
+            .accessibilityHint("Unlock detailed stage breakdown and fasting reports")
+            .buttonStyle(.bounce)
         }
         .padding(16)
         .background(
@@ -220,12 +417,12 @@ private struct StatItem: View {
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(.body))
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.system(.body, design: .rounded, weight: .bold))
             Text(title)
-                .font(.system(size: 11))
+                .font(.system(.caption))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
@@ -239,7 +436,9 @@ private struct StatItem: View {
         planType: .sixteenEight
     )
     session.complete()
-    return FastCompleteView(session: session, isPremium: false, onUpgrade: {})
+    return FastCompleteView(session: session, isPremium: false, onUpgrade: {}, streak: 5)
+        .modelContainer(for: FastingSession.self, inMemory: true)
+        .environment(ThemeManager())
 }
 
 #Preview("Premium") {
@@ -249,5 +448,7 @@ private struct StatItem: View {
         planType: .twentyFour
     )
     session.complete()
-    return FastCompleteView(session: session, isPremium: true, onUpgrade: {})
+    return FastCompleteView(session: session, isPremium: true, onUpgrade: {}, streak: 12)
+        .modelContainer(for: FastingSession.self, inMemory: true)
+        .environment(ThemeManager())
 }

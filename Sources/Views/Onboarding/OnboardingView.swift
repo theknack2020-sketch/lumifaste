@@ -1,7 +1,9 @@
 import SwiftUI
 
 /// İlk açılış onboarding akışı — plan seçimi, hedef belirleme, izin istekleri.
+/// Entrance animations on each page, bounce button style, spring transitions.
 struct OnboardingView: View {
+    @Environment(ThemeManager.self) private var themeManager
     @State private var currentPage = 0
     @State private var selectedPlan: FastingPlan = .sixteenEight
     @State private var selectedGoal: FastingGoal = .weightLoss
@@ -21,9 +23,13 @@ struct OnboardingView: View {
             planPage
                 .tag(2)
             
-            // Page 4: Ready
-            readyPage
+            // Page 4: Notifications
+            notificationPage
                 .tag(3)
+            
+            // Page 5: Ready
+            readyPage
+                .tag(4)
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -39,26 +45,23 @@ struct OnboardingView: View {
             Image(systemName: "leaf.fill")
                 .font(.system(size: 64))
                 .scaleEffect(x: -1, y: 1)
-                .foregroundStyle(
-                    .linearGradient(
-                        colors: [Color(red: 0.46, green: 0.44, blue: 0.78), .purple],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+                .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                .entranceAnimation(delay: 0.2)
             
             Text("Welcome to Lumifaste")
                 .font(.system(size: 28, weight: .bold))
+                .entranceAnimation(delay: 0.35)
             
             Text("Your honest fasting companion.\nNo ads. No tricks. Just results.")
                 .font(.system(size: 17))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .entranceAnimation(delay: 0.45)
             
             Spacer()
             
             nextButton("Get Started") {
-                withAnimation { currentPage = 1 }
+                withAnimation(.smoothSpring) { currentPage = 1 }
             }
         }
         .padding(24)
@@ -78,13 +81,17 @@ struct OnboardingView: View {
                 .foregroundStyle(.secondary)
             
             VStack(spacing: 12) {
-                ForEach(FastingGoal.allCases) { goal in
+                ForEach(Array(FastingGoal.allCases.enumerated()), id: \.element.id) { index, goal in
                     GoalCard(
                         goal: goal,
                         isSelected: selectedGoal == goal
                     ) {
-                        selectedGoal = goal
+                        HapticManager.shared.selectionChanged()
+                        withAnimation(.tapSpring) {
+                            selectedGoal = goal
+                        }
                     }
+                    .staggeredAppear(index: index)
                 }
             }
             .padding(.top, 8)
@@ -92,7 +99,7 @@ struct OnboardingView: View {
             Spacer()
             
             nextButton("Continue") {
-                withAnimation { currentPage = 2 }
+                withAnimation(.smoothSpring) { currentPage = 2 }
             }
         }
         .padding(24)
@@ -114,23 +121,96 @@ struct OnboardingView: View {
             
             ScrollView {
                 VStack(spacing: 10) {
-                    ForEach(FastingPlan.allCases.filter { $0 != .custom && $0 != .fiveTwo }) { plan in
+                    ForEach(Array(FastingPlan.allCases.filter { $0 != .custom && $0 != .fiveTwo }.enumerated()), id: \.element.id) { index, plan in
                         PlanCard(
                             plan: plan,
                             isSelected: selectedPlan == plan,
                             isRecommended: recommendedPlan == plan
                         ) {
-                            selectedPlan = plan
+                            HapticManager.shared.selectionChanged()
+                            withAnimation(.tapSpring) {
+                                selectedPlan = plan
+                            }
                         }
+                        .staggeredAppear(index: index)
                     }
                 }
             }
             
             nextButton("Continue") {
-                withAnimation { currentPage = 3 }
+                withAnimation(.smoothSpring) { currentPage = 3 }
             }
         }
         .padding(24)
+    }
+    
+    // MARK: - Notifications
+    
+    private var notificationPage: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            ZStack {
+                Circle()
+                    .fill(Color.blue.opacity(0.12))
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 44))
+                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
+            }
+            .entranceAnimation(delay: 0.2)
+            
+            Text("Stay on Track")
+                .font(.system(size: 26, weight: .bold))
+                .entranceAnimation(delay: 0.35)
+            
+            Text("Get notified when you hit milestones,\nenter new fasting stages, and reach your goal")
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .entranceAnimation(delay: 0.45)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                notifBenefit(icon: "flag.checkered", color: .green, text: "Milestone alerts at 25%, 50%, 75%")
+                notifBenefit(icon: "flame.fill", color: .orange, text: "Fat Burning & Ketosis stage alerts")
+                notifBenefit(icon: "trophy.fill", color: .yellow, text: "Celebration when you reach your goal")
+                notifBenefit(icon: "bolt.fill", color: .purple, text: "Streak reminders to stay consistent")
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            
+            Spacer()
+            
+            nextButton("Enable Notifications") {
+                Task {
+                    _ = await NotificationManager.shared.requestPermission()
+                    NotificationManager.shared.scheduleDailyReminder()
+                    withAnimation(.smoothSpring) { currentPage = 4 }
+                }
+            }
+            
+            Button("Skip for Now") {
+                withAnimation(.smoothSpring) { currentPage = 4 }
+            }
+            .font(.system(size: 15))
+            .foregroundStyle(.secondary)
+        }
+        .padding(24)
+    }
+    
+    private func notifBenefit(icon: String, color: Color, text: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(color)
+                .frame(width: 24)
+            Text(text)
+                .font(.system(size: 14))
+        }
     }
     
     // MARK: - Ready
@@ -142,9 +222,11 @@ struct OnboardingView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
+                .entranceAnimation(delay: 0.2)
             
             Text("You're all set!")
                 .font(.system(size: 28, weight: .bold))
+                .entranceAnimation(delay: 0.35)
             
             VStack(spacing: 8) {
                 Text("Your plan: **\(selectedPlan.rawValue)**")
@@ -152,14 +234,18 @@ struct OnboardingView: View {
                     .foregroundStyle(.secondary)
             }
             .font(.system(size: 17))
+            .entranceAnimation(delay: 0.45)
             
             Spacer()
             
             nextButton("Start Fasting") {
+                HapticManager.shared.fastStarted()
                 // Save selections
                 UserDefaults.standard.set(selectedPlan.rawValue, forKey: "lf_fasting_plan")
                 UserDefaults.standard.set(selectedGoal.rawValue, forKey: "lf_fasting_goal")
-                hasCompletedOnboarding = true
+                withAnimation(.smoothSpring) {
+                    hasCompletedOnboarding = true
+                }
             }
         }
         .padding(24)
@@ -189,6 +275,7 @@ struct OnboardingView: View {
                         .fill(Color.accentColor)
                 )
         }
+        .buttonStyle(.bounce)
     }
 }
 
@@ -253,6 +340,7 @@ private struct GoalCard: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .animation(.tapSpring, value: isSelected)
             }
             .padding(14)
             .background(
@@ -263,8 +351,9 @@ private struct GoalCard: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
+            .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
     }
 }
 
@@ -316,6 +405,7 @@ private struct PlanCard: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 24))
                     .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .animation(.tapSpring, value: isSelected)
             }
             .padding(14)
             .background(
@@ -326,11 +416,13 @@ private struct PlanCard: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
             )
+            .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
     }
 }
 
 #Preview {
     OnboardingView(hasCompletedOnboarding: .constant(false))
+        .environment(ThemeManager())
 }

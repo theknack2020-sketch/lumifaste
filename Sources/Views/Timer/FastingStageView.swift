@@ -1,7 +1,9 @@
 import SwiftUI
 
 /// Fasting stage badge — şu anki aşamayı gösterir.
-/// Free: stage ismi + icon. Premium: subtitle + next stage hint.
+/// Standalone version for use outside the main timer (e.g. fast detail, history).
+/// Free: stage ismi + icon. Premium: subtitle + next stage hint + metabolic info.
+/// Fully accessible with VoiceOver support.
 struct FastingStageView: View {
     let stage: FastingStage
     let elapsed: TimeInterval
@@ -9,54 +11,86 @@ struct FastingStageView: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // Stage badge — always visible
+            // Stage badge — always visible, animated on stage change
             HStack(spacing: 6) {
                 Image(systemName: stage.icon)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
                 Text(stage.rawValue)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
+                    .contentTransition(.numericText())
             }
             .foregroundStyle(stage.color)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(stage.color.opacity(0.12))
             .clipShape(Capsule())
+            .animation(.smoothSpring, value: stage)
             
             if isPremium {
-                // Premium: stage description
+                // Premium: stage description — fade transition
                 Text(stage.subtitle)
-                    .font(.system(size: 13))
+                    .font(.system(.footnote))
                     .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.3), value: stage)
+                
+                // Premium: metabolic info teaser
+                if let detail = FastingEducation.detail(for: stage) {
+                    Text(detail.metabolicInfo.prefix(80) + "…")
+                        .font(.system(.caption))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                        .contentTransition(.opacity)
+                        .animation(.easeInOut(duration: 0.3), value: stage)
+                }
                 
                 // Premium: next stage hint
                 if let next = stage.next {
                     let hoursUntilNext = max(0, (next.startHour * 3600 - elapsed) / 3600)
                     if hoursUntilNext > 0 {
                         Text("\(next.rawValue) in \(formatHours(hoursUntilNext))")
-                            .font(.system(size: 12))
+                            .font(.system(.caption))
                             .foregroundStyle(.tertiary)
+                            .contentTransition(.numericText())
+                            .animation(.easeInOut(duration: 0.3), value: next)
                     }
                 }
             } else {
                 // Free: teaser
                 HStack(spacing: 4) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 10))
+                        .font(.system(.caption2))
                     Text("Upgrade for stage details")
-                        .font(.system(size: 12))
+                        .font(.system(.caption))
                 }
                 .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+    }
+    
+    private var accessibilityDescription: String {
+        var desc = "Current stage: \(stage.rawValue). \(stage.subtitle)."
+        if isPremium, let next = stage.next {
+            let hoursUntilNext = max(0, (next.startHour * 3600 - elapsed) / 3600)
+            if hoursUntilNext > 0 {
+                desc += " Next stage: \(next.rawValue) in \(formatHours(hoursUntilNext))."
+            }
+        }
+        return desc
     }
     
     private func formatHours(_ hours: Double) -> String {
         if hours < 1 {
-            return "\(Int(hours * 60))min"
+            return "\(Int(hours * 60)) minutes"
         }
         let h = Int(hours)
         let m = Int((hours - Double(h)) * 60)
-        return m > 0 ? "\(h)h \(m)min" : "\(h)h"
+        return m > 0 ? "\(h) hours \(m) minutes" : "\(h) hours"
     }
 }
 

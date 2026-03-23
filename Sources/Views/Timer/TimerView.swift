@@ -4,66 +4,249 @@ import UIKit
 
 /// Ana timer ekranı — oruç başlat/bitir, circular progress, stage tracking.
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
+/// Soft paywall trigger: shows after 3rd completed fast (non-blocking).
+///
+/// REDESIGNED: gradient backgrounds, prominent stage display, time remaining,
+/// next stage progress, motivational quotes, quick-action buttons, streak counter,
+/// improved plan selector, date display, breathing animation on ring.
 struct TimerView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(ThemeManager.self) private var themeManager
+    @Query private var allSessions: [FastingSession]
     @State private var manager = FastingManager()
     @State private var showPlanPicker = false
     @State private var showEndConfirm = false
     @State private var showPaywall = false
+    @State private var showSoftPaywall = false
     @State private var completedSession: FastingSession?
+    @State private var lastStage: FastingStage = .fed
+    @State private var showEditStartTime = false
+    @State private var showExtendSheet = false
+    @State private var showCustomPlanSheet = false
+    @State private var showNudge = false
+    @State private var showClockWarning = false
+    @State private var showMoodLogger = false
+    @State private var selectedQuickMood: String?
+    
+    /// Task handle for product loading — enables cancellation
+    @State private var productLoadTask: Task<Void, Never>?
+    @State private var achievementManager = AchievementManager()
+    @State private var unlockedAchievement: Achievement?
+    @State private var showStreakShareSheet = false
+    @State private var streakShareImage: UIImage?
+    
+    /// Tracks whether we've shown the soft paywall this session to avoid repeat
+    @AppStorage("lf_soft_paywall_shown") private var softPaywallShown = false
+    
+    /// Number of completed fasts needed before showing soft paywall
+    private let softPaywallThreshold = 3
+    
+    private var completedFastCount: Int {
+        allSessions.filter(\.isCompleted).count
+    }
+    
+    /// Current streak — used for streak reminder notifications
+    private var currentStreak: Int {
+        let calendar = Calendar.current
+        var streak = 0
+        var checkDate = calendar.startOfDay(for: .now)
+        
+        let completedDays = Set(
+            allSessions
+                .filter { $0.isCompleted }
+                .map { calendar.startOfDay(for: $0.startDate) }
+        )
+        .sorted(by: >)
+        
+        for day in completedDays {
+            if day == checkDate {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
+            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                streak += 1
+                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+            } else {
+                break
+            }
+        }
+        return streak
+    }
+    
+    // MARK: - Motivational Quotes
+    
+    private static let motivationalQuotes: [(text: String, author: String)] = [
+        ("The body achieves what the mind believes.", "Napoleon Hill"),
+        ("Discipline is the bridge between goals and accomplishment.", "Jim Rohn"),
+        ("Every hour of fasting is an investment in your health.", ""),
+        ("Your body is healing right now. Trust the process.", ""),
+        ("Small daily improvements lead to extraordinary results.", "Robin Sharma"),
+        ("The secret of getting ahead is getting started.", "Mark Twain"),
+        ("You are stronger than your cravings.", ""),
+        ("This discomfort is temporary. The benefits last.", ""),
+        ("Fasting is the greatest remedy — the physician within.", "Paracelsus"),
+        ("Take care of your body. It's the only place you have to live.", "Jim Rohn"),
+        ("Strength does not come from what you can do. It comes from overcoming what you once thought you couldn't.", ""),
+        ("The best time to plant a tree was 20 years ago. The second best time is now.", "Chinese Proverb"),
+    ]
+    
+    private var currentQuote: (text: String, author: String) {
+        let interval = manager.isActive ? manager.elapsedTime : 0
+        // Rotate every 5 minutes
+        let index = Int(interval / 300) % Self.motivationalQuotes.count
+        return Self.motivationalQuotes[index]
+    }
+    
+    // MARK: - Stage Background Gradient
+    
+    private var stageGradient: LinearGradient {
+        let stage = manager.isActive ? manager.currentStage : .fed
+        let colors: [Color]
+        switch stage {
+        case .fed:
+            colors = [Color(.systemBackground), Color(.systemBackground)]
+        case .earlyFasting:
+            colors = [Color(.systemBackground), Color.yellow.opacity(0.06)]
+        case .fatBurning:
+            colors = [Color(.systemBackground), Color.orange.opacity(0.08)]
+        case .ketosis:
+            colors = [Color(.systemBackground), Color.blue.opacity(0.08)]
+        case .autophagy:
+            colors = [Color(.systemBackground), Color.purple.opacity(0.1)]
+        }
+        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+    }
     
     var body: some View {
         NavigationStack {
             TimelineView(.periodic(from: .now, by: 1.0)) { timeline in
-                VStack(spacing: 0) {
-                    Spacer()
-                    
-                    // Circular timer
-                    timerRing
-                        .padding(.horizontal, 40)
-                    
-                    Spacer()
-                        .frame(height: 24)
-                    
-                    // Stage indicator
-                    if manager.isActive {
-                        FastingStageView(
-                            stage: manager.currentStage,
-                            elapsed: manager.elapsedTime,
-                            isPremium: subscriptionManager.isSubscribed
-                        )
-                        .transition(.opacity.combined(with: .scale))
+                let _ = detectStageChange()
+                let _ = periodicClockCheck()
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Date & streak header
+                        dateAndStreakHeader
+                            .padding(.horizontal, 20)
+                            .padding(.top, 8)
+                        
+                        // Nudge banner (#13)
+                        if showNudge && !manager.isActive {
+                            nudgeBanner
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
+                        
+                        Spacer()
+                            .frame(height: 16)
+                        
+                        // Circular timer with glow and breathing
+                        timerRing
+                            .padding(.horizontal, 32)
+                            .entranceAnimation(delay: 0.1)
+                        
+                        Spacer()
+                            .frame(height: 16)
+                        
+                        // Current fasting stage — prominent display
+                        if manager.isActive {
+                            currentStageDisplay
+                                .padding(.horizontal, 20)
+                                .id(manager.currentStage)
+                                .transition(
+                                    .asymmetric(
+                                        insertion: .opacity
+                                            .combined(with: .scale(scale: 0.9))
+                                            .animation(.smoothSpring),
+                                        removal: .opacity
+                                            .combined(with: .scale(scale: 1.05))
+                                            .animation(.easeInOut(duration: 0.2))
+                                    )
+                                )
+                        }
+                        
+                        // Next stage progress
+                        if manager.isActive, let next = manager.currentStage.next {
+                            nextStageIndicator(next: next)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                        }
+                        
+                        Spacer()
+                            .frame(height: 12)
+                        
+                        // Motivational quote card
+                        if manager.isActive && !manager.isPaused {
+                            motivationalQuoteCard
+                                .padding(.horizontal, 20)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
+                        
+                        Spacer()
+                            .frame(height: 12)
+                        
+                        // Stage-specific tip — contextual to current stage
+                        if manager.isActive {
+                            stageTipView
+                                .padding(.horizontal, 20)
+                                .padding(.top, 2)
+                                .id("stagetip-\(manager.currentStage)")
+                                .transition(.opacity)
+                        }
+                        
+                        // Quick action buttons (water, mood, end fast)
+                        if manager.isActive {
+                            quickActionBar
+                                .padding(.top, 16)
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        // Community comparison (#7)
+                        if manager.isActive, let avg = CommunityStats.average(for: manager.currentPlan) {
+                            communityComparison(avg: avg)
+                                .padding(.top, 12)
+                                .padding(.horizontal, 20)
+                        }
+                        
+                        Spacer()
+                            .frame(height: 24)
+                        
+                        // Action buttons — redesigned
+                        actionButtons
+                            .entranceAnimation(delay: 0.25)
+                        
+                        // Plan selector (inactive state) — redesigned
+                        if !manager.isActive {
+                            planSelector
+                                .padding(.top, 16)
+                                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
+                        
+                        Spacer()
+                            .frame(height: 32)
                     }
-                    
-                    Spacer()
-                        .frame(height: 32)
-                    
-                    // Action button
-                    actionButton
-                    
-                    // Plan selector (inactive state)
-                    if !manager.isActive {
-                        planSelector
-                            .padding(.top, 16)
-                    }
-                    
-                    Spacer()
+                    .animation(.smoothSpring, value: manager.isActive)
+                    .animation(.smoothSpring, value: manager.isPaused)
+                    .animation(.smoothSpring, value: manager.currentStage)
                 }
-                .padding()
+                .background(stageGradient.ignoresSafeArea())
             }
             .navigationTitle("Lumifaste")
             .navigationBarTitleDisplayMode(.inline)
-            .confirmationDialog("End Fast?", isPresented: $showEndConfirm) {
-                Button("End & Save", role: .destructive) {
-                    let notif = UINotificationFeedbackGenerator()
-                    notif.notificationOccurred(.success)
-                    withAnimation(.spring(duration: 0.4)) {
-                        completedSession = manager.endFast(context: modelContext)
+            .toolbar {
+                // Fasting status indicator in nav bar (#13)
+                if manager.isActive {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        fastingStatusBadge
                     }
                 }
+            }
+            .confirmationDialog("End Fast?", isPresented: $showEndConfirm) {
+                Button("End & Save", role: .destructive) {
+                    endAndSaveFast()
+                }
                 Button("Cancel Fast", role: .destructive) {
-                    withAnimation(.spring(duration: 0.4)) {
+                    withAnimation(.smoothSpring) {
                         manager.cancelFast()
                     }
                 }
@@ -74,94 +257,733 @@ struct TimerView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
+            .sheet(isPresented: $showSoftPaywall) {
+                SoftPaywallView(reason: .completedFasts(count: completedFastCount))
+                    .presentationDetents([.medium, .large])
+            }
+            .sheet(isPresented: $showEditStartTime) {
+                EditStartTimeSheet(manager: manager)
+                    .presentationDetents([.height(280)])
+            }
+            .sheet(isPresented: $showExtendSheet) {
+                ExtendFastSheet(manager: manager)
+                    .presentationDetents([.height(300)])
+            }
+            .sheet(isPresented: $showCustomPlanSheet) {
+                CustomPlanSheet {
+                    manager.setPlan(.custom)
+                }
+                .presentationDetents([.height(300)])
+            }
             .sheet(item: $completedSession) { session in
                 FastCompleteView(
                     session: session,
                     isPremium: subscriptionManager.isSubscribed,
-                    onUpgrade: { showPaywall = true }
+                    onUpgrade: { showPaywall = true },
+                    streak: currentStreak
                 )
+                .onDisappear {
+                    checkSoftPaywallTrigger()
+                    let newlyUnlocked = achievementManager.evaluate(sessions: allSessions)
+                    if let first = newlyUnlocked.first {
+                        if Achievement.streakMilestones.contains(first) {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                streakShareImage = ShareImageRenderer.renderStreakCard(
+                                    streakDays: currentStreak,
+                                    achievement: first
+                                )
+                                showStreakShareSheet = true
+                            }
+                        } else {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                unlockedAchievement = first
+                            }
+                        }
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .notificationActionReceived)) { notification in
+                guard let actionID = notification.userInfo?["actionID"] as? String else { return }
+                handleNotificationAction(actionID)
+            }
+            .overlay {
+                if let achievement = unlockedAchievement {
+                    AchievementUnlockOverlay(achievement: achievement) {
+                        unlockedAchievement = nil
+                    }
+                }
+            }
+            .sheet(isPresented: $showStreakShareSheet) {
+                if let image = streakShareImage {
+                    ActivityShareSheet(
+                        image: image,
+                        caption: "🔥 \(currentStreak)-day fasting streak with Lumifaste! #Lumifaste #IntermittentFasting"
+                    )
+                }
+            }
+            .onAppear {
+                if !manager.isActive && completedFastCount > 0 {
+                    showNudge = FastingManager.shouldShowNudge(sessions: allSessions)
+                }
+            }
+            .onDisappear {
+                productLoadTask?.cancel()
+            }
+            .alert("Clock Change Detected", isPresented: $showClockWarning) {
+                Button("OK") {
+                    showClockWarning = false
+                }
+            } message: {
+                Text("Your device clock may have changed significantly. The fasting timer uses absolute timestamps and should remain accurate, but please verify your elapsed time looks correct.")
             }
         }
     }
     
-    // MARK: - Timer Ring
+    // MARK: - Notification Action Handling
+    
+    private func handleNotificationAction(_ actionID: String) {
+        switch actionID {
+        case NotificationActionID.endFast.rawValue:
+            if manager.isActive {
+                endAndSaveFast()
+            }
+        case NotificationActionID.extendFast.rawValue:
+            if manager.isActive {
+                showExtendSheet = true
+            }
+        case NotificationActionID.startFast.rawValue:
+            if !manager.isActive {
+                withAnimation(.smoothSpring) {
+                    manager.startFast(plan: manager.currentPlan)
+                }
+            }
+        default:
+            break
+        }
+    }
+    
+    private func endAndSaveFast() {
+        HapticManager.shared.fastCompleted()
+        withAnimation(.smoothSpring) {
+            completedSession = manager.endFast(context: modelContext)
+        }
+        Task { @MainActor in
+            NotificationManager.shared.scheduleStreakReminder(currentStreak: currentStreak)
+        }
+    }
+    
+    // MARK: - Soft Paywall Trigger
+    
+    private func checkSoftPaywallTrigger() {
+        guard !subscriptionManager.isSubscribed,
+              !softPaywallShown,
+              completedFastCount >= softPaywallThreshold else { return }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            showSoftPaywall = true
+            softPaywallShown = true
+        }
+    }
+    
+    // MARK: - Date & Streak Header (#10, #11)
+    
+    private var dateAndStreakHeader: some View {
+        HStack {
+            // Today's date and day-of-week
+            VStack(alignment: .leading, spacing: 2) {
+                Text(Date.now, format: .dateTime.weekday(.wide))
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.primary)
+                Text(Date.now, format: .dateTime.month(.wide).day())
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+            
+            // Mini streak counter
+            if currentStreak > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.orange)
+                    Text("\(currentStreak)")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(.orange)
+                    Text(currentStreak == 1 ? "day" : "days")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.orange.opacity(0.1))
+                )
+                .accessibilityLabel("\(currentStreak) day fasting streak")
+            }
+        }
+    }
+    
+    // MARK: - Fasting Status Badge (nav bar) (#13)
+    
+    private var fastingStatusBadge: some View {
+        HStack(spacing: 4) {
+            Circle()
+                .fill(manager.isPaused ? Color.orange : Color.green)
+                .frame(width: 7, height: 7)
+            Text(manager.isPaused ? "Paused" : "Fasting")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(manager.isPaused ? .orange : .green)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(
+            Capsule()
+                .fill((manager.isPaused ? Color.orange : Color.green).opacity(0.12))
+        )
+        .accessibilityLabel(manager.isPaused ? "Fast is paused" : "Currently fasting")
+    }
+    
+    // MARK: - Nudge Banner (#13)
+    
+    private var nudgeBanner: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "hand.wave.fill")
+                .font(.system(size: 20))
+                .foregroundStyle(.orange)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("We miss you!")
+                    .font(.system(size: 14, weight: .semibold))
+                Text("It's been a while since your last fast. Ready to get back on track?")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            
+            Spacer()
+            
+            Button {
+                withAnimation(.smoothSpring) {
+                    showNudge = false
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.orange.opacity(0.1))
+        )
+    }
+    
+    // MARK: - Timer Ring (redesigned)
     
     private var timerRing: some View {
-        ZStack {
+        let accent = themeManager.selectedTheme.accent
+        return ZStack {
             CircularProgressView(
                 progress: manager.isActive ? manager.progress : 0,
-                stage: manager.isActive ? manager.currentStage : .fed
+                stage: manager.isActive ? manager.currentStage : .fed,
+                lineWidth: 28,
+                themeAccent: accent,
+                isBreathing: manager.isActive && !manager.isPaused
             )
             
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 if manager.isActive {
-                    Text(formatDuration(manager.elapsedTime))
-                        .font(.system(size: 44, weight: .light, design: .rounded))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                    
-                    Text("of \(formatDuration(manager.currentPlan.fastingDuration))")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                    
-                    if manager.isOvertime {
-                        Text("🎉 Goal reached!")
-                            .font(.system(size: 13, weight: .medium))
+                    if manager.isPaused {
+                        Image(systemName: "pause.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.orange)
+                        
+                        Text("PAUSED")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(.orange)
+                        
+                        Text(formatDuration(manager.elapsedTime))
+                            .font(.system(size: 28, weight: .light, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    } else {
+                        // Elapsed time — big and prominent
+                        Text(formatDuration(manager.elapsedTime))
+                            .font(.system(size: 44, weight: .light, design: .rounded))
+                            .monospacedDigit()
+                            .contentTransition(.numericText(countsDown: false))
+                            .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.elapsedTime))
+                        
+                        Text("elapsed")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.tertiary)
+                            .textCase(.uppercase)
+                            .tracking(1)
+                        
+                        // Divider line
+                        Rectangle()
+                            .fill(.quaternary)
+                            .frame(width: 40, height: 1)
+                            .padding(.vertical, 2)
+                        
+                        // Time remaining display (#4)
+                        if manager.remainingTime > 0 {
+                            Text(formatDuration(manager.remainingTime))
+                                .font(.system(size: 18, weight: .medium, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                                .contentTransition(.numericText(countsDown: true))
+                                .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.remainingTime))
+                            
+                            Text("remaining")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundStyle(.tertiary)
+                                .textCase(.uppercase)
+                                .tracking(0.8)
+                        }
+                        
+                        if manager.isOvertime {
+                            HStack(spacing: 4) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 13))
+                                Text("Goal reached!")
+                                    .font(.system(size: 13, weight: .semibold))
+                            }
                             .foregroundStyle(.green)
+                            .transition(.scale.combined(with: .opacity))
+                        }
                     }
                 } else {
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 36))
                         .scaleEffect(x: -1)
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(accent)
                     
                     Text("Ready to fast")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
+                    
+                    Text(manager.currentPlan.rawValue)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.tertiary)
                 }
             }
+            .animation(.smoothSpring, value: manager.isActive)
+            .animation(.smoothSpring, value: manager.isPaused)
         }
         .aspectRatio(1, contentMode: .fit)
     }
     
-    // MARK: - Action Button
+    // MARK: - Current Stage Display (#3) — prominent below timer
     
-    private var actionButton: some View {
-        Button {
-            if manager.isActive {
-                showEndConfirm = true
-            } else {
-                let impact = UIImpactFeedbackGenerator(style: .medium)
-                impact.impactOccurred()
-                withAnimation(.spring(duration: 0.5)) {
-                    manager.startFast(plan: manager.currentPlan)
-                }
-            }
-        } label: {
+    private var currentStageDisplay: some View {
+        VStack(spacing: 6) {
             HStack(spacing: 8) {
-                Image(systemName: manager.isActive ? "stop.fill" : "play.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                Text(manager.isActive ? "End Fast" : "Start Fast")
-                    .font(.system(size: 17, weight: .semibold))
+                Image(systemName: manager.currentStage.icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                Text(manager.currentStage.rawValue)
+                    .font(.system(size: 20, weight: .bold))
+                    .contentTransition(.numericText())
             }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity)
-            .frame(height: 54)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(manager.isActive ? Color.red : Color.accentColor)
-            )
+            .foregroundStyle(manager.currentStage.color)
+            
+            Text(manager.currentStage.subtitle)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .contentTransition(.opacity)
+            
+            // Premium: metabolic info teaser
+            if subscriptionManager.isSubscribed, let detail = FastingEducation.detail(for: manager.currentStage) {
+                Text(detail.metabolicInfo.prefix(90) + "…")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+                    .contentTransition(.opacity)
+            }
         }
-        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(manager.currentStage.color.opacity(0.08))
+        )
+        .animation(.smoothSpring, value: manager.currentStage)
     }
     
-    // MARK: - Plan Selector (preset plans free, custom premium)
+    // MARK: - Next Stage Indicator (#5)
+    
+    private func nextStageIndicator(next: FastingStage) -> some View {
+        let hoursUntilNext = max(0, (next.startHour * 3600 - manager.elapsedTime))
+        let stageStart = manager.currentStage.startHour * 3600.0
+        let stageEnd = next.startHour * 3600.0
+        let stageProgress = min(1.0, max(0, (manager.elapsedTime - stageStart) / (stageEnd - stageStart)))
+        
+        return HStack(spacing: 10) {
+            Image(systemName: next.icon)
+                .font(.system(size: 14))
+                .foregroundStyle(next.color)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack {
+                    Text("\(next.rawValue)")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(next.color)
+                    
+                    if hoursUntilNext > 0 {
+                        Text("in \(formatDurationCompact(hoursUntilNext))")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text("\(Int(stageProgress * 100))%")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.tertiary)
+                }
+                
+                // Mini progress bar to next stage
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(next.color.opacity(0.12))
+                            .frame(height: 4)
+                        
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(next.color.opacity(0.6))
+                            .frame(width: geo.size.width * stageProgress, height: 4)
+                            .animation(.progressSpring, value: stageProgress)
+                    }
+                }
+                .frame(height: 4)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+    
+    // MARK: - Motivational Quote Card (#6)
+    
+    private var motivationalQuoteCard: some View {
+        let quote = currentQuote
+        return VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: "quote.opening")
+                    .font(.system(size: 10))
+                    .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
+                Spacer()
+            }
+            
+            Text(quote.text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.primary.opacity(0.8))
+                .multilineTextAlignment(.center)
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            
+            if !quote.author.isEmpty {
+                Text("— \(quote.author)")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(themeManager.selectedTheme.accent.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(themeManager.selectedTheme.accent.opacity(0.08), lineWidth: 1)
+                )
+        )
+        .id("quote-\(currentQuote.text.prefix(20))")
+        .transition(.opacity)
+        .animation(.easeInOut(duration: 0.5), value: currentQuote.text)
+    }
+    
+    // MARK: - Stage Tip (shown when entering a new stage)
+    
+    private var stageTipView: some View {
+        let stageTips = FastingTips.stageTips(for: manager.currentStage)
+        let tipIndex = Int(manager.elapsedTime / 300) % max(1, stageTips.count)
+        let tip = stageTips.isEmpty ? FastingTips.tips.first! : stageTips[tipIndex]
+        
+        return HStack(spacing: 8) {
+            Image(systemName: "lightbulb.fill")
+                .font(.system(size: 12))
+                .foregroundStyle(.yellow)
+            Text(tip.text)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+    
+    // MARK: - Quick Action Bar (#7) — water, mood, end fast
+    
+    private var quickActionBar: some View {
+        HStack(spacing: 0) {
+            // Water counter
+            Button {
+                HapticManager.shared.lightTap()
+                manager.logWater()
+            } label: {
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.cyan.opacity(0.1))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "drop.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.cyan)
+                    }
+                    HStack(spacing: 2) {
+                        Text("\(manager.waterCount)")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                        Text("Water")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .buttonStyle(.bounce)
+            .accessibilityLabel("Log water, \(manager.waterCount) glasses logged")
+            .frame(maxWidth: .infinity)
+            
+            // Pause/Resume
+            Button {
+                HapticManager.shared.mediumTap()
+                withAnimation(.smoothSpring) {
+                    if manager.isPaused {
+                        manager.resumeFast()
+                    } else {
+                        manager.pauseFast()
+                    }
+                }
+            } label: {
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.orange.opacity(0.1))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: manager.isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.orange)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
+                    Text(manager.isPaused ? "Resume" : "Pause")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.bounce)
+            .accessibilityLabel(manager.isPaused ? "Resume fast" : "Pause fast")
+            .frame(maxWidth: .infinity)
+            
+            // Edit start time
+            Button {
+                HapticManager.shared.lightTap()
+                showEditStartTime = true
+            } label: {
+                VStack(spacing: 4) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blue.opacity(0.1))
+                            .frame(width: 44, height: 44)
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.blue)
+                    }
+                    Text("Adjust")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.bounce)
+            .accessibilityLabel("Adjust start time")
+            .frame(maxWidth: .infinity)
+            
+            // Extend (when overtime) or log mood
+            if manager.isOvertime {
+                Button {
+                    HapticManager.shared.lightTap()
+                    showExtendSheet = true
+                } label: {
+                    VStack(spacing: 4) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.green.opacity(0.1))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(.green)
+                        }
+                        Text("Extend")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.bounce)
+                .accessibilityLabel("Extend fast")
+                .frame(maxWidth: .infinity)
+            } else {
+                // End fast quick button
+                Button {
+                    showEndConfirm = true
+                } label: {
+                    VStack(spacing: 4) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.red.opacity(0.1))
+                                .frame(width: 44, height: 44)
+                            Image(systemName: "stop.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(.red)
+                        }
+                        Text("End")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.bounce)
+                .accessibilityLabel("End fast")
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+    
+    // MARK: - Community Comparison (#7)
+    
+    private func communityComparison(avg: CommunityStats.PlanAverage) -> some View {
+        let userHours = manager.elapsedTime / 3600
+        let ahead = userHours > avg.averageDurationHours
+        
+        return HStack(spacing: 10) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 14))
+                .foregroundStyle(.purple)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Community Avg: \(String(format: "%.1f", avg.averageDurationHours))h")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                
+                if manager.elapsedTime > 3600 {
+                    Text(ahead ? "You're ahead of average! 💪" : "Keep going — you're getting there!")
+                        .font(.system(size: 11))
+                        .foregroundStyle(ahead ? .green : .secondary)
+                }
+            }
+            
+            Spacer()
+            
+            Text("\(CommunityStats.formatCount(avg.participantCount)) fasters")
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+    }
+    
+    // MARK: - Action Buttons (redesigned — gradient + shadow)
+    
+    private var actionButtons: some View {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(spacing: 10) {
+            Button {
+                if manager.isActive {
+                    showEndConfirm = true
+                } else {
+                    HapticManager.shared.fastStarted()
+                    withAnimation(.smoothSpring) {
+                        manager.startFast(plan: manager.currentPlan)
+                        showNudge = false
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: manager.isActive ? "stop.fill" : "play.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .contentTransition(.symbolEffect(.replace))
+                    Text(manager.isActive ? "End Fast" : "Start Fast")
+                        .font(.system(size: 17, weight: .bold))
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(
+                            manager.isActive
+                                ? AnyShapeStyle(LinearGradient(colors: [.red, .red.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                : AnyShapeStyle(themeManager.selectedTheme.accentGradient)
+                        )
+                )
+                .shadow(color: (manager.isActive ? Color.red : accent).opacity(0.35), radius: 12, y: 4)
+                .animation(.smoothSpring, value: manager.isActive)
+            }
+            .buttonStyle(.bounce)
+            .padding(.horizontal, 20)
+            
+            // Extend button when overtime
+            if manager.isActive && manager.isOvertime {
+                Button {
+                    HapticManager.shared.lightTap()
+                    showExtendSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 14, weight: .semibold))
+                        Text("Keep Going — Extend Fast")
+                            .font(.system(size: 15, weight: .medium))
+                    }
+                    .foregroundStyle(.green)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.green.opacity(0.12))
+                    )
+                }
+                .buttonStyle(.bounce)
+                .padding(.horizontal, 20)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+    
+    // MARK: - Plan Selector (redesigned — shows plan details #12)
     
     private var planSelector: some View {
-        VStack(spacing: 8) {
-            Text("Fasting Plan")
-                .font(.system(size: 13))
+        VStack(spacing: 10) {
+            Text("Choose Your Plan")
+                .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
             
             ScrollView(.horizontal, showsIndicators: false) {
@@ -169,15 +991,21 @@ struct TimerView: View {
                     ForEach(FastingPlan.allCases.filter { $0 != .fiveTwo }) { plan in
                         let isLocked = plan == .custom && !subscriptionManager.isSubscribed
                         
-                        PlanChip(
+                        PlanCard(
                             plan: plan,
                             isSelected: manager.currentPlan == plan,
-                            isLocked: isLocked
+                            isLocked: isLocked,
+                            themeAccent: themeManager.selectedTheme.accent
                         ) {
                             if isLocked {
+                                HapticManager.shared.warning()
                                 showPaywall = true
+                            } else if plan == .custom {
+                                HapticManager.shared.selectionChanged()
+                                showCustomPlanSheet = true
                             } else {
-                                withAnimation(.spring(duration: 0.3)) {
+                                HapticManager.shared.selectionChanged()
+                                withAnimation(.tapSpring) {
                                     manager.setPlan(plan)
                                 }
                             }
@@ -189,51 +1017,346 @@ struct TimerView: View {
         }
     }
     
+    // MARK: - Helpers
+    
     private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        let seconds = Int(duration) % 60
+        let total = Int(duration)
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let seconds = total % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+    
+    private func formatDurationCompact(_ duration: TimeInterval) -> String {
+        let total = Int(duration)
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        if hours > 0 && minutes > 0 {
+            return "\(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    /// Detect fasting stage transitions and fire haptic + sound
+    @discardableResult
+    private func detectStageChange() -> Bool {
+        guard manager.isActive else {
+            lastStage = .fed
+            return false
+        }
+        let current = manager.currentStage
+        if current != lastStage {
+            let previous = lastStage
+            lastStage = current
+            if current.index > previous.index {
+                HapticManager.shared.stageTransition()
+            }
+            return true
+        }
+        return false
+    }
+    
+    /// Periodic clock integrity check — runs every tick but only acts on anomalies
+    @discardableResult
+    private func periodicClockCheck() -> Bool {
+        guard manager.isActive else { return false }
+        manager.checkClockIntegrity()
+        if manager.clockAnomalyDetected && !showClockWarning {
+            showClockWarning = true
+            return true
+        }
+        return false
     }
 }
 
-// MARK: - Plan Chip
+// MARK: - Plan Card (redesigned — shows details, difficulty, subtitle)
 
-private struct PlanChip: View {
+private struct PlanCard: View {
     let plan: FastingPlan
     let isSelected: Bool
     var isLocked: Bool = false
+    let themeAccent: Color
     let action: () -> Void
+    
+    private var difficultyDots: Int {
+        plan.difficulty
+    }
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
-                HStack(spacing: 3) {
+            VStack(alignment: .leading, spacing: 6) {
+                // Header: plan name + lock
+                HStack(spacing: 4) {
                     Text(plan.rawValue)
-                        .font(.system(size: 15, weight: isSelected ? .bold : .medium))
+                        .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
+                        .foregroundStyle(isSelected ? themeAccent : .primary)
                     if isLocked {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 9))
                             .foregroundStyle(.secondary)
                     }
                 }
-                Text("\(Int(plan.fastingHours))h")
+                
+                // Subtitle: "16h fast · 8h eat"
+                Text(plan.subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                
+                // Difficulty dots
+                HStack(spacing: 3) {
+                    ForEach(0..<5, id: \.self) { i in
+                        Circle()
+                            .fill(i < difficultyDots ? themeAccent.opacity(isSelected ? 0.8 : 0.4) : Color(.systemGray5))
+                            .frame(width: 5, height: 5)
+                    }
+                    Spacer()
+                }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
+            .frame(width: 130)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(isSelected ? Color.accentColor.opacity(0.15) : Color(.systemGray6))
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(isSelected ? themeAccent.opacity(0.1) : Color(.systemGray6))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? themeAccent : .clear, lineWidth: 1.5)
             )
             .opacity(isLocked ? 0.6 : 1.0)
+            .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.bounce)
+    }
+}
+
+// MARK: - Edit Start Time Sheet (#1)
+
+struct EditStartTimeSheet: View {
+    let manager: FastingManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedDate: Date = .now
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("When did you actually start fasting?")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                DatePicker(
+                    "Start Time",
+                    selection: $selectedDate,
+                    in: Date.now.addingTimeInterval(-24 * 3600)...Date.now,
+                    displayedComponents: [.date, .hourAndMinute]
+                )
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                
+                Button {
+                    HapticManager.shared.mediumTap()
+                    manager.adjustStartTime(to: selectedDate)
+                    dismiss()
+                } label: {
+                    Text("Update Start Time")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.accentColor)
+                        )
+                }
+                .buttonStyle(.bounce)
+            }
+            .padding(24)
+            .navigationTitle("Adjust Start Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .onAppear {
+                selectedDate = manager.startDate ?? .now
+            }
+        }
+    }
+}
+
+// MARK: - Extend Fast Sheet (#3)
+
+struct ExtendFastSheet: View {
+    let manager: FastingManager
+    @Environment(\.dismiss) private var dismiss
+    @State private var extendHours: Double = 2
+    
+    private let options: [Double] = [1, 2, 4, 6]
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Text("🔥")
+                    .font(.system(size: 44))
+                
+                Text("Keep Going!")
+                    .font(.system(size: 22, weight: .bold))
+                
+                Text("You've reached your goal. Extend your fast to push further.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                
+                HStack(spacing: 12) {
+                    ForEach(options, id: \.self) { hours in
+                        Button {
+                            HapticManager.shared.selectionChanged()
+                            extendHours = hours
+                        } label: {
+                            Text("+\(Int(hours))h")
+                                .font(.system(size: 15, weight: .semibold))
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .fill(extendHours == hours ? Color.green.opacity(0.2) : Color(.systemGray6))
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        .stroke(extendHours == hours ? Color.green : .clear, lineWidth: 1.5)
+                                )
+                        }
+                        .buttonStyle(.bounce)
+                    }
+                }
+                
+                Button {
+                    HapticManager.shared.mediumTap()
+                    manager.extendFast(byHours: extendHours)
+                    dismiss()
+                } label: {
+                    Text("Extend by \(Int(extendHours)) hours")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.green)
+                        )
+                }
+                .buttonStyle(.bounce)
+            }
+            .padding(24)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Custom Plan Sheet (#2)
+
+struct CustomPlanSheet: View {
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var hours: Double = FastingPlan.customHours
+    @State private var showExtremeWarning = false
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Text("Custom Fasting Plan")
+                    .font(.system(size: 20, weight: .bold))
+                
+                VStack(spacing: 8) {
+                    Text("\(Int(hours))h")
+                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                        .foregroundStyle(InputValidator.isExtremeFast(hours: hours) ? .orange : Color.accentColor)
+                    
+                    Text("fasting window")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                    
+                    if InputValidator.isExtremeFast(hours: hours) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 11))
+                            Text("Extended fasts require medical supervision")
+                                .font(.system(size: 12))
+                        }
+                        .foregroundStyle(.orange)
+                        .transition(.opacity)
+                    }
+                }
+                
+                Slider(value: $hours, in: 1...48, step: 1)
+                    .tint(InputValidator.isExtremeFast(hours: hours) ? .orange : Color.accentColor)
+                    .padding(.horizontal, 20)
+                
+                HStack {
+                    Text("1h")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                    Spacer()
+                    Text("48h")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.horizontal, 20)
+                
+                Button {
+                    if InputValidator.isExtremeFast(hours: hours) {
+                        showExtremeWarning = true
+                    } else {
+                        savePlan()
+                    }
+                } label: {
+                    Text("Set Plan")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.accentColor)
+                        )
+                }
+                .buttonStyle(.bounce)
+            }
+            .padding(24)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .animation(.smoothSpring, value: InputValidator.isExtremeFast(hours: hours))
+            .alert("Extended Fast Warning", isPresented: $showExtremeWarning) {
+                Button("I Understand", role: .destructive) {
+                    savePlan()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Fasts over 72 hours can be dangerous without medical supervision. Are you sure you want to set this plan?")
+            }
+        }
+    }
+    
+    private func savePlan() {
+        HapticManager.shared.mediumTap()
+        FastingPlan.customHours = hours
+        onSave()
+        dismiss()
     }
 }
 
@@ -241,4 +1364,5 @@ private struct PlanChip: View {
     TimerView()
         .modelContainer(for: FastingSession.self, inMemory: true)
         .environment(SubscriptionManager())
+        .environment(ThemeManager())
 }

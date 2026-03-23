@@ -1,0 +1,122 @@
+import SwiftUI
+
+/// Glossary of fasting terms — autophagy, ketosis, etc.
+/// Searchable, alphabetically sorted.
+struct GlossaryView: View {
+    @State private var searchText = ""
+    
+    private var filteredTerms: [FastingEducation.GlossaryTerm] {
+        if searchText.isEmpty {
+            return FastingEducation.glossary.sorted { $0.term < $1.term }
+        }
+        let query = searchText.lowercased()
+        return FastingEducation.glossary
+            .filter { $0.term.lowercased().contains(query) || $0.definition.lowercased().contains(query) }
+            .sorted { $0.term < $1.term }
+    }
+    
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 10) {
+                ForEach(Array(filteredTerms.enumerated()), id: \.element.id) { index, term in
+                    GlossaryCard(term: term)
+                        .padding(.horizontal, 16)
+                        .staggeredAppear(index: min(index, 10))
+                }
+                
+                if filteredTerms.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 32))
+                            .foregroundStyle(.tertiary)
+                        Text("No matching terms")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 40)
+                }
+            }
+            .padding(.top, 12)
+            .padding(.bottom, 24)
+        }
+        .navigationTitle("Glossary")
+        .navigationBarTitleDisplayMode(.large)
+        .searchable(text: $searchText, prompt: "Search terms")
+    }
+}
+
+// MARK: - Glossary Card
+
+private struct GlossaryCard: View {
+    let term: FastingEducation.GlossaryTerm
+    @State private var isExpanded = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.smoothSpring) { isExpanded.toggle() }
+            } label: {
+                HStack(spacing: 12) {
+                    Text(term.term)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.primary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
+                }
+                .padding(14)
+            }
+            .buttonStyle(.plain)
+            
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 10) {
+                    Divider()
+                    
+                    Text(term.definition)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    if !term.relatedTerms.isEmpty {
+                        HStack(spacing: 6) {
+                            Text("Related:")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.tertiary)
+                            
+                            ForEach(term.relatedTerms, id: \.self) { related in
+                                Text(related)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(Color.accentColor)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(
+                                        Capsule().fill(Color.accentColor.opacity(0.1))
+                                    )
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.bottom, 14)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(term.term): \(term.definition)")
+    }
+}
+
+#Preview {
+    NavigationStack {
+        GlossaryView()
+    }
+}
