@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import AudioToolbox
 
 /// Ana timer ekranı — oruç başlat/bitir, circular progress, stage tracking.
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
@@ -36,6 +37,9 @@ struct TimerView: View {
     @State private var showStreakShareSheet = false
     @State private var streakShareImage: UIImage?
     
+    @State private var showError = false
+    @State private var errorMessage: String?
+    
     /// Tracks whether we've shown the soft paywall this session to avoid repeat
     @AppStorage("lf_soft_paywall_shown") private var softPaywallShown = false
     
@@ -62,10 +66,12 @@ struct TimerView: View {
         for day in completedDays {
             if day == checkDate {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prev
+            } else if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate), day == prev {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                checkDate = prevDay
             } else {
                 break
             }
@@ -97,6 +103,18 @@ struct TimerView: View {
         return Self.motivationalQuotes[index]
     }
     
+    /// Streak-based motivational micro-copy
+    private var streakMicroCopy: String? {
+        switch currentStreak {
+        case 1: return "Great start! 🌱"
+        case 2...6: return "Building momentum! 💪"
+        case 7...13: return "On fire! 🔥"
+        case 14...29: return "Incredible discipline! ⚡"
+        case 30...: return "Unstoppable! 🏆"
+        default: return nil
+        }
+    }
+    
     // MARK: - Stage Background Gradient
     
     private var stageGradient: LinearGradient {
@@ -104,15 +122,15 @@ struct TimerView: View {
         let colors: [Color]
         switch stage {
         case .fed:
-            colors = [Color(.systemBackground), Color(.systemBackground)]
+            colors = [Color(.systemBackground), themeManager.selectedTheme.accent.opacity(0.04), Color(.systemBackground)]
         case .earlyFasting:
-            colors = [Color(.systemBackground), Color.yellow.opacity(0.06)]
+            colors = [Color(.systemBackground), Color.yellow.opacity(0.08), Color.orange.opacity(0.04)]
         case .fatBurning:
-            colors = [Color(.systemBackground), Color.orange.opacity(0.08)]
+            colors = [Color.orange.opacity(0.05), Color.orange.opacity(0.12), Color.red.opacity(0.05)]
         case .ketosis:
-            colors = [Color(.systemBackground), Color.blue.opacity(0.08)]
+            colors = [Color.blue.opacity(0.04), Color.blue.opacity(0.12), Color.purple.opacity(0.06)]
         case .autophagy:
-            colors = [Color(.systemBackground), Color.purple.opacity(0.1)]
+            colors = [Color.purple.opacity(0.06), Color.purple.opacity(0.14), Color.pink.opacity(0.06)]
         }
         return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
     }
@@ -246,6 +264,7 @@ struct TimerView: View {
                     endAndSaveFast()
                 }
                 Button("Cancel Fast", role: .destructive) {
+                    HapticManager.shared.heavyTap()
                     withAnimation(.smoothSpring) {
                         manager.cancelFast()
                     }
@@ -286,6 +305,8 @@ struct TimerView: View {
                     checkSoftPaywallTrigger()
                     let newlyUnlocked = achievementManager.evaluate(sessions: allSessions)
                     if let first = newlyUnlocked.first {
+                        // Sound 1025: celebration chime on achievement unlock
+                        AudioServicesPlaySystemSound(1025)
                         if Achievement.streakMilestones.contains(first) {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 streakShareImage = ShareImageRenderer.renderStreakCard(
@@ -336,6 +357,11 @@ struct TimerView: View {
             } message: {
                 Text("Your device clock may have changed significantly. The fasting timer uses absolute timestamps and should remain accurate, but please verify your elapsed time looks correct.")
             }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong. Please try again.")
+            }
         }
     }
     
@@ -365,7 +391,13 @@ struct TimerView: View {
     private func endAndSaveFast() {
         HapticManager.shared.fastCompleted()
         withAnimation(.smoothSpring) {
-            completedSession = manager.endFast(context: modelContext)
+            let session = manager.endFast(context: modelContext)
+            if session != nil {
+                completedSession = session
+            } else {
+                errorMessage = "Couldn't save your fasting session. Please try again."
+                showError = true
+            }
         }
         Task { @MainActor in
             NotificationManager.shared.scheduleStreakReminder(currentStreak: currentStreak)
@@ -401,26 +433,35 @@ struct TimerView: View {
             
             Spacer()
             
-            // Mini streak counter
+            // Mini streak counter with motivational copy
             if currentStreak > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "flame.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.orange)
-                    Text("\(currentStreak)")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(.orange)
-                    Text(currentStreak == 1 ? "day" : "days")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.orange)
+                        Text("\(currentStreak)")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(.orange)
+                        Text(currentStreak == 1 ? "day" : "days")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.orange.opacity(0.1))
+                    )
+                    
+                    if let microCopy = streakMicroCopy {
+                        Text(microCopy)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.orange.opacity(0.8))
+                            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
                 }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.orange.opacity(0.1))
-                )
-                .accessibilityLabel("\(currentStreak) day fasting streak")
+                .accessibilityLabel("\(currentStreak) day fasting streak\(streakMicroCopy.map { ", \($0)" } ?? "")")
             }
         }
     }
@@ -493,6 +534,7 @@ struct TimerView: View {
                 themeAccent: accent,
                 isBreathing: manager.isActive && !manager.isPaused
             )
+            .pulsing(when: manager.isActive && !manager.isPaused)
             
             VStack(spacing: 4) {
                 if manager.isActive {
@@ -591,11 +633,16 @@ struct TimerView: View {
                     .contentTransition(.numericText())
             }
             .foregroundStyle(manager.currentStage.color)
+            .transition(.asymmetric(
+                insertion: .scale(scale: 0.8).combined(with: .opacity),
+                removal: .scale(scale: 1.1).combined(with: .opacity)
+            ))
             
             Text(manager.currentStage.subtitle)
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)
+                .transition(.opacity.combined(with: .offset(y: 6)))
             
             // Premium: metabolic info teaser
             if subscriptionManager.isSubscribed, let detail = FastingEducation.detail(for: manager.currentStage) {
@@ -606,6 +653,7 @@ struct TimerView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
                     .contentTransition(.opacity)
+                    .transition(.opacity)
             }
         }
         .padding(.vertical, 12)
@@ -718,7 +766,7 @@ struct TimerView: View {
     private var stageTipView: some View {
         let stageTips = FastingTips.stageTips(for: manager.currentStage)
         let tipIndex = Int(manager.elapsedTime / 300) % max(1, stageTips.count)
-        let tip = stageTips.isEmpty ? FastingTips.tips.first! : stageTips[tipIndex]
+        let tip = stageTips.isEmpty ? (FastingTips.tips.first ?? FastingTips.Tip(id: -1, emoji: "💧", text: "Stay hydrated during your fast.", category: .hydration)) : stageTips[tipIndex]
         
         return HStack(spacing: 8) {
             Image(systemName: "lightbulb.fill")
@@ -911,10 +959,11 @@ struct TimerView: View {
         )
     }
     
-    // MARK: - Action Buttons (redesigned — gradient + shadow)
+    // MARK: - Action Buttons (redesigned — gradient + shadow + glow)
     
     private var actionButtons: some View {
         let accent = themeManager.selectedTheme.accent
+        let buttonColor = manager.isActive ? Color.red : accent
         return VStack(spacing: 10) {
             Button {
                 if manager.isActive {
@@ -941,14 +990,16 @@ struct TimerView: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(
                             manager.isActive
-                                ? AnyShapeStyle(LinearGradient(colors: [.red, .red.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                ? AnyShapeStyle(LinearGradient(colors: [.red, .red.opacity(0.7)], startPoint: .topLeading, endPoint: .bottomTrailing))
                                 : AnyShapeStyle(themeManager.selectedTheme.accentGradient)
                         )
                 )
-                .shadow(color: (manager.isActive ? Color.red : accent).opacity(0.35), radius: 12, y: 4)
+                .shadow(color: buttonColor.opacity(0.4), radius: 16, y: 6)
+                .shadow(color: buttonColor.opacity(0.2), radius: 6, y: 2)
                 .animation(.smoothSpring, value: manager.isActive)
             }
             .buttonStyle(.bounce)
+            .breathingScale(when: !manager.isActive, maxScale: 1.05, duration: 2.0)
             .padding(.horizontal, 20)
             
             // Extend button when overtime

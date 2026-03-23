@@ -193,3 +193,181 @@ extension View {
         modifier(EntranceModifier(delay: delay))
     }
 }
+
+// MARK: - Breathing Scale Modifier (idle button pulse)
+
+/// Subtle breathing scale animation — use on idle start buttons.
+/// Oscillates scale from 1.0 to maxScale with a smooth easeInOut cycle.
+struct BreathingScaleModifier: ViewModifier {
+    let isActive: Bool
+    let maxScale: CGFloat
+    let duration: Double
+    @State private var phase = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive && phase ? maxScale : 1.0)
+            .onChange(of: isActive) { _, newValue in
+                if newValue {
+                    withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
+                        phase = true
+                    }
+                } else {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        phase = false
+                    }
+                }
+            }
+            .onAppear {
+                if isActive {
+                    withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
+                        phase = true
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    /// Subtle breathing scale animation — idle button pulse
+    func breathingScale(when active: Bool, maxScale: CGFloat = 1.05, duration: Double = 2.0) -> some View {
+        modifier(BreathingScaleModifier(isActive: active, maxScale: maxScale, duration: duration))
+    }
+}
+
+// MARK: - Slide-In From Edge Modifier
+
+struct SlideInModifier: ViewModifier {
+    let edge: Edge
+    let delay: Double
+    @State private var appeared = false
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(appeared ? 1 : 0)
+            .offset(x: appeared ? 0 : (edge == .trailing ? 60 : edge == .leading ? -60 : 0),
+                    y: appeared ? 0 : (edge == .bottom ? 30 : edge == .top ? -30 : 0))
+            .onAppear {
+                withAnimation(.spring(duration: 0.6, bounce: 0.2).delay(delay)) {
+                    appeared = true
+                }
+            }
+    }
+}
+
+extension View {
+    func slideIn(from edge: Edge, delay: Double = 0) -> some View {
+        modifier(SlideInModifier(edge: edge, delay: delay))
+    }
+}
+
+// MARK: - Animated Value Modifier (for growing bars from 0)
+
+struct AnimateFromZeroModifier: ViewModifier {
+    let delay: Double
+    @State private var appeared = false
+    
+    var animatedFraction: Double { appeared ? 1.0 : 0.0 }
+    
+    func body(content: Content) -> some View {
+        content
+            .onAppear {
+                withAnimation(.spring(duration: 0.8, bounce: 0.15).delay(delay)) {
+                    appeared = true
+                }
+            }
+    }
+}
+
+// MARK: - Gold Glow Modifier (for achievement badges)
+
+struct GoldGlowModifier: ViewModifier {
+    let isActive: Bool
+    @State private var glowPhase = false
+    
+    func body(content: Content) -> some View {
+        content
+            .shadow(
+                color: isActive ? Color.yellow.opacity(glowPhase ? 0.6 : 0.2) : .clear,
+                radius: isActive ? (glowPhase ? 12 : 4) : 0
+            )
+            .onChange(of: isActive) { _, newValue in
+                if newValue {
+                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                        glowPhase = true
+                    }
+                } else {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        glowPhase = false
+                    }
+                }
+            }
+            .onAppear {
+                if isActive {
+                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                        glowPhase = true
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func goldGlow(when active: Bool) -> some View {
+        modifier(GoldGlowModifier(isActive: active))
+    }
+}
+
+// MARK: - Shimmer Rotation Modifier (for circular progress)
+
+struct ShimmerRotationModifier: ViewModifier {
+    let isActive: Bool
+    @State private var rotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay {
+                if isActive {
+                    Circle()
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: [
+                                    .white.opacity(0),
+                                    .white.opacity(0),
+                                    .white.opacity(0.15),
+                                    .white.opacity(0),
+                                    .white.opacity(0)
+                                ]),
+                                center: .center,
+                                startAngle: .degrees(rotation),
+                                endAngle: .degrees(rotation + 360)
+                            ),
+                            lineWidth: 28
+                        )
+                        .blendMode(.overlay)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onAppear {
+                if isActive {
+                    withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                }
+            }
+            .onChange(of: isActive) { _, newValue in
+                if newValue {
+                    rotation = 0
+                    withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                        rotation = 360
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmerRotation(when active: Bool) -> some View {
+        modifier(ShimmerRotationModifier(isActive: active))
+    }
+}

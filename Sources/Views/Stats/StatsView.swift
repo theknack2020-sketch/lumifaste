@@ -47,18 +47,47 @@ struct StatsView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "chart.bar.xaxis")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
+        VStack(spacing: 24) {
+            Spacer()
             
-            Text("No data yet")
-                .font(.system(size: 20, weight: .semibold))
+            ZStack {
+                // Decorative background rings
+                Circle()
+                    .stroke(Color.blue.opacity(0.08), lineWidth: 12)
+                    .frame(width: 120, height: 120)
+                
+                Circle()
+                    .stroke(Color.green.opacity(0.1), lineWidth: 8)
+                    .frame(width: 88, height: 88)
+                
+                Circle()
+                    .stroke(Color.orange.opacity(0.12), lineWidth: 6)
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: "chart.bar.xaxis.ascending")
+                    .font(.system(size: 28, weight: .medium))
+                    .foregroundStyle(.blue)
+            }
+            .accessibilityHidden(true)
             
-            Text("Complete your first fast to\nsee your insights here.")
-                .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 10) {
+                Text("Insights Await")
+                    .font(.system(size: 22, weight: .bold))
+                
+                Text("Complete a few fasts to unlock\ncharts, streaks, and trends.")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            // Mini preview of what they'll see
+            HStack(spacing: 16) {
+                InsightPreviewPill(icon: "flame.fill", label: "Streaks", color: .orange)
+                InsightPreviewPill(icon: "chart.line.uptrend.xyaxis", label: "Trends", color: .green)
+                InsightPreviewPill(icon: "calendar", label: "Calendar", color: .blue)
+            }
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -70,27 +99,35 @@ struct StatsView: View {
             LazyVStack(spacing: 20) {
                 // Hero stats cards
                 heroStats
+                    .entranceAnimation(delay: 0.1)
                 
                 // Streak display
                 streakSection
+                    .entranceAnimation(delay: 0.15)
                 
                 // Weekly chart
                 weeklyChartSection
+                    .entranceAnimation(delay: 0.2)
                 
                 // Weekly comparison
                 weeklyComparisonSection
+                    .entranceAnimation(delay: 0.25)
                 
                 // Monthly calendar
                 monthlyCalendarSection
+                    .entranceAnimation(delay: 0.3)
                 
                 // Time analysis
                 timeAnalysisSection
+                    .entranceAnimation(delay: 0.35)
                 
                 // Weight trend
                 weightSection
+                    .entranceAnimation(delay: 0.4)
                 
                 // Consistency
                 consistencySection
+                    .entranceAnimation(delay: 0.45)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -333,10 +370,12 @@ struct StatsView: View {
         for day in completedDays {
             if day == checkDate {
                 currentStreak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prev
+            } else if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate), day == prev {
                 currentStreak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                checkDate = prevDay
             } else {
                 break
             }
@@ -366,7 +405,7 @@ struct StatsView: View {
         let calendar = Calendar.current
         let now = Date.now
         let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
-        let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek)!
+        let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek) ?? startOfThisWeek
         
         let completed = sessions.filter(\.isCompleted)
         let thisWeek = completed.filter { $0.startDate >= startOfThisWeek }
@@ -416,6 +455,7 @@ private struct HeroStatCard: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
+                .shadow(color: color.opacity(0.1), radius: 8, y: 3)
         )
     }
 }
@@ -437,6 +477,18 @@ struct InsightCard<Content: View>: View {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
+            .background(
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [color.opacity(0.12), color.opacity(0.04)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+            )
             
             content()
         }
@@ -445,6 +497,32 @@ struct InsightCard<Content: View>: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 3)
+        )
+    }
+}
+
+// MARK: - Insight Preview Pill (empty state)
+
+private struct InsightPreviewPill: View {
+    let icon: String
+    let label: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(color.opacity(0.08))
         )
     }
 }

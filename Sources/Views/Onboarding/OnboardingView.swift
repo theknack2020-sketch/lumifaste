@@ -1,4 +1,5 @@
 import SwiftUI
+import AudioToolbox
 
 /// İlk açılış onboarding akışı — plan seçimi, hedef belirleme, izin istekleri.
 /// Entrance animations on each page, bounce button style, spring transitions.
@@ -7,6 +8,7 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @State private var selectedPlan: FastingPlan = .sixteenEight
     @State private var selectedGoal: FastingGoal = .weightLoss
+    @State private var notificationDenied = false
     @Binding var hasCompletedOnboarding: Bool
     
     var body: some View {
@@ -46,25 +48,47 @@ struct OnboardingView: View {
                 .font(.system(size: 64))
                 .scaleEffect(x: -1, y: 1)
                 .foregroundStyle(themeManager.selectedTheme.accentGradient)
-                .entranceAnimation(delay: 0.2)
+                .slideIn(from: .trailing, delay: 0.2)
             
             Text("Welcome to Lumifaste")
                 .font(.system(size: 28, weight: .bold))
-                .entranceAnimation(delay: 0.35)
+                .slideIn(from: .trailing, delay: 0.35)
             
             Text("Your honest fasting companion.\nNo ads. No tricks. Just results.")
                 .font(.system(size: 17))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .entranceAnimation(delay: 0.45)
+                .slideIn(from: .trailing, delay: 0.45)
+            
+            // Benefit micro-copy
+            VStack(alignment: .leading, spacing: 10) {
+                OnboardingBenefit(icon: "timer", color: .blue, text: "Smart timer tracks every fasting stage")
+                OnboardingBenefit(icon: "hand.raised.slash.fill", color: .green, text: "Zero ads — your screen, your focus")
+                OnboardingBenefit(icon: "lock.shield.fill", color: .purple, text: "All data stays on your device")
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .entranceAnimation(delay: 0.55)
             
             Spacer()
             
             nextButton("Get Started") {
+                HapticManager.shared.selectionChanged()
                 withAnimation(.smoothSpring) { currentPage = 1 }
             }
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                colors: [Color.green.opacity(0.08), Color.teal.opacity(0.05), Color(.systemBackground)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
     }
     
     // MARK: - Goal Selection
@@ -76,7 +100,7 @@ struct OnboardingView: View {
             Text("What's your goal?")
                 .font(.system(size: 26, weight: .bold))
             
-            Text("This helps us recommend the right plan")
+            Text("We'll recommend the best plan for you")
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
             
@@ -99,10 +123,19 @@ struct OnboardingView: View {
             Spacer()
             
             nextButton("Continue") {
+                HapticManager.shared.selectionChanged()
                 withAnimation(.smoothSpring) { currentPage = 2 }
             }
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                colors: [Color.orange.opacity(0.07), Color.yellow.opacity(0.05), Color(.systemBackground)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
     }
     
     // MARK: - Plan Selection
@@ -115,7 +148,7 @@ struct OnboardingView: View {
             Text("Choose your plan")
                 .font(.system(size: 26, weight: .bold))
             
-            Text("You can change this anytime")
+            Text("You can change this anytime — no commitment")
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
             
@@ -138,10 +171,19 @@ struct OnboardingView: View {
             }
             
             nextButton("Continue") {
+                HapticManager.shared.selectionChanged()
                 withAnimation(.smoothSpring) { currentPage = 3 }
             }
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                colors: [Color.blue.opacity(0.06), Color.purple.opacity(0.04), Color(.systemBackground)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
     }
     
     // MARK: - Notifications
@@ -159,17 +201,17 @@ struct OnboardingView: View {
                     .font(.system(size: 44))
                     .foregroundStyle(themeManager.selectedTheme.accentGradient)
             }
-            .entranceAnimation(delay: 0.2)
+            .slideIn(from: .trailing, delay: 0.2)
             
             Text("Stay on Track")
                 .font(.system(size: 26, weight: .bold))
-                .entranceAnimation(delay: 0.35)
+                .slideIn(from: .trailing, delay: 0.35)
             
             Text("Get notified when you hit milestones,\nenter new fasting stages, and reach your goal")
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-                .entranceAnimation(delay: 0.45)
+                .slideIn(from: .trailing, delay: 0.45)
             
             VStack(alignment: .leading, spacing: 12) {
                 notifBenefit(icon: "flag.checkered", color: .green, text: "Milestone alerts at 25%, 50%, 75%")
@@ -185,21 +227,60 @@ struct OnboardingView: View {
             
             Spacer()
             
+            // Inline denial message
+            if notificationDenied {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.orange)
+                    Text("No worries! You can enable notifications later in Settings.")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.orange.opacity(0.1))
+                )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
+            
             nextButton("Enable Notifications") {
+                HapticManager.shared.selectionChanged()
                 Task {
-                    _ = await NotificationManager.shared.requestPermission()
-                    NotificationManager.shared.scheduleDailyReminder()
-                    withAnimation(.smoothSpring) { currentPage = 4 }
+                    let granted = await NotificationManager.shared.requestPermission()
+                    if granted {
+                        NotificationManager.shared.scheduleDailyReminder()
+                        withAnimation(.smoothSpring) { currentPage = 4 }
+                    } else {
+                        withAnimation(.smoothSpring) {
+                            notificationDenied = true
+                        }
+                        // Auto-advance after a brief pause so user sees the message
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            withAnimation(.smoothSpring) { currentPage = 4 }
+                        }
+                    }
                 }
             }
             
             Button("Skip for Now") {
+                HapticManager.shared.selectionChanged()
                 withAnimation(.smoothSpring) { currentPage = 4 }
             }
             .font(.system(size: 15))
             .foregroundStyle(.secondary)
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                colors: [Color.cyan.opacity(0.06), Color.blue.opacity(0.04), Color(.systemBackground)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
     }
     
     private func notifBenefit(icon: String, color: Color, text: String) -> some View {
@@ -222,11 +303,11 @@ struct OnboardingView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
                 .foregroundStyle(.green)
-                .entranceAnimation(delay: 0.2)
+                .slideIn(from: .trailing, delay: 0.2)
             
             Text("You're all set!")
                 .font(.system(size: 28, weight: .bold))
-                .entranceAnimation(delay: 0.35)
+                .slideIn(from: .trailing, delay: 0.35)
             
             VStack(spacing: 8) {
                 Text("Your plan: **\(selectedPlan.rawValue)**")
@@ -234,12 +315,27 @@ struct OnboardingView: View {
                     .foregroundStyle(.secondary)
             }
             .font(.system(size: 17))
-            .entranceAnimation(delay: 0.45)
+            .slideIn(from: .trailing, delay: 0.45)
+            
+            // Ready benefits
+            VStack(alignment: .leading, spacing: 10) {
+                OnboardingBenefit(icon: "bell.badge.fill", color: .cyan, text: "Stage alerts keep you motivated")
+                OnboardingBenefit(icon: "chart.bar.fill", color: .blue, text: "Track progress with detailed insights")
+                OnboardingBenefit(icon: "flame.fill", color: .orange, text: "Build streaks and earn achievements")
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .entranceAnimation(delay: 0.55)
             
             Spacer()
             
             nextButton("Start Fasting") {
-                HapticManager.shared.fastStarted()
+                HapticManager.shared.success()
+                // Sound 1057: tock on final onboarding step
+                AudioServicesPlaySystemSound(1057)
                 // Save selections
                 UserDefaults.standard.set(selectedPlan.rawValue, forKey: "lf_fasting_plan")
                 UserDefaults.standard.set(selectedGoal.rawValue, forKey: "lf_fasting_goal")
@@ -249,6 +345,14 @@ struct OnboardingView: View {
             }
         }
         .padding(24)
+        .background(
+            LinearGradient(
+                colors: [Color.green.opacity(0.08), Color.mint.opacity(0.05), Color(.systemBackground)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+        )
     }
     
     // MARK: - Helpers
@@ -419,6 +523,26 @@ private struct PlanCard: View {
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.bounce)
+    }
+}
+
+// MARK: - Onboarding Benefit Row
+
+private struct OnboardingBenefit: View {
+    let icon: String
+    let color: Color
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(color)
+                .frame(width: 24)
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(.primary)
+        }
     }
 }
 

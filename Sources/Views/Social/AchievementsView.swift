@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AudioToolbox
 
 /// Achievement badges grid — shown in Settings or as a standalone view.
 /// Shows earned badges with dates, locked badges with requirements.
@@ -25,6 +26,31 @@ struct AchievementsView: View {
                 progressHeader
                     .entranceAnimation(delay: 0.1)
                 
+                // Motivational empty state when nothing earned yet
+                if achievementManager.earnedCount == 0 {
+                    VStack(spacing: 14) {
+                        Image(systemName: "star.circle")
+                            .font(.system(size: 36, weight: .light))
+                            .foregroundStyle(.purple.opacity(0.6))
+                        
+                        Text("Your First Badge Awaits")
+                            .font(.system(size: 17, weight: .semibold))
+                        
+                        Text("Complete fasts to unlock achievements.\nEvery journey starts with a single step.")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(20)
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.purple.opacity(0.06))
+                    )
+                    .padding(.horizontal, 16)
+                    .entranceAnimation(delay: 0.15)
+                }
+                
                 // Badge grid
                 LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(Array(Achievement.allCases.enumerated()), id: \.element.id) { index, achievement in
@@ -49,10 +75,14 @@ struct AchievementsView: View {
         .navigationTitle("Achievements")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            HapticManager.shared.lightTap()
             // Evaluate on appear
             let newlyUnlocked = achievementManager.evaluate(sessions: sessions)
             if let first = newlyUnlocked.first {
+                // Sound 1025: celebration chime on achievement unlock
+                AudioServicesPlaySystemSound(1025)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    HapticManager.shared.success()
                     withAnimation(.smoothSpring) {
                         animatingBadge = first
                     }
@@ -181,7 +211,8 @@ struct AchievementBadge: View {
             }
             .scaleEffect(isAnimating ? 1.3 : 1.0)
             .opacity(isAnimating ? 0.7 : 1.0)
-            .animation(.smoothSpring, value: isAnimating)
+            .goldGlow(when: isAnimating)
+            .animation(.spring(duration: 0.5, bounce: 0.5), value: isAnimating)
             
             Text(achievement.title)
                 .font(.system(size: 11, weight: .medium))

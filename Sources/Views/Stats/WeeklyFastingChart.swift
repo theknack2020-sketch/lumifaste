@@ -5,6 +5,7 @@ import Charts
 /// Uses Swift Charts framework with smooth styling.
 struct WeeklyFastingChart: View {
     let sessions: [FastingSession]
+    @State private var animateChart = false
     
     private var weekData: [DayData] {
         let calendar = Calendar.current
@@ -13,10 +14,10 @@ struct WeeklyFastingChart: View {
         
         let completed = sessions.filter(\.isCompleted)
         
-        return (0..<7).map { dayOffset in
-            let date = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek)!
+        return (0..<7).compactMap { dayOffset -> DayData? in
+            guard let date = calendar.date(byAdding: .day, value: dayOffset, to: startOfWeek) else { return nil }
             let dayStart = calendar.startOfDay(for: date)
-            let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
+            guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else { return nil }
             
             let hoursForDay = completed
                 .filter { $0.startDate >= dayStart && $0.startDate < dayEnd }
@@ -33,7 +34,7 @@ struct WeeklyFastingChart: View {
         Chart(weekData) { item in
             BarMark(
                 x: .value("Day", item.day),
-                y: .value("Hours", item.hours)
+                y: .value("Hours", animateChart ? item.hours : 0)
             )
             .foregroundStyle(
                 item.isToday
@@ -42,10 +43,11 @@ struct WeeklyFastingChart: View {
             )
             .cornerRadius(6)
             .annotation(position: .top) {
-                if item.hours > 0 {
+                if item.hours > 0 && animateChart {
                     Text(String(format: "%.1f", item.hours))
                         .font(.system(size: 10, weight: .medium, design: .rounded))
                         .foregroundStyle(.secondary)
+                        .transition(.opacity)
                 }
             }
         }
@@ -63,6 +65,11 @@ struct WeeklyFastingChart: View {
             AxisMarks { value in
                 AxisValueLabel()
                     .font(.system(size: 11, weight: .medium))
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(duration: 0.8, bounce: 0.15).delay(0.2)) {
+                animateChart = true
             }
         }
     }

@@ -60,6 +60,8 @@ struct HistoryView: View {
     @State private var exportText = ""
     @State private var deleteTarget: FastingSession?
     @State private var showDeleteConfirmation = false
+    @State private var showError = false
+    @State private var errorMessage: String?
     @State private var isRefreshing = false
     
     private let freeLimit = 7
@@ -201,6 +203,11 @@ struct HistoryView: View {
             } message: {
                 deleteAlertMessage
             }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong. Please try again.")
+            }
         }
     }
     
@@ -293,9 +300,14 @@ struct HistoryView: View {
     private var deleteAlertButtons: some View {
         Button("Delete", role: .destructive) {
             if let target = deleteTarget {
+                HapticManager.shared.heavyTap()
                 withAnimation(.smoothSpring) {
                     modelContext.delete(target)
-                    DataController.shared.save(modelContext, operation: "delete fasting session")
+                    let success = DataController.shared.save(modelContext, operation: "delete fasting session")
+                    if !success {
+                        errorMessage = "Couldn't delete the fasting session. Please try again."
+                        showError = true
+                    }
                 }
                 deleteTarget = nil
             }
@@ -316,41 +328,80 @@ struct HistoryView: View {
     // MARK: - Empty State
     
     private var historyEmptyState: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
+            Spacer()
+            
             ZStack {
                 Circle()
-                    .fill(Color(.tertiarySystemFill))
-                    .frame(width: 120, height: 120)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.orange.opacity(0.12), Color.yellow.opacity(0.06)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 130, height: 130)
+                
+                Circle()
+                    .fill(Color.orange.opacity(0.06))
+                    .frame(width: 100, height: 100)
                 
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 40, weight: .thin))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 48, weight: .thin))
+                    .foregroundStyle(.orange)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
             .accessibilityHidden(true)
             
-            VStack(spacing: 8) {
-                Text("No fasts yet")
-                    .font(.system(.title3, weight: .semibold))
+            VStack(spacing: 10) {
+                Text("Your Fasting Journey\nStarts Here")
+                    .font(.system(.title3, weight: .bold))
+                    .multilineTextAlignment(.center)
                 
-                Text("Complete your first fast and\nit will appear here.")
+                Text("Start your first fast to see your\nhistory, streaks, and progress.")
                     .font(.system(.subheadline))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
             
+            // CTA button navigating to Timer tab
+            NavigationLink {
+                // This is a visual CTA — in a TabView app, switching tabs is handled by parent.
+                // Using a label that signals the action.
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 14))
+                    Text("Start Your First Fast")
+                        .font(.system(.subheadline, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 14)
+                .background(
+                    Capsule()
+                        .fill(Color.orange.gradient)
+                )
+                .shadow(color: .orange.opacity(0.3), radius: 10, y: 4)
+            }
+            .buttonStyle(.bounce)
+            .padding(.top, 4)
+            
             HStack(spacing: 6) {
-                Image(systemName: "hand.tap.fill")
-                    .font(.system(.caption))
-                Text("Go to Timer to start fasting")
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 11))
+                Text("All data stays on your device")
                     .font(.system(.caption))
             }
             .foregroundStyle(.tertiary)
-            .padding(.top, 8)
+            .padding(.top, 4)
+            
+            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .entranceAnimation()
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("No fasts yet. Complete your first fast and it will appear here.")
+        .accessibilityLabel("Your fasting journey starts here. Start your first fast to see your history, streaks, and progress.")
     }
     
     // MARK: - Session List
@@ -404,6 +455,13 @@ struct HistoryView: View {
             FastingSessionRow(session: session)
                 .staggeredAppear(index: index)
         }
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 4)
+        )
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
                 deleteTarget = session
@@ -590,10 +648,12 @@ struct HistoryView: View {
         for day in completedDays {
             if day == checkDate {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prev
+            } else if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate), day == prev {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                checkDate = prevDay
             } else {
                 break
             }

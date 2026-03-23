@@ -5,37 +5,73 @@ import SwiftUI
 struct LearnView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @State private var showPaywall = false
+    @State private var isLoading = true
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: 20) {
-                    // Quick links
-                    quickLinks
-                        .padding(.horizontal, 16)
-                        .entranceAnimation(delay: 0.1)
-                    
-                    // Fasting stages science
-                    stagesSection
-                        .padding(.horizontal, 16)
-                        .entranceAnimation(delay: 0.2)
-                    
-                    // Articles
-                    articlesSection
-                        .padding(.horizontal, 16)
-                        .entranceAnimation(delay: 0.3)
-                    
-                    // Disclaimer
-                    disclaimerBanner
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 24)
+            Group {
+                if isLoading {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        
+                        ProgressView()
+                            .controlSize(.large)
+                        
+                        Text("Loading articles…")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity)
+                } else {
+                    learnContent
                 }
-                .padding(.top, 12)
             }
             .navigationTitle("Learn")
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
+            .onAppear {
+                // Brief loading state for smooth entrance
+                if isLoading {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            isLoading = false
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Learn Content
+    
+    private var learnContent: some View {
+        ScrollView {
+            LazyVStack(spacing: 20) {
+                // Quick links
+                quickLinks
+                    .padding(.horizontal, 16)
+                    .entranceAnimation(delay: 0.1)
+                
+                // Fasting stages science
+                stagesSection
+                    .padding(.horizontal, 16)
+                    .entranceAnimation(delay: 0.2)
+                
+                // Articles
+                articlesSection
+                    .padding(.horizontal, 16)
+                    .entranceAnimation(delay: 0.3)
+                
+                // Disclaimer
+                disclaimerBanner
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 24)
+            }
+            .padding(.top, 12)
         }
     }
     

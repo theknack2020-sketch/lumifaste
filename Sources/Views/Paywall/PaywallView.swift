@@ -1,5 +1,6 @@
 import SwiftUI
 import StoreKit
+import AudioToolbox
 
 /// Paywall ekranı — premium özelliklerin kapısı.
 /// Araştırma: $3.99/ay, $29.99/yıl (%37 tasarruf), 7 gün free trial.
@@ -9,6 +10,10 @@ struct PaywallView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
     @State private var selectedProduct: Product?
+    @State private var showError = false
+    @State private var errorMessage: String?
+    @State private var showRestoreError = false
+    @State private var restoreErrorMessage: String?
     
     var body: some View {
         NavigationStack {
@@ -53,6 +58,39 @@ struct PaywallView: View {
                     selectedProduct = subscriptionManager.yearlyProduct
                 }
             }
+            .alert("Purchase Failed", isPresented: $showError) {
+                Button("Try Again") {
+                    guard let product = selectedProduct else { return }
+                    Task {
+                        let success = await subscriptionManager.purchase(product)
+                        if success { dismiss() }
+                        else if let error = subscriptionManager.purchaseError, !error.isEmpty {
+                            errorMessage = error
+                            showError = true
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong with your purchase. Please try again.")
+            }
+            .alert("Restore Failed", isPresented: $showRestoreError) {
+                Button("Try Again") {
+                    Task {
+                        await subscriptionManager.restorePurchases()
+                        if case .failed(let msg) = subscriptionManager.restoreResult {
+                            restoreErrorMessage = msg
+                            showRestoreError = true
+                        } else if case .noPurchasesFound = subscriptionManager.restoreResult {
+                            restoreErrorMessage = "No previous purchases found. If you believe this is an error, contact Apple Support."
+                            showRestoreError = true
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text(restoreErrorMessage ?? "Couldn't restore purchases. Please check your connection and try again.")
+            }
         }
     }
     
@@ -86,9 +124,13 @@ struct PaywallView: View {
                 .padding(.bottom, 2)
             
             FeatureRow(icon: "timer", title: "Fasting Timer", subtitle: "All preset plans: 16:8, 18:6, 20:4, OMAD...", isFree: true)
+                .staggeredAppear(index: 0)
             FeatureRow(icon: "flame.fill", title: "Fasting Stages", subtitle: "See which stage you're in", isFree: true)
+                .staggeredAppear(index: 1)
             FeatureRow(icon: "bell.badge", title: "Milestone Alerts", subtitle: "Notifications at key fasting hours", isFree: true)
+                .staggeredAppear(index: 2)
             FeatureRow(icon: "clock.arrow.circlepath", title: "Recent History", subtitle: "Your last 7 fasting sessions", isFree: true)
+                .staggeredAppear(index: 3)
             
             Divider().padding(.vertical, 4)
             
@@ -99,10 +141,15 @@ struct PaywallView: View {
                 .padding(.bottom, 2)
             
             FeatureRow(icon: "sparkles", title: "Stage Science", subtitle: "What's happening in your body + tips", isFree: false, premiumColor: accent)
+                .staggeredAppear(index: 4)
             FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "All your fasts, forever", isFree: false, premiumColor: accent)
+                .staggeredAppear(index: 5)
             FeatureRow(icon: "bolt.fill", title: "Streak Tracking", subtitle: "Daily streak counter and motivation", isFree: false, premiumColor: accent)
+                .staggeredAppear(index: 6)
             FeatureRow(icon: "chart.bar.fill", title: "Detailed Reports", subtitle: "Stage breakdown after each fast", isFree: false, premiumColor: accent)
+                .staggeredAppear(index: 7)
             FeatureRow(icon: "slider.horizontal.3", title: "Custom Plans", subtitle: "Create your own fasting schedule", isFree: false, premiumColor: accent)
+                .staggeredAppear(index: 8)
         }
         .padding(20)
         .background(
@@ -178,10 +225,19 @@ struct PaywallView: View {
     private var purchaseButton: some View {
         VStack(spacing: 10) {
             Button {
+                HapticManager.shared.mediumTap()
                 guard let product = selectedProduct else { return }
                 Task {
                     let success = await subscriptionManager.purchase(product)
-                    if success { dismiss() }
+                    if success {
+                        HapticManager.shared.success()
+                        // Sound 1025: celebration chime on successful purchase
+                        AudioServicesPlaySystemSound(1025)
+                        dismiss()
+                    } else if let error = subscriptionManager.purchaseError, !error.isEmpty {
+                        errorMessage = error
+                        showError = true
+                    }
                 }
             } label: {
                 HStack {
@@ -198,11 +254,31 @@ struct PaywallView: View {
                 .frame(height: 54)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(themeManager.selectedTheme.accentGradient)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    themeManager.selectedTheme.gradientStart,
+                                    themeManager.selectedTheme.gradientEnd,
+                                    themeManager.selectedTheme.accent
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                 )
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.45), radius: 16, y: 6)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.2), radius: 6, y: 2)
             }
             .buttonStyle(.bounce)
             .disabled(selectedProduct == nil || subscriptionManager.isPurchasing)
+            
+            // Trust indicators
+            HStack(spacing: 16) {
+                TrustIndicator(icon: "lock.shield.fill", text: "Secure payment")
+                TrustIndicator(icon: "xmark.circle", text: "Cancel anytime")
+                TrustIndicator(icon: "hand.raised.fill", text: "No commitment")
+            }
+            .padding(.top, 4)
             
             if let error = subscriptionManager.purchaseError {
                 Text(error)
@@ -213,7 +289,18 @@ struct PaywallView: View {
             
             // Restore
             Button("Restore Purchases") {
-                Task { await subscriptionManager.restorePurchases() }
+                Task {
+                    await subscriptionManager.restorePurchases()
+                    if case .failed(let msg) = subscriptionManager.restoreResult {
+                        restoreErrorMessage = msg
+                        showRestoreError = true
+                    } else if case .noPurchasesFound = subscriptionManager.restoreResult {
+                        restoreErrorMessage = "No previous purchases found. If you believe this is an error, contact Apple Support."
+                        showRestoreError = true
+                    } else if subscriptionManager.isSubscribed {
+                        dismiss()
+                    }
+                }
             }
             .font(.system(size: 14))
             .foregroundStyle(.secondary)
@@ -278,6 +365,27 @@ private struct FeatureRow: View {
 
 // MARK: - Product Card
 
+// MARK: - Trust Indicator
+
+private struct TrustIndicator: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(.green)
+            Text(text)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Product Card
+
 private struct ProductCard: View {
     let product: Product
     let label: String
@@ -334,6 +442,7 @@ private struct ProductCard: View {
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color(.secondarySystemBackground))
+                    .shadow(color: isSelected ? accentColor.opacity(0.2) : Color.black.opacity(0.06), radius: isSelected ? 12 : 6, y: isSelected ? 4 : 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)

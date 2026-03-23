@@ -41,6 +41,15 @@ struct ContentView: View {
                     .accessibilityHint("App settings and preferences")
             }
             .tint(themeManager.selectedTheme.accent)
+            .animation(.smoothSpring, value: selectedTab)
+            .onAppear {
+                let tabBarAppearance = UITabBarAppearance()
+                tabBarAppearance.configureWithDefaultBackground()
+                tabBarAppearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.92)
+                tabBarAppearance.shadowColor = UIColor.label.withAlphaComponent(0.08)
+                UITabBar.appearance().standardAppearance = tabBarAppearance
+                UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+            }
             .onChange(of: selectedTab) { _, _ in
                 HapticManager.shared.selectionChanged()
             }

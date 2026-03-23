@@ -41,14 +41,14 @@ struct CircularProgressView: View {
     
     var body: some View {
         ZStack {
-            // Outer subtle glow ring (ambient)
+            // Outer ambient glow ring — creates depth
             if progress > 0.01 {
                 Circle()
                     .stroke(
-                        ringColor.opacity(0.08),
-                        style: StrokeStyle(lineWidth: lineWidth + 16, lineCap: .round)
+                        ringColor.opacity(0.1),
+                        style: StrokeStyle(lineWidth: lineWidth + 20, lineCap: .round)
                     )
-                    .blur(radius: 4)
+                    .blur(radius: 8)
             }
             
             // Background ring — slightly translucent
@@ -59,17 +59,17 @@ struct CircularProgressView: View {
                 )
                 .animation(.smoothSpring, value: stage)
             
-            // Glow shadow layer (drawn behind progress ring)
+            // Glow shadow layer (drawn behind progress ring) — intensified
             if progress > 0.01 {
                 Circle()
                     .trim(from: 0, to: min(progress, 1.0))
                     .stroke(
                         ringColor,
-                        style: StrokeStyle(lineWidth: lineWidth + 4, lineCap: .round)
+                        style: StrokeStyle(lineWidth: lineWidth + 8, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .blur(radius: 10)
-                    .opacity(0.4)
+                    .blur(radius: 14)
+                    .opacity(0.45)
                     .animation(.progressSpring, value: progress)
                     .animation(.smoothSpring, value: stage)
             }
@@ -91,7 +91,8 @@ struct CircularProgressView: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .shadow(color: ringColor.opacity(0.5), radius: 8, x: 0, y: 0)
+                .shadow(color: ringColor.opacity(0.6), radius: 10, x: 0, y: 0)
+                .shadow(color: ringColor.opacity(0.3), radius: 20, x: 0, y: 0)
                 .animation(.progressSpring, value: progress)
                 .animation(.smoothSpring, value: stage)
             
@@ -126,6 +127,7 @@ struct CircularProgressView: View {
                 .padding(lineWidth + 6)
         }
         .modifier(BreathingGlowModifier(isActive: isBreathing, color: ringColor))
+        .shimmerRotation(when: isBreathing)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Fasting progress")
         .accessibilityValue("\(progressPercent) percent complete, \(stage.rawValue) stage")

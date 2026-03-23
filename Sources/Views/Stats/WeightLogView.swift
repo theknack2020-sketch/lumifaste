@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AudioToolbox
 
 /// Weight logging sheet — manual entry, stored via SwiftData.
 /// Data stays on device (K004).
@@ -14,6 +15,8 @@ struct WeightLogView: View {
     @State private var noteText = ""
     @State private var logDate = Date.now
     @State private var validationError: String?
+    @State private var showError = false
+    @State private var errorMessage: String?
     @FocusState private var isWeightFocused: Bool
     
     private var unit: String { useMetric ? "kg" : "lbs" }
@@ -92,7 +95,46 @@ struct WeightLogView: View {
                 }
                 
                 // Recent entries
-                if !entries.isEmpty {
+                if entries.isEmpty {
+                    Section {
+                        VStack(spacing: 16) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.pink.opacity(0.08))
+                                    .frame(width: 80, height: 80)
+                                
+                                Image(systemName: "scalemass.fill")
+                                    .font(.system(size: 32, weight: .light))
+                                    .foregroundStyle(.pink)
+                            }
+                            .accessibilityHidden(true)
+                            
+                            VStack(spacing: 6) {
+                                Text("No Entries Yet")
+                                    .font(.system(size: 17, weight: .semibold))
+                                
+                                Text("Track your weight to see trends\nand how fasting affects your body.")
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.secondary)
+                                    .multilineTextAlignment(.center)
+                            }
+                            
+                            Button {
+                                isWeightFocused = true
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.system(size: 14))
+                                    Text("Add Your First Entry")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                .foregroundStyle(.pink)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 20)
+                    }
+                } else if !entries.isEmpty {
                     Section("Recent") {
                         ForEach(entries.prefix(10)) { entry in
                             HStack {
@@ -120,7 +162,11 @@ struct WeightLogView: View {
                                     modelContext.delete(arr[index])
                                 }
                             }
-                            DataController.shared.save(modelContext, operation: "delete weight entry")
+                            let success = DataController.shared.save(modelContext, operation: "delete weight entry")
+                            if !success {
+                                errorMessage = "Couldn't delete the weight entry. Please try again."
+                                showError = true
+                            }
                         }
                     }
                 }
@@ -131,6 +177,11 @@ struct WeightLogView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong. Please try again.")
             }
             .onAppear {
                 // Pre-fill with last weight if available
@@ -148,9 +199,17 @@ struct WeightLogView: View {
         let kg = useMetric ? weight : weight / 2.20462
         let entry = WeightEntry(date: logDate, weightKg: kg, note: noteText)
         modelContext.insert(entry)
-        DataController.shared.save(modelContext, operation: "save weight entry")
-        HapticManager.shared.success()
-        dismiss()
+        let success = DataController.shared.save(modelContext, operation: "save weight entry")
+        if success {
+            HapticManager.shared.success()
+            // Sound 1057: tock on weight save
+            AudioServicesPlaySystemSound(1057)
+            dismiss()
+        } else {
+            HapticManager.shared.error()
+            errorMessage = "Couldn't save your weight entry. Please check your device storage and try again."
+            showError = true
+        }
     }
 }
 

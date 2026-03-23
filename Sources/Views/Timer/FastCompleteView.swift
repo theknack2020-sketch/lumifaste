@@ -17,6 +17,10 @@ struct FastCompleteView: View {
     @State private var noteText: String = ""
     @State private var showShareSheet = false
     @State private var shareImage: UIImage?
+    @State private var showError = false
+    @State private var errorMessage: String?
+    @State private var celebrationScale: CGFloat = 0.3
+    @State private var celebrationOpacity: Double = 0
     
     private let moods = ["😴", "😐", "😊", "🔥"]
     private let moodLabels = ["Tired", "Okay", "Good", "Energized"]
@@ -24,6 +28,19 @@ struct FastCompleteView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                // Celebratory warm gradient background
+                LinearGradient(
+                    colors: [
+                        Color.orange.opacity(0.08),
+                        Color.yellow.opacity(0.06),
+                        Color.pink.opacity(0.05),
+                        Color(.systemBackground)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                
                 ScrollView {
                     VStack(spacing: 24) {
                         // Celebration header
@@ -110,6 +127,11 @@ struct FastCompleteView: View {
                     )
                 }
             }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong. Please try again.")
+            }
         }
     }
     
@@ -141,6 +163,7 @@ struct FastCompleteView: View {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color.accentColor.opacity(0.12))
             )
+            .shadow(color: Color.accentColor.opacity(0.2), radius: 8, y: 3)
         }
         .buttonStyle(.bounce)
         .accessibilityLabel("Share my fast results")
@@ -160,8 +183,28 @@ struct FastCompleteView: View {
                 session.note = String(trimmed.prefix(500))
             }
         }
-        DataController.shared.save(modelContext, operation: "save fast mood/note")
+        let success = DataController.shared.save(modelContext, operation: "save fast mood/note")
+        if !success {
+            errorMessage = "Couldn't save your mood and notes. Your fast was recorded, but these details may be lost."
+            showError = true
+        }
         ReviewRequestManager.recordCompletedFast()
+    }
+    
+    // MARK: - Personalized congratulation based on fast length
+    
+    private var fastLengthCongrats: (title: String, subtitle: String) {
+        let hours = session.actualDuration / 3600
+        switch hours {
+        case ..<14:
+            return ("Quick Fast! ⚡", "Every fast counts — you're building the habit.")
+        case 14..<18:
+            return ("Solid Fast! 💪", "Your body entered fat-burning mode. Great work.")
+        case 18..<24:
+            return ("Warrior Fast! 🔥", "Deep ketosis and cellular repair activated.")
+        default:
+            return ("Epic Fast! 🏆", "Incredible willpower. Your body thanks you.")
+        }
     }
     
     // MARK: - Celebration
@@ -170,18 +213,39 @@ struct FastCompleteView: View {
         VStack(spacing: 12) {
             Text("🎉")
                 .font(.system(size: 56))
+                .scaleEffect(celebrationScale)
+                .opacity(celebrationOpacity)
                 .accessibilityHidden(true)
             
-            Text("Fast Complete!")
+            Text(fastLengthCongrats.title)
                 .font(.system(.title, weight: .bold))
             
-            Text("Great discipline — you did it.")
-                .font(.system(.body))
+            Text(fastLengthCongrats.subtitle)
+                .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            
+            if streak > 1 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.orange)
+                    Text("\(streak)-day streak!")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.orange)
+                }
+                .padding(.top, 4)
+            }
         }
         .padding(.top, 8)
+        .onAppear {
+            withAnimation(.spring(duration: 0.7, bounce: 0.5).delay(0.15)) {
+                celebrationScale = 1.0
+                celebrationOpacity = 1.0
+            }
+        }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Congratulations! Fast complete. Great discipline.")
+        .accessibilityLabel("Congratulations! \(fastLengthCongrats.title). \(fastLengthCongrats.subtitle)")
     }
     
     // MARK: - Basic Stats (Free)

@@ -20,6 +20,9 @@ struct SettingsView: View {
     @State private var exportFileURL: URL?
     @State private var showHealthDisclaimer = false
     @State private var showMailError = false
+    @State private var showError = false
+    @State private var errorMessage: String?
+    @State private var showResetConfirm = false
     
     private var selectedAppearance: AppearanceMode {
         get { AppearanceMode(rawValue: appearanceMode) ?? .system }
@@ -80,6 +83,23 @@ struct SettingsView: View {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Mail is not set up on this device. You can email us at support@lumifaste.com")
+            }
+            .alert("Error", isPresented: $showError) {
+                Button("OK") {}
+            } message: {
+                Text(errorMessage ?? "Something went wrong. Please try again.")
+            }
+            .alert("Reset All Data?", isPresented: $showResetConfirm) {
+                Button("Reset", role: .destructive) {
+                    let success = DataController.shared.resetAllData(context: modelContext)
+                    if !success {
+                        errorMessage = "Couldn't reset your data. Please try again. If this keeps happening, your device storage may be full."
+                        showError = true
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will permanently delete all your fasting sessions and weight data. This cannot be undone.")
             }
         }
     }
@@ -385,7 +405,11 @@ struct SettingsView: View {
     // MARK: - Actions
     
     private func exportData() {
-        guard let url = FastingDataExporter.exportToFile(sessions: sessions) else { return }
+        guard let url = FastingDataExporter.exportToFile(sessions: sessions) else {
+            errorMessage = "Couldn't export your data. Please check your device storage and try again."
+            showError = true
+            return
+        }
         exportFileURL = url
         showExportShare = true
     }

@@ -138,7 +138,8 @@ struct FastingSessionRow: View {
         let reached = FastingStage.allCases.filter { $0.startHour * 3600 < session.actualDuration }
         if reached.isEmpty { return [.gray] }
         if reached.count == 1 { return [reached[0].color] }
-        return [reached.first!.color, reached.last!.color]
+        guard let first = reached.first, let last = reached.last else { return [.gray] }
+        return [first.color, last.color]
     }
     
     // MARK: - Helpers

@@ -12,8 +12,10 @@ struct MonthlyCalendarView: View {
         let calendar = Calendar.current
         let now = Date.now
         let components = calendar.dateComponents([.year, .month], from: now)
-        let startOfMonth = calendar.date(from: components)!
-        let range = calendar.range(of: .day, in: .month, for: startOfMonth)!
+        guard let startOfMonth = calendar.date(from: components),
+              let range = calendar.range(of: .day, in: .month, for: startOfMonth) else {
+            return []
+        }
         
         // Which weekday does the month start on (1 = Sunday in en)
         let firstWeekday = calendar.component(.weekday, from: startOfMonth)
@@ -53,6 +55,9 @@ struct MonthlyCalendarView: View {
     }
     
     var body: some View {
+        let data = calendarData
+        let hasAnyFasts = data.contains { $0.state == .completed }
+        
         VStack(spacing: 6) {
             // Month header
             Text(Date.now.formatted(.dateTime.month(.wide).year()))
@@ -71,17 +76,30 @@ struct MonthlyCalendarView: View {
             
             // Day grid
             LazyVGrid(columns: columns, spacing: 4) {
-                ForEach(calendarData) { day in
+                ForEach(data) { day in
                     calendarCell(day: day)
                 }
             }
             
-            // Legend
-            HStack(spacing: 16) {
-                legendItem(color: .green, label: "Fasted")
-                legendItem(color: Color(.systemGray5), label: "No fast")
+            // Empty month message or legend
+            if !hasAnyFasts {
+                VStack(spacing: 6) {
+                    Text("No fasts this month yet")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                    Text("Start fasting to fill your calendar 💪")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.tertiary)
+                }
+                .padding(.top, 8)
+            } else {
+                // Legend
+                HStack(spacing: 16) {
+                    legendItem(color: .green, label: "Fasted")
+                    legendItem(color: Color(.systemGray5), label: "No fast")
+                }
+                .padding(.top, 6)
             }
-            .padding(.top, 6)
         }
     }
     
