@@ -76,11 +76,12 @@ final class FastingManager {
     /// Whether a clock anomaly was detected during this session
     private(set) var clockAnomalyDetected: Bool = false
     
-    /// Kalan süre (saniye) — target'a göre, adjusted for pauses
+    /// Kalan süre (saniye) — elapsed'dan türetilir, senkronizasyon garantili
     var remainingTime: TimeInterval {
-        guard let end = targetEndDate, isActive else { return 0 }
-        let adjusted = end.addingTimeInterval(effectivePausedDuration)
-        return max(0, adjusted.timeIntervalSince(Date.now))
+        guard let start = startDate, let end = targetEndDate, isActive else { return 0 }
+        let total = end.timeIntervalSince(start)
+        guard total > 0 else { return 0 }
+        return max(0, total - elapsedTime)
     }
     
     /// 0.0 - 1.0 arası ilerleme
