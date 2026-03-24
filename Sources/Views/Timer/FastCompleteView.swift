@@ -30,12 +30,12 @@ struct FastCompleteView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Celebratory warm gradient background
+                // Celebratory warm gradient background — gold/amber
                 LinearGradient(
                     colors: [
-                        Color.orange.opacity(0.08),
-                        Color.yellow.opacity(0.06),
-                        Color.pink.opacity(0.05),
+                        Color(red: 0.18, green: 0.12, blue: 0.0),
+                        Color.orange.opacity(0.12),
+                        Color.yellow.opacity(0.08),
                         Color(.systemBackground)
                     ],
                     startPoint: .topLeading,
@@ -91,8 +91,9 @@ struct FastCompleteView: View {
                                 .frame(height: 50)
                                 .background(
                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color.accentColor)
+                                        .fill(themeManager.selectedTheme.accentGradient)
                                 )
+                                .shadow(color: themeManager.selectedTheme.accent.opacity(0.4), radius: 12, y: 4)
                         }
                         .buttonStyle(.pressable)
                         .entranceAnimation(delay: 0.5)
@@ -250,11 +251,33 @@ struct FastCompleteView: View {
     
     private var celebrationHeader: some View {
         VStack(spacing: 12) {
-            Text("🎉")
-                .font(.system(size: 56))
-                .scaleEffect(celebrationScale)
-                .opacity(celebrationOpacity)
-                .accessibilityHidden(true)
+            // Large checkmark icon — premium celebration
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.orange.opacity(0.3), Color.yellow.opacity(0.1), Color.clear],
+                            center: .center,
+                            startRadius: 10,
+                            endRadius: 60
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 80))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.yellow, .orange],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: .orange.opacity(0.5), radius: 16, x: 0, y: 4)
+            }
+            .scaleEffect(celebrationScale)
+            .opacity(celebrationOpacity)
+            .accessibilityHidden(true)
             
             Text(fastLengthCongrats.title)
                 .font(.system(.title, weight: .bold))
@@ -305,6 +328,7 @@ struct FastCompleteView: View {
                         .foregroundStyle(.cyan)
                     Text("\(session.waterCount) glasses of water")
                         .font(.system(size: 13))
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -312,7 +336,9 @@ struct FastCompleteView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+                .shadow(color: .orange.opacity(0.1), radius: 16, x: 0, y: 2)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Duration \(formatDuration(session.actualDuration)), Plan \(session.plan.rawValue), Reached \(session.stage.rawValue) stage")
@@ -359,7 +385,8 @@ struct FastCompleteView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
     
@@ -383,7 +410,8 @@ struct FastCompleteView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
         )
     }
     
@@ -427,7 +455,8 @@ struct FastCompleteView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
     
@@ -477,7 +506,8 @@ struct FastCompleteView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
     
@@ -524,8 +554,9 @@ private struct StatItem: View {
                 .foregroundStyle(color)
             Text(value)
                 .font(.system(.body, design: .rounded, weight: .bold))
+                .monospacedDigit()
             Text(title)
-                .font(.system(.caption))
+                .font(.caption)
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

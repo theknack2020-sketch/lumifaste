@@ -3,7 +3,8 @@ import SwiftUI
 /// Circular progress ring — oruç ilerlemesini gösterir.
 /// Fully accessible: announces progress percentage and current stage to VoiceOver.
 /// Uses the app theme's accent color as the primary ring color when in fed/idle state.
-/// Redesigned: thicker ring, glow shadow on arc, breathing pulse animation.
+/// Redesigned: thicker ring, strong glow shadow on arc, breathing pulse animation,
+/// inner radial gradient fill, premium-grade depth and visibility.
 struct CircularProgressView: View {
     let progress: Double
     let stage: FastingStage
@@ -41,40 +42,56 @@ struct CircularProgressView: View {
     
     var body: some View {
         ZStack {
+            // Inner radial gradient fill — very faint stage-tinted glow inside the circle
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            ringColor.opacity(0.06),
+                            ringColor.opacity(0.02),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: 140
+                    )
+                )
+                .padding(lineWidth + 8)
+            
             // Outer ambient glow ring — creates depth
             if progress > 0.01 {
                 Circle()
                     .stroke(
-                        ringColor.opacity(0.1),
-                        style: StrokeStyle(lineWidth: lineWidth + 20, lineCap: .round)
+                        ringColor.opacity(0.15),
+                        style: StrokeStyle(lineWidth: lineWidth + 24, lineCap: .round)
                     )
-                    .blur(radius: 8)
+                    .blur(radius: 10)
             }
             
-            // Background ring — slightly translucent
+            // Background ring — more visible against dark backgrounds
             Circle()
                 .stroke(
-                    ringColor.opacity(0.12),
+                    ringColor.opacity(0.2),
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             
-            // Glow shadow layer (drawn behind progress ring) — intensified
+            // Glow shadow layer (drawn behind progress ring) — intensified for visibility
             if progress > 0.01 {
                 Circle()
                     .trim(from: 0, to: min(progress, 1.0))
                     .stroke(
                         ringColor,
-                        style: StrokeStyle(lineWidth: lineWidth + 8, lineCap: .round)
+                        style: StrokeStyle(lineWidth: lineWidth + 10, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .blur(radius: 14)
-                    .opacity(0.45)
+                    .blur(radius: 16)
+                    .opacity(0.6)
                     .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                     .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             }
             
-            // Progress ring — gradient stroke with glow
+            // Progress ring — gradient stroke with strong glow
             Circle()
                 .trim(from: 0, to: min(progress, 1.0))
                 .stroke(
@@ -91,8 +108,9 @@ struct CircularProgressView: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .shadow(color: ringColor.opacity(0.6), radius: 10, x: 0, y: 0)
-                .shadow(color: ringColor.opacity(0.3), radius: 20, x: 0, y: 0)
+                .shadow(color: ringColor.opacity(0.7), radius: 15, x: 0, y: 0)
+                .shadow(color: ringColor.opacity(0.4), radius: 25, x: 0, y: 0)
+                .shadow(color: ringColor.opacity(0.15), radius: 40, x: 0, y: 0)
                 .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             
@@ -109,8 +127,8 @@ struct CircularProgressView: View {
                             )
                         )
                         .frame(width: lineWidth * 0.55, height: lineWidth * 0.55)
-                        .shadow(color: ringColor.opacity(0.8), radius: 10)
-                        .shadow(color: ringColor.opacity(0.4), radius: 20)
+                        .shadow(color: ringColor.opacity(0.9), radius: 12)
+                        .shadow(color: ringColor.opacity(0.5), radius: 24)
                         .position(x: geo.size.width / 2, y: lineWidth / 2)
                         .rotationEffect(.degrees(360 * min(progress, 1.0) - 90), anchor: .center)
                 }
@@ -121,7 +139,7 @@ struct CircularProgressView: View {
             // Inner decorative ring (thin)
             Circle()
                 .stroke(
-                    ringColor.opacity(0.06),
+                    ringColor.opacity(0.08),
                     style: StrokeStyle(lineWidth: 1)
                 )
                 .padding(lineWidth + 6)
@@ -147,8 +165,8 @@ private struct BreathingGlowModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .shadow(
-                color: isActive ? color.opacity(0.25 + 0.15 * phase) : .clear,
-                radius: isActive ? 16 + 8 * phase : 0
+                color: isActive ? color.opacity(0.3 + 0.2 * phase) : .clear,
+                radius: isActive ? 20 + 10 * phase : 0
             )
             .onChange(of: isActive) { _, newValue in
                 if newValue {

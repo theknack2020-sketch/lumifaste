@@ -4,6 +4,7 @@ import SwiftUI
 /// Standalone version for use outside the main timer (e.g. fast detail, history).
 /// Free: stage ismi + icon. Premium: subtitle + next stage hint + metabolic info.
 /// Fully accessible with VoiceOver support.
+/// Redesigned: glassmorphism cards, layered shadows for depth, monospacedDigit on times.
 struct FastingStageView: View {
     let stage: FastingStage
     let elapsed: TimeInterval
@@ -23,8 +24,12 @@ struct FastingStageView: View {
             .foregroundStyle(stage.color)
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(stage.color.opacity(0.12))
-            .clipShape(Capsule())
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: stage.color.opacity(0.3), radius: 8, x: 0, y: 2)
+                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 1)
+            )
             .animation(.smoothSpring, value: stage)
             
             if isPremium {
@@ -53,6 +58,7 @@ struct FastingStageView: View {
                     if hoursUntilNext > 0 {
                         Text("\(next.rawValue) in \(formatHours(hoursUntilNext))")
                             .font(.system(.caption))
+                            .monospacedDigit()
                             .foregroundStyle(.tertiary)
                             .contentTransition(.numericText())
                             .animation(.easeInOut(duration: 0.3), value: next)
@@ -69,6 +75,14 @@ struct FastingStageView: View {
                 .foregroundStyle(.secondary)
             }
         }
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: stage.color.opacity(0.1), radius: 12, x: 0, y: 2)
+        )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
     }
@@ -100,4 +114,5 @@ struct FastingStageView: View {
         FastingStageView(stage: .fatBurning, elapsed: 14 * 3600, isPremium: false)
     }
     .padding()
+    .preferredColorScheme(.dark)
 }

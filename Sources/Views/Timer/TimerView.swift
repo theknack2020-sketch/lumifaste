@@ -121,15 +121,15 @@ struct TimerView: View {
         let colors: [Color]
         switch stage {
         case .fed:
-            colors = [Color(.systemBackground), themeManager.selectedTheme.accent.opacity(0.04), Color(.systemBackground)]
+            colors = [Color(red: 0.02, green: 0.06, blue: 0.04), themeManager.selectedTheme.accent.opacity(0.08), Color(.systemBackground)]
         case .earlyFasting:
-            colors = [Color(.systemBackground), Color.yellow.opacity(0.08), Color.orange.opacity(0.04)]
+            colors = [Color(red: 0.04, green: 0.06, blue: 0.05), Color(red: 0.0, green: 0.12, blue: 0.10), Color(.systemBackground)]
         case .fatBurning:
-            colors = [Color.orange.opacity(0.05), Color.orange.opacity(0.12), Color.red.opacity(0.05)]
+            colors = [Color(red: 0.08, green: 0.04, blue: 0.0), Color.orange.opacity(0.18), Color(.systemBackground)]
         case .ketosis:
-            colors = [Color.blue.opacity(0.04), Color.blue.opacity(0.12), Color.purple.opacity(0.06)]
+            colors = [Color(red: 0.04, green: 0.02, blue: 0.10), Color.purple.opacity(0.16), Color(.systemBackground)]
         case .autophagy:
-            colors = [Color.purple.opacity(0.06), Color.purple.opacity(0.14), Color.pink.opacity(0.06)]
+            colors = [Color(red: 0.08, green: 0.02, blue: 0.08), Color(red: 0.20, green: 0.0, blue: 0.15).opacity(0.20), Color(.systemBackground)]
         }
         return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
     }
@@ -552,16 +552,16 @@ struct TimerView: View {
                     } else {
                         // Elapsed time — big and prominent
                         Text(formatDuration(manager.elapsedTime))
-                            .font(.system(size: 44, weight: .light, design: .rounded))
+                            .font(.system(size: 56, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .contentTransition(.numericText(countsDown: false))
                             .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.elapsedTime))
                         
-                        Text("elapsed")
-                            .font(.system(size: 11, weight: .medium))
+                        Text("ELAPSED")
+                            .font(.caption)
+                            .fontWeight(.semibold)
                             .foregroundStyle(.tertiary)
-                            .textCase(.uppercase)
-                            .tracking(1)
+                            .tracking(2)
                         
                         // Divider line
                         Rectangle()
@@ -572,17 +572,17 @@ struct TimerView: View {
                         // Time remaining display (#4)
                         if manager.remainingTime > 0 {
                             Text(formatDuration(manager.remainingTime))
-                                .font(.system(size: 18, weight: .medium, design: .rounded))
+                                .font(.system(size: 20, weight: .semibold, design: .rounded))
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                                 .contentTransition(.numericText(countsDown: true))
                                 .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.remainingTime))
                             
-                            Text("remaining")
-                                .font(.system(size: 10, weight: .medium))
+                            Text("REMAINING")
+                                .font(.caption)
+                                .fontWeight(.medium)
                                 .foregroundStyle(.tertiary)
-                                .textCase(.uppercase)
-                                .tracking(0.8)
+                                .tracking(2)
                         }
                         
                         if manager.isOvertime {
@@ -659,7 +659,9 @@ struct TimerView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(manager.currentStage.color.opacity(0.08))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                .shadow(color: manager.currentStage.color.opacity(0.15), radius: 12, x: 0, y: 2)
         )
         .animation(.smoothSpring, value: manager.currentStage)
     }
@@ -715,7 +717,9 @@ struct TimerView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
+                .shadow(color: next.color.opacity(0.1), radius: 10, x: 0, y: 2)
         )
     }
     
@@ -723,36 +727,44 @@ struct TimerView: View {
     
     private var motivationalQuoteCard: some View {
         let quote = currentQuote
-        return VStack(spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: "quote.opening")
-                    .font(.system(size: 10))
-                    .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
-                Spacer()
-            }
+        return HStack(spacing: 0) {
+            // Left accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(themeManager.selectedTheme.accent.opacity(0.6))
+                .frame(width: 3)
+                .padding(.vertical, 4)
             
-            Text(quote.text)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.primary.opacity(0.8))
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .fixedSize(horizontal: false, vertical: true)
-            
-            if !quote.author.isEmpty {
-                Text("— \(quote.author)")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.tertiary)
+            VStack(spacing: 6) {
+                HStack(spacing: 6) {
+                    Image(systemName: "quote.opening")
+                        .font(.system(size: 10))
+                        .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
+                    Spacer()
+                }
+                
+                Text(quote.text)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary.opacity(0.8))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                if !quote.author.isEmpty {
+                    Text("— \(quote.author)")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .padding(.leading, 12)
+            .padding(.trailing, 14)
+            .padding(.vertical, 14)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(themeManager.selectedTheme.accent.opacity(0.06))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(themeManager.selectedTheme.accent.opacity(0.08), lineWidth: 1)
-                )
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.08), radius: 12, x: 0, y: 2)
         )
         .id("quote-\(currentQuote.text.prefix(20))")
         .transition(.opacity)
@@ -766,20 +778,31 @@ struct TimerView: View {
         let tipIndex = Int(manager.elapsedTime / 300) % max(1, stageTips.count)
         let tip = stageTips.isEmpty ? (FastingTips.tips.first ?? FastingTips.Tip(id: -1, emoji: "💧", text: "Stay hydrated during your fast.", category: .hydration)) : stageTips[tipIndex]
         
-        return HStack(spacing: 8) {
-            Image(systemName: "lightbulb.fill")
-                .font(.system(size: 12))
-                .foregroundStyle(.yellow)
-            Text(tip.text)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
+        return HStack(spacing: 0) {
+            // Left accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.yellow.opacity(0.5))
+                .frame(width: 3)
+                .padding(.vertical, 4)
+            
+            HStack(spacing: 8) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.yellow)
+                Text(tip.text)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+            .padding(.leading, 10)
+            .padding(.trailing, 10)
         }
-        .padding(10)
+        .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
         )
     }
     
@@ -917,7 +940,8 @@ struct TimerView: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
     
@@ -953,7 +977,8 @@ struct TimerView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
         )
     }
     
@@ -1166,15 +1191,18 @@ private struct PlanCard: View {
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(width: 130)
+            .padding(.vertical, 12)
+            .frame(width: 136)
+            .frame(minHeight: 50)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isSelected ? themeAccent.opacity(0.1) : Color(.systemGray6))
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(isSelected ? 0.3 : 0.15), radius: isSelected ? 10 : 6, x: 0, y: isSelected ? 4 : 2)
+                    .shadow(color: isSelected ? themeAccent.opacity(0.2) : .clear, radius: 12, x: 0, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isSelected ? themeAccent : .clear, lineWidth: 1.5)
+                    .stroke(isSelected ? themeAccent.opacity(0.6) : .white.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
             )
             .opacity(isLocked ? 0.6 : 1.0)
             .animation(.tapSpring, value: isSelected)
