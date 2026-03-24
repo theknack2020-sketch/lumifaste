@@ -5,14 +5,14 @@ import SwiftData
 /// Timestamp-based: startDate/endDate persist edilir, elapsed time Date.now'dan hesaplanır.
 @Model
 final class FastingSession {
-    var id: UUID
-    var startDate: Date
+    var id: UUID = UUID()
+    var startDate: Date = Date()
     var endDate: Date?
-    var targetEndDate: Date
-    var planType: String
-    var isCompleted: Bool
-    var actualDuration: TimeInterval
-    var stageReached: String
+    var targetEndDate: Date = Date()
+    var planType: String = ""
+    var isCompleted: Bool = false
+    var actualDuration: TimeInterval = 0
+    var stageReached: String = ""
     
     // MARK: - New fields
     
@@ -23,10 +23,10 @@ final class FastingSession {
     var note: String?
     
     /// Water intake count during fast (simple counter)
-    var waterCount: Int
+    var waterCount: Int = 0
     
     /// Total paused duration (seconds) — subtracted from elapsed for accurate tracking
-    var totalPausedDuration: TimeInterval
+    var totalPausedDuration: TimeInterval = 0
     
     init(
         startDate: Date,

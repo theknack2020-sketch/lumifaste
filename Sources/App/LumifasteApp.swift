@@ -15,13 +15,21 @@ struct LumifasteApp: App {
         do {
             let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
             let config = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
-            modelContainer = try ModelContainer(
-                for: schema,
-                migrationPlan: LumifasteMigrationPlan.self,
-                configurations: [config]
-            )
+            modelContainer = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Failed to initialize ModelContainer: \(error)")
+            print("[Lumifaste] CRITICAL: ModelContainer init failed: \(error)")
+            print("[Lumifaste] Falling back to local-only store...")
+            do {
+                let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
+                let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+                let storeURL = config.url
+                try? FileManager.default.removeItem(at: storeURL)
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
+                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
+                modelContainer = try ModelContainer(for: schema, configurations: [config])
+            } catch {
+                fatalError("[Lumifaste] Cannot create ModelContainer: \(error)")
+            }
         }
         
         // Register notification categories at launch

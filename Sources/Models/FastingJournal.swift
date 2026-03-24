@@ -40,12 +40,12 @@ enum FastingMood: String, CaseIterable, Identifiable, Codable {
 /// Data stays on device (K004).
 @Model
 final class FastingJournal {
-    var id: UUID
-    var date: Date
-    var sessionID: UUID
-    var moodRaw: String
-    var energy: Int
-    var notes: String
+    var id: UUID = UUID()
+    var date: Date = Date()
+    var sessionID: UUID = UUID()
+    var moodRaw: String = "neutral"
+    var energy: Int = 3
+    var notes: String = ""
     
     init(
         sessionID: UUID,
