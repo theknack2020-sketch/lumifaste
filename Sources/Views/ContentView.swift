@@ -41,7 +41,7 @@ struct ContentView: View {
                     .accessibilityHint("App settings and preferences")
             }
             .tint(themeManager.selectedTheme.accent)
-            .animation(.smoothSpring, value: selectedTab)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: selectedTab)
             .onAppear {
                 let tabBarAppearance = UITabBarAppearance()
                 tabBarAppearance.configureWithDefaultBackground()
@@ -51,7 +51,7 @@ struct ContentView: View {
                 UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
             }
             .onChange(of: selectedTab) { _, _ in
-                HapticManager.shared.selectionChanged()
+                HapticManager.shared.tabChanged()
             }
             .onReceive(NotificationCenter.default.publisher(for: .deepLinkReceived)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int {
@@ -145,7 +145,7 @@ private struct FastingStatusBar: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [FastingSession.self, WeightEntry.self], inMemory: true)
+        .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
 }

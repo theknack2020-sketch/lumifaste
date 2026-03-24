@@ -46,6 +46,9 @@ struct WeightTrendChart: View {
                             .fill((diff <= 0 ? Color.green : Color.red).opacity(0.12))
                     )
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Current weight")
+                .accessibilityValue(String(format: "%.1f %@, %@ %.1f since first entry", latest.weight, unit, diff <= 0 ? "down" : "up", abs(diff)))
             }
             
             // Chart
@@ -96,6 +99,21 @@ struct WeightTrendChart: View {
                         .font(.system(size: 10))
                 }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Weight trend chart")
+            .accessibilityValue(weightChartAccessibilitySummary)
         }
+    }
+    
+    private var weightChartAccessibilitySummary: String {
+        guard displayEntries.count > 1,
+              let first = displayEntries.first,
+              let last = displayEntries.last else {
+            return "\(displayEntries.count) entries"
+        }
+        let diff = last.weight - first.weight
+        return String(format: "%d entries from %.1f to %.1f %@, %@ %.1f overall",
+                      displayEntries.count, first.weight, last.weight, unit,
+                      diff <= 0 ? "down" : "up", abs(diff))
     }
 }

@@ -51,7 +51,7 @@ struct OnboardingView: View {
                 .slideIn(from: .trailing, delay: 0.2)
             
             Text("Welcome to Lumifaste")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .slideIn(from: .trailing, delay: 0.35)
             
             Text("Your honest fasting companion.\nNo ads. No tricks. Just results.")
@@ -83,7 +83,7 @@ struct OnboardingView: View {
         .padding(24)
         .background(
             LinearGradient(
-                colors: [Color.green.opacity(0.08), Color.teal.opacity(0.05), Color(.systemBackground)],
+                colors: [themeManager.selectedTheme.accent.opacity(0.10), themeManager.selectedTheme.gradientEnd.opacity(0.06), Color(.systemBackground)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -98,7 +98,7 @@ struct OnboardingView: View {
             Spacer()
             
             Text("What's your goal?")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
             
             Text("We'll recommend the best plan for you")
                 .font(.system(size: 15))
@@ -108,7 +108,8 @@ struct OnboardingView: View {
                 ForEach(Array(FastingGoal.allCases.enumerated()), id: \.element.id) { index, goal in
                     GoalCard(
                         goal: goal,
-                        isSelected: selectedGoal == goal
+                        isSelected: selectedGoal == goal,
+                        accentColor: themeManager.selectedTheme.accent
                     ) {
                         HapticManager.shared.selectionChanged()
                         withAnimation(.tapSpring) {
@@ -130,7 +131,7 @@ struct OnboardingView: View {
         .padding(24)
         .background(
             LinearGradient(
-                colors: [Color.orange.opacity(0.07), Color.yellow.opacity(0.05), Color(.systemBackground)],
+                colors: [themeManager.selectedTheme.gradientStart.opacity(0.08), themeManager.selectedTheme.accent.opacity(0.05), Color(.systemBackground)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -146,7 +147,7 @@ struct OnboardingView: View {
                 .frame(height: 20)
             
             Text("Choose your plan")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
             
             Text("You can change this anytime — no commitment")
                 .font(.system(size: 15))
@@ -158,7 +159,8 @@ struct OnboardingView: View {
                         PlanCard(
                             plan: plan,
                             isSelected: selectedPlan == plan,
-                            isRecommended: recommendedPlan == plan
+                            isRecommended: recommendedPlan == plan,
+                            accentColor: themeManager.selectedTheme.accent
                         ) {
                             HapticManager.shared.selectionChanged()
                             withAnimation(.tapSpring) {
@@ -178,7 +180,7 @@ struct OnboardingView: View {
         .padding(24)
         .background(
             LinearGradient(
-                colors: [Color.blue.opacity(0.06), Color.purple.opacity(0.04), Color(.systemBackground)],
+                colors: [themeManager.selectedTheme.gradientEnd.opacity(0.07), themeManager.selectedTheme.gradientStart.opacity(0.04), Color(.systemBackground)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -204,7 +206,7 @@ struct OnboardingView: View {
             .slideIn(from: .trailing, delay: 0.2)
             
             Text("Stay on Track")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 30, weight: .bold, design: .rounded))
                 .slideIn(from: .trailing, delay: 0.35)
             
             Text("Get notified when you hit milestones,\nenter new fasting stages, and reach your goal")
@@ -275,7 +277,7 @@ struct OnboardingView: View {
         .padding(24)
         .background(
             LinearGradient(
-                colors: [Color.cyan.opacity(0.06), Color.blue.opacity(0.04), Color(.systemBackground)],
+                colors: [themeManager.selectedTheme.accent.opacity(0.07), themeManager.selectedTheme.gradientEnd.opacity(0.04), Color(.systemBackground)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -306,7 +308,7 @@ struct OnboardingView: View {
                 .slideIn(from: .trailing, delay: 0.2)
             
             Text("You're all set!")
-                .font(.system(size: 28, weight: .bold))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
                 .slideIn(from: .trailing, delay: 0.35)
             
             VStack(spacing: 8) {
@@ -347,7 +349,7 @@ struct OnboardingView: View {
         .padding(24)
         .background(
             LinearGradient(
-                colors: [Color.green.opacity(0.08), Color.mint.opacity(0.05), Color(.systemBackground)],
+                colors: [themeManager.selectedTheme.gradientStart.opacity(0.09), themeManager.selectedTheme.accent.opacity(0.05), Color(.systemBackground)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -370,16 +372,17 @@ struct OnboardingView: View {
     private func nextButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: 17, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 54)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.accentColor)
+                        .fill(themeManager.selectedTheme.accentGradient)
                 )
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.35), radius: 12, y: 5)
         }
-        .buttonStyle(.bounce)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -420,6 +423,7 @@ enum FastingGoal: String, CaseIterable, Identifiable {
 private struct GoalCard: View {
     let goal: FastingGoal
     let isSelected: Bool
+    let accentColor: Color
     let action: () -> Void
     
     var body: some View {
@@ -428,7 +432,7 @@ private struct GoalCard: View {
                 Image(systemName: goal.icon)
                     .font(.system(size: 20))
                     .scaleEffect(x: goal.icon == "leaf.fill" ? -1 : 1)
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? accentColor : .secondary)
                     .frame(width: 32)
                 
                 VStack(alignment: .leading, spacing: 2) {
@@ -443,21 +447,22 @@ private struct GoalCard: View {
                 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? accentColor : .secondary)
                     .animation(.tapSpring, value: isSelected)
             }
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color(.secondarySystemBackground))
+                    .shadow(color: isSelected ? accentColor.opacity(0.15) : Color.black.opacity(0.04), radius: isSelected ? 8 : 4, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
+                    .stroke(isSelected ? accentColor : .clear, lineWidth: 1.5)
             )
             .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.bounce)
+        .buttonStyle(.pressable)
     }
 }
 
@@ -467,6 +472,7 @@ private struct PlanCard: View {
     let plan: FastingPlan
     let isSelected: Bool
     let isRecommended: Bool
+    let accentColor: Color
     let action: () -> Void
     
     var body: some View {
@@ -483,7 +489,7 @@ private struct PlanCard: View {
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(Capsule().fill(Color.accentColor))
+                                .background(Capsule().fill(accentColor))
                         }
                     }
                     
@@ -495,7 +501,7 @@ private struct PlanCard: View {
                     HStack(spacing: 3) {
                         ForEach(1...5, id: \.self) { level in
                             Circle()
-                                .fill(level <= plan.difficulty ? Color.accentColor : Color(.systemGray4))
+                                .fill(level <= plan.difficulty ? accentColor : Color(.systemGray4))
                                 .frame(width: 6, height: 6)
                         }
                         Text("Difficulty")
@@ -508,21 +514,22 @@ private struct PlanCard: View {
                 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 24))
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
+                    .foregroundStyle(isSelected ? accentColor : .secondary)
                     .animation(.tapSpring, value: isSelected)
             }
             .padding(14)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color(.secondarySystemBackground))
+                    .shadow(color: isSelected ? accentColor.opacity(0.15) : Color.black.opacity(0.04), radius: isSelected ? 8 : 4, y: 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
+                    .stroke(isSelected ? accentColor : .clear, lineWidth: 1.5)
             )
             .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.bounce)
+        .buttonStyle(.pressable)
     }
 }
 

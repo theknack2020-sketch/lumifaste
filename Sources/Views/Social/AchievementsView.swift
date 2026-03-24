@@ -7,6 +7,7 @@ import AudioToolbox
 /// Unlock animation: scale + opacity spring.
 struct AchievementsView: View {
     let achievementManager: AchievementManager
+    @Environment(ThemeManager.self) private var themeManager
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var animatingBadge: Achievement?
@@ -31,7 +32,7 @@ struct AchievementsView: View {
                     VStack(spacing: 14) {
                         Image(systemName: "star.circle")
                             .font(.system(size: 36, weight: .light))
-                            .foregroundStyle(.purple.opacity(0.6))
+                            .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
                         
                         Text("Your First Badge Awaits")
                             .font(.system(size: 17, weight: .semibold))
@@ -45,7 +46,7 @@ struct AchievementsView: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(Color.purple.opacity(0.06))
+                            .fill(themeManager.selectedTheme.accent.opacity(0.06))
                     )
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.15)
@@ -104,7 +105,8 @@ struct AchievementsView: View {
     // MARK: - Progress Header
     
     private var progressHeader: some View {
-        VStack(spacing: 12) {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(spacing: 12) {
             ZStack {
                 Circle()
                     .stroke(Color(.systemGray4), lineWidth: 8)
@@ -112,7 +114,7 @@ struct AchievementsView: View {
                 
                 Circle()
                     .trim(from: 0, to: achievementManager.completionPercent / 100)
-                    .stroke(Color.purple, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .frame(width: 80, height: 80)
                     .rotationEffect(.degrees(-90))
                     .animation(.progressSpring, value: achievementManager.completionPercent)
@@ -138,11 +140,12 @@ struct AchievementsView: View {
     // MARK: - Referral Section
     
     private var referralSection: some View {
-        VStack(spacing: 12) {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
                     .font(.system(size: 20))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(accent)
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tell a friend about Lumifaste")
@@ -170,7 +173,7 @@ struct AchievementsView: View {
                 .frame(height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.purple)
+                        .fill(accent)
                 )
             }
             .buttonStyle(.bounce)
@@ -204,6 +207,7 @@ struct AchievementBadge: View {
                 Circle()
                     .fill(isEarned ? achievement.color.opacity(0.15) : Color(.systemGray5))
                     .frame(width: 56, height: 56)
+                    .shadow(color: isEarned ? achievement.color.opacity(0.25) : .clear, radius: 6, y: 2)
                 
                 Image(systemName: achievement.icon)
                     .font(.system(size: 24, weight: .semibold))
@@ -338,5 +342,6 @@ struct ActivityShareSheet: UIViewControllerRepresentable {
     NavigationStack {
         AchievementsView(achievementManager: AchievementManager())
             .modelContainer(for: FastingSession.self, inMemory: true)
+            .environment(ThemeManager())
     }
 }

@@ -1,7 +1,6 @@
 import SwiftUI
 import SwiftData
 import UIKit
-import AudioToolbox
 
 /// Ana timer ekranı — oruç başlat/bitir, circular progress, stage tracking.
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
@@ -244,8 +243,8 @@ struct TimerView: View {
                             .frame(height: 32)
                     }
                     .animation(.smoothSpring, value: manager.isActive)
-                    .animation(.smoothSpring, value: manager.isPaused)
-                    .animation(.smoothSpring, value: manager.currentStage)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: manager.isPaused)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: manager.currentStage)
                 }
                 .background(stageGradient.ignoresSafeArea())
             }
@@ -305,8 +304,7 @@ struct TimerView: View {
                     checkSoftPaywallTrigger()
                     let newlyUnlocked = achievementManager.evaluate(sessions: allSessions)
                     if let first = newlyUnlocked.first {
-                        // Sound 1025: celebration chime on achievement unlock
-                        AudioServicesPlaySystemSound(1025)
+                        HapticManager.shared.achievementUnlocked()
                         if Achievement.streakMilestones.contains(first) {
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 streakShareImage = ShareImageRenderer.renderStreakCard(
@@ -614,8 +612,8 @@ struct TimerView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
-            .animation(.smoothSpring, value: manager.isActive)
-            .animation(.smoothSpring, value: manager.isPaused)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: manager.isActive)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: manager.isPaused)
         }
         .aspectRatio(1, contentMode: .fit)
     }
@@ -791,7 +789,7 @@ struct TimerView: View {
         HStack(spacing: 0) {
             // Water counter
             Button {
-                HapticManager.shared.lightTap()
+                HapticManager.shared.waterLogged()
                 manager.logWater()
             } label: {
                 VStack(spacing: 4) {
@@ -818,8 +816,8 @@ struct TimerView: View {
             
             // Pause/Resume
             Button {
-                HapticManager.shared.mediumTap()
-                withAnimation(.smoothSpring) {
+                HapticManager.shared.pauseResume()
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                     if manager.isPaused {
                         manager.resumeFast()
                     } else {
@@ -998,7 +996,7 @@ struct TimerView: View {
                 .shadow(color: buttonColor.opacity(0.2), radius: 6, y: 2)
                 .animation(.smoothSpring, value: manager.isActive)
             }
-            .buttonStyle(.bounce)
+            .buttonStyle(.pressable)
             .breathingScale(when: !manager.isActive, maxScale: 1.05, duration: 2.0)
             .padding(.horizontal, 20)
             
@@ -1052,11 +1050,11 @@ struct TimerView: View {
                                 HapticManager.shared.warning()
                                 showPaywall = true
                             } else if plan == .custom {
-                                HapticManager.shared.selectionChanged()
+                                HapticManager.shared.planSelected()
                                 showCustomPlanSheet = true
                             } else {
-                                HapticManager.shared.selectionChanged()
-                                withAnimation(.tapSpring) {
+                                HapticManager.shared.planSelected()
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                                     manager.setPlan(plan)
                                 }
                             }

@@ -21,6 +21,8 @@ struct FastCompleteView: View {
     @State private var errorMessage: String?
     @State private var celebrationScale: CGFloat = 0.3
     @State private var celebrationOpacity: Double = 0
+    @State private var contentAppeared = false
+    @State private var showJournal = false
     
     private let moods = ["😴", "😐", "😊", "🔥"]
     private let moodLabels = ["Tired", "Okay", "Good", "Energized"]
@@ -63,6 +65,10 @@ struct FastCompleteView: View {
                         shareButton
                             .entranceAnimation(delay: 0.38)
                         
+                        // Journal entry button
+                        journalButton
+                            .entranceAnimation(delay: 0.42)
+                        
                         // Premium breakdown
                         if isPremium {
                             premiumBreakdown
@@ -88,12 +94,14 @@ struct FastCompleteView: View {
                                         .fill(Color.accentColor)
                                 )
                         }
-                        .buttonStyle(.bounce)
+                        .buttonStyle(.pressable)
                         .entranceAnimation(delay: 0.5)
                         .accessibilityLabel("Done")
                         .accessibilityHint("Dismiss the fast completion report")
                     }
                     .padding(24)
+                    .scaleEffect(contentAppeared ? 1.0 : 0.92)
+                    .opacity(contentAppeared ? 1.0 : 0)
                 }
                 
                 // Confetti overlay
@@ -115,6 +123,9 @@ struct FastCompleteView: View {
             }
             .onAppear {
                 HapticManager.shared.fastCompleted()
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+                    contentAppeared = true
+                }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showConfetti = true
                 }
@@ -126,6 +137,9 @@ struct FastCompleteView: View {
                         caption: "I just completed a \(formatDuration(session.actualDuration)) fast with Lumifaste! 🍃 #Lumifaste #IntermittentFasting"
                     )
                 }
+            }
+            .sheet(isPresented: $showJournal) {
+                JournalEntryView(session: session)
             }
             .alert("Error", isPresented: $showError) {
                 Button("OK") {}
@@ -139,7 +153,7 @@ struct FastCompleteView: View {
     
     private var shareButton: some View {
         Button {
-            HapticManager.shared.lightTap()
+            HapticManager.shared.shareAction()
             shareImage = ShareImageRenderer.renderFastCard(
                 duration: session.actualDuration,
                 stage: session.stage,
@@ -165,9 +179,34 @@ struct FastCompleteView: View {
             )
             .shadow(color: Color.accentColor.opacity(0.2), radius: 8, y: 3)
         }
-        .buttonStyle(.bounce)
+        .buttonStyle(.pressable)
         .accessibilityLabel("Share my fast results")
         .accessibilityHint("Creates a shareable image card of your fasting results")
+    }
+    
+    // MARK: - Journal Entry Button
+    
+    private var journalButton: some View {
+        Button {
+            HapticManager.shared.lightTap()
+            showJournal = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "book.closed.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                Text("Add Journal Entry")
+                    .font(.system(size: 15, weight: .semibold))
+            }
+            .foregroundStyle(Color.accentColor)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.accentColor.opacity(0.12))
+            )
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel("Add a journal entry about this fast")
     }
     
     // MARK: - Save mood and note to session
@@ -289,8 +328,8 @@ struct FastCompleteView: View {
             HStack(spacing: 16) {
                 ForEach(Array(zip(moods, moodLabels)), id: \.0) { emoji, label in
                     Button {
-                        HapticManager.shared.selectionChanged()
-                        withAnimation(.tapSpring) {
+                        HapticManager.shared.moodSelected()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                             selectedMood = emoji
                         }
                     } label: {
@@ -433,7 +472,7 @@ struct FastCompleteView: View {
             }
             .accessibilityLabel("Try Premium Free")
             .accessibilityHint("Unlock detailed stage breakdown and fasting reports")
-            .buttonStyle(.bounce)
+            .buttonStyle(.pressable)
         }
         .padding(16)
         .background(

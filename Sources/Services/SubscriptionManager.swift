@@ -1,5 +1,6 @@
 import Foundation
 import StoreKit
+import AudioToolbox
 import OSLog
 
 private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "StoreKit")
@@ -21,6 +22,24 @@ final class SubscriptionManager {
         case success
         case noPurchasesFound
         case failed(String)
+        
+        /// User-facing message for the restore result
+        var message: String {
+            switch self {
+            case .success:
+                "Your Premium subscription has been restored! All features are now unlocked."
+            case .noPurchasesFound:
+                "No previous purchases found for this Apple ID. If you purchased with a different account, sign in with that account and try again."
+            case .failed(let reason):
+                reason
+            }
+        }
+        
+        /// Whether the result is considered successful
+        var isSuccess: Bool {
+            if case .success = self { return true }
+            return false
+        }
     }
     
     private let productIDs: Set<String> = [
@@ -30,6 +49,39 @@ final class SubscriptionManager {
     
     @ObservationIgnored
     nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
+    
+    // MARK: - Sound Preference
+    
+    /// Whether in-app sounds are enabled (celebration chimes, purchase confirmations etc.)
+    /// Reads from UserDefaults "lf_sounds_disabled" — false by default (sounds ON).
+    /// HapticManager also reads this key. SettingsView toggles it.
+    static var isSoundEnabled: Bool {
+        get {
+            !UserDefaults.standard.bool(forKey: "lf_sounds_disabled")
+        }
+        set {
+            UserDefaults.standard.set(!newValue, forKey: "lf_sounds_disabled")
+        }
+    }
+    
+    /// Play celebration chime (sound 1025) if sound is enabled.
+    /// Centralized so all purchase/achievement celebrations respect the toggle.
+    static func playCelebrationSound() {
+        guard isSoundEnabled else { return }
+        AudioServicesPlaySystemSound(1025)
+    }
+    
+    /// Play subtle tick/tock sound (sound 1057) if sound is enabled.
+    static func playTickSound() {
+        guard isSoundEnabled else { return }
+        AudioServicesPlaySystemSound(1057)
+    }
+    
+    /// Play subtle key-press tone (sound 1113) if sound is enabled.
+    static func playStartSound() {
+        guard isSoundEnabled else { return }
+        AudioServicesPlaySystemSound(1113)
+    }
     
     init() {
         transactionListener = listenForTransactions()
@@ -216,7 +268,9 @@ final class SubscriptionManager {
     
     // MARK: - Restore
     
-    func restorePurchases() async {
+    /// Restore purchases and return the result for callers that need synchronous handling.
+    @discardableResult
+    func restorePurchases() async -> RestoreResult {
         isRestoring = true
         restoreResult = nil
         defer { isRestoring = false }
@@ -224,11 +278,34 @@ final class SubscriptionManager {
         do {
             try await AppStore.sync()
             await checkSubscriptionStatus()
-            restoreResult = isSubscribed ? .success : .noPurchasesFound
+            let result: RestoreResult = isSubscribed ? .success : .noPurchasesFound
+            restoreResult = result
+            
+            if result.isSuccess {
+                logger.info("Restore successful — subscription active")
+            } else {
+                logger.info("Restore completed — no active subscription found")
+            }
+            
+            return result
         } catch {
-            restoreResult = .failed("Could not connect to the App Store. Please try again later.")
+            let result = RestoreResult.failed("Could not connect to the App Store. Please check your internet connection and try again.")
+            restoreResult = result
             logger.error("Restore failed: \(error.localizedDescription)")
+            return result
         }
+    }
+    
+    // MARK: - Subscription Info
+    
+    /// Returns a formatted string describing the current subscription period price, e.g. "$3.99/mo"
+    var currentPriceDescription: String? {
+        guard let monthly = monthlyProduct, let yearly = yearlyProduct else { return nil }
+        if isSubscribed {
+            // We don't know which one they subscribed to from here, show both
+            return "\(monthly.displayPrice)/mo or \(yearly.displayPrice)/yr"
+        }
+        return nil
     }
     
     // MARK: - Transaction Listener

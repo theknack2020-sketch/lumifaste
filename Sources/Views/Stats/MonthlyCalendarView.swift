@@ -57,12 +57,15 @@ struct MonthlyCalendarView: View {
     var body: some View {
         let data = calendarData
         let hasAnyFasts = data.contains { $0.state == .completed }
+        let completedCount = data.filter { $0.state == .completed }.count
+        let missedCount = data.filter { $0.state == .missed }.count
         
         VStack(spacing: 6) {
             // Month header
             Text(Date.now.formatted(.dateTime.month(.wide).year()))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.secondary)
+                .accessibilityAddTraits(.isHeader)
             
             // Weekday headers
             LazyVGrid(columns: columns, spacing: 4) {
@@ -71,6 +74,7 @@ struct MonthlyCalendarView: View {
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.tertiary)
                         .frame(height: 20)
+                        .accessibilityHidden(true)
                 }
             }
             
@@ -80,6 +84,9 @@ struct MonthlyCalendarView: View {
                     calendarCell(day: day)
                 }
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Monthly fasting calendar")
+            .accessibilityValue(calendarAccessibilitySummary(completedCount: completedCount, missedCount: missedCount))
             
             // Empty month message or legend
             if !hasAnyFasts {
@@ -92,6 +99,8 @@ struct MonthlyCalendarView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.top, 8)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("No fasts this month yet. Start fasting to fill your calendar.")
             } else {
                 // Legend
                 HStack(spacing: 16) {
@@ -99,8 +108,16 @@ struct MonthlyCalendarView: View {
                     legendItem(color: Color(.systemGray5), label: "No fast")
                 }
                 .padding(.top, 6)
+                .accessibilityHidden(true)
             }
         }
+    }
+    
+    private func calendarAccessibilitySummary(completedCount: Int, missedCount: Int) -> String {
+        if completedCount == 0 {
+            return "No fasts completed this month"
+        }
+        return "\(completedCount) days fasted, \(missedCount) days missed this month"
     }
     
     @ViewBuilder

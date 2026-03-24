@@ -13,6 +13,7 @@ struct SettingsView: View {
     
     @AppStorage("lf_appearance_mode") private var appearanceMode: String = AppearanceMode.system.rawValue
     @AppStorage("lf_weight_unit") private var useMetric = true
+    @AppStorage("lf_sounds_disabled") private var soundsDisabled = false
     
     @State private var showPaywall = false
     @State private var showRestoreAlert = false
@@ -23,6 +24,7 @@ struct SettingsView: View {
     @State private var showError = false
     @State private var errorMessage: String?
     @State private var showResetConfirm = false
+    @State private var challengeManager = ChallengeManager()
     
     private var selectedAppearance: AppearanceMode {
         get { AppearanceMode(rawValue: appearanceMode) ?? .system }
@@ -39,8 +41,10 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 premiumSection
+                activitySection
                 themeSection
                 appearanceSection
+                soundsSection
                 unitsSection
                 dataSection
                 shareSection
@@ -101,6 +105,40 @@ struct SettingsView: View {
             } message: {
                 Text("This will permanently delete all your fasting sessions and weight data. This cannot be undone.")
             }
+            .onAppear {
+                challengeManager.evaluate(sessions: sessions)
+            }
+        }
+    }
+    
+    // MARK: - Activity Section (Challenges & Achievements)
+    
+    private var activitySection: some View {
+        Section {
+            NavigationLink {
+                ChallengesView(challengeManager: challengeManager)
+            } label: {
+                HStack {
+                    Label("Challenges", systemImage: "flag.checkered")
+                    Spacer()
+                    if challengeManager.completedCount > 0 {
+                        Text("\(challengeManager.completedCount)/\(challengeManager.totalCount)")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .accessibilityHint("View fasting challenges and your progress")
+            
+            NavigationLink {
+                AchievementsView(achievementManager: AchievementManager())
+            } label: {
+                Label("Achievements", systemImage: "trophy")
+            }
+            .accessibilityHint("View your earned badges and milestones")
+        } header: {
+            Text("Activity")
         }
     }
     
@@ -262,6 +300,30 @@ struct SettingsView: View {
         }
     }
     
+    // MARK: - Sounds & Haptics Section
+    
+    private var soundsSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { !soundsDisabled },
+                set: { newValue in
+                    soundsDisabled = !newValue
+                    if newValue {
+                        HapticManager.shared.lightTap()
+                    }
+                }
+            )) {
+                Label("Sound & Haptics", systemImage: "speaker.wave.2")
+            }
+            .accessibilityLabel("Sound and haptics")
+            .accessibilityHint(soundsDisabled ? "Sounds are off. Toggle to turn on." : "Sounds are on. Toggle to turn off.")
+        } header: {
+            Text("Sound & Haptics")
+        } footer: {
+            Text("When disabled, system sounds are muted. Haptic feedback follows your device settings.")
+        }
+    }
+    
     // MARK: - Units Section
     
     private var unitsSection: some View {
@@ -284,7 +346,7 @@ struct SettingsView: View {
     private var dataSection: some View {
         Section {
             Button {
-                HapticManager.shared.lightTap()
+                HapticManager.shared.exportCompleted()
                 exportData()
             } label: {
                 Label("Export Fasting History", systemImage: "square.and.arrow.up")
@@ -316,11 +378,11 @@ struct SettingsView: View {
             
             Button {
                 HapticManager.shared.lightTap()
-                rateApp()
+                ReviewRequestManager.requestReviewIfAppropriate()
             } label: {
                 Label("Rate Lumifaste", systemImage: "star")
             }
-            .accessibilityHint("Opens the App Store to rate this app")
+            .accessibilityHint("Rate this app in the App Store")
         } header: {
             Text("Spread the Word")
         }
@@ -519,7 +581,7 @@ struct HealthDisclaimerView: View {
 
 #Preview {
     SettingsView()
-        .modelContainer(for: [FastingSession.self, WeightEntry.self], inMemory: true)
+        .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
 }

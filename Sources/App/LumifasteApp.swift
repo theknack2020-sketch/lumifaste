@@ -13,7 +13,7 @@ struct LumifasteApp: App {
     
     init() {
         do {
-            let schema = Schema([FastingSession.self, WeightEntry.self])
+            let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
             let config = ModelConfiguration(schema: schema)
             modelContainer = try ModelContainer(
                 for: schema,

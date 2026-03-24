@@ -174,6 +174,9 @@ final class FastingManager {
             NotificationManager.shared.cancelAllFastingNotifications()
         }
         
+        // Record completion for paywall trigger and review request tracking
+        FastingManager.recordFastCompletion()
+        
         // State temizle
         clearState()
         
@@ -310,5 +313,63 @@ final class FastingManager {
         }
         let daysSinceLast = Date.now.timeIntervalSince(lastFast.startDate) / 86400
         return daysSinceLast >= 3
+    }
+    
+    // MARK: - Soft Paywall Trigger (#14)
+    
+    /// Key for total completed fasts counter (persisted across sessions)
+    private static let totalCompletedFastsKey = "lf_total_completed_fasts"
+    
+    /// Key for whether soft paywall has been triggered at least once
+    private static let softPaywallTriggeredKey = "lf_soft_paywall_triggered"
+    
+    /// Number of completed fasts needed to trigger soft paywall
+    static let softPaywallThreshold = 3
+    
+    /// Total number of completed fasts (persisted, monotonically increasing)
+    static var totalCompletedFasts: Int {
+        UserDefaults.standard.integer(forKey: totalCompletedFastsKey)
+    }
+    
+    /// Record a completed fast — updates counter and checks paywall eligibility.
+    /// Called from endFast. Returns true if this completion should trigger a soft paywall.
+    @discardableResult
+    static func recordFastCompletion() -> Bool {
+        let newCount = totalCompletedFasts + 1
+        UserDefaults.standard.set(newCount, forKey: totalCompletedFastsKey)
+        logger.info("Total completed fasts: \(newCount)")
+        
+        // Trigger soft paywall at threshold and at multiples of 10 after
+        if newCount == softPaywallThreshold || (newCount > softPaywallThreshold && newCount % 10 == 0) {
+            if !UserDefaults.standard.bool(forKey: softPaywallTriggeredKey) || newCount % 10 == 0 {
+                logger.info("Soft paywall trigger eligible at \(newCount) fasts")
+                return true
+            }
+        }
+        return false
+    }
+    
+    /// Mark that soft paywall was shown (prevents re-showing until next trigger point)
+    static func markSoftPaywallShown() {
+        UserDefaults.standard.set(true, forKey: softPaywallTriggeredKey)
+        logger.info("Soft paywall marked as shown")
+    }
+    
+    /// Whether conditions are met to show soft paywall (non-premium, threshold reached, not yet shown this cycle)
+    static func shouldShowSoftPaywall(isPremium: Bool) -> Bool {
+        guard !isPremium else { return false }
+        let count = totalCompletedFasts
+        guard count >= softPaywallThreshold else { return false }
+        // Show at threshold, or at every 10 fasts after
+        if count == softPaywallThreshold {
+            return !UserDefaults.standard.bool(forKey: softPaywallTriggeredKey)
+        }
+        return count % 10 == 0
+    }
+    
+    /// Reset soft paywall trigger state (for testing or after subscription change)
+    static func resetSoftPaywallState() {
+        UserDefaults.standard.removeObject(forKey: softPaywallTriggeredKey)
+        logger.info("Soft paywall state reset")
     }
 }

@@ -83,9 +83,13 @@ struct TimeAnalysisView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Usual fasting start time")
+                .accessibilityValue(peakStartHour)
                 
                 Divider()
                     .frame(height: 40)
+                    .accessibilityHidden(true)
                 
                 VStack(spacing: 4) {
                     Image(systemName: "sun.max.fill")
@@ -98,6 +102,9 @@ struct TimeAnalysisView: View {
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Usual fasting end time")
+                .accessibilityValue(peakEndHour)
             }
             
             // Chart
@@ -141,6 +148,9 @@ struct TimeAnalysisView: View {
                     }
                 }
                 .frame(height: 140)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Time of day distribution chart")
+                .accessibilityValue("Shows when you typically start and end fasts. Most common start: \(peakStartHour), most common end: \(peakEndHour)")
             }
         }
     }

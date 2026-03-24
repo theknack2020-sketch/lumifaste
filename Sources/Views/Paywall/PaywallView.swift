@@ -269,7 +269,7 @@ struct PaywallView: View {
                 .shadow(color: themeManager.selectedTheme.accent.opacity(0.45), radius: 16, y: 6)
                 .shadow(color: themeManager.selectedTheme.accent.opacity(0.2), radius: 6, y: 2)
             }
-            .buttonStyle(.bounce)
+            .buttonStyle(.pressable)
             .disabled(selectedProduct == nil || subscriptionManager.isPurchasing)
             
             // Trust indicators
@@ -442,7 +442,7 @@ private struct ProductCard: View {
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(Color(.secondarySystemBackground))
-                    .shadow(color: isSelected ? accentColor.opacity(0.2) : Color.black.opacity(0.06), radius: isSelected ? 12 : 6, y: isSelected ? 4 : 2)
+                    .shadow(color: isSelected ? accentColor.opacity(0.25) : Color.black.opacity(0.06), radius: isSelected ? 14 : 6, y: isSelected ? 5 : 2)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -450,7 +450,7 @@ private struct ProductCard: View {
             )
             .animation(.tapSpring, value: isSelected)
         }
-        .buttonStyle(.bounce)
+        .buttonStyle(.pressable)
     }
 }
 

@@ -41,6 +41,8 @@ struct WeightLogView: View {
                             .keyboardType(.decimalPad)
                             .focused($isWeightFocused)
                             .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .accessibilityLabel("Weight value")
+                            .accessibilityHint("Enter your weight in \(unit)")
                         
                         // Unit picker
                         Picker("Unit", selection: $useMetric) {
@@ -49,12 +51,16 @@ struct WeightLogView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 100)
+                        .accessibilityLabel("Weight unit")
                     }
                     
                     DatePicker("Date", selection: $logDate, displayedComponents: .date)
+                        .accessibilityLabel("Entry date")
                     
                     TextField("Note (optional)", text: $noteText)
                         .font(.system(size: 15))
+                        .accessibilityLabel("Note")
+                        .accessibilityHint("Optional note for this weight entry")
                 } header: {
                     Text("Log Weight")
                 } footer: {
@@ -86,6 +92,8 @@ struct WeightLogView: View {
                         }
                     }
                     .disabled(parsedWeight == nil)
+                    .accessibilityLabel("Save weight entry")
+                    .accessibilityHint(parsedWeight == nil ? "Enter a valid weight first" : "Saves \(weightText) \(unit)")
                     
                     if let error = validationError {
                         Text(error)
@@ -118,6 +126,8 @@ struct WeightLogView: View {
                                     .foregroundStyle(.secondary)
                                     .multilineTextAlignment(.center)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("No entries yet. Track your weight to see trends and how fasting affects your body.")
                             
                             Button {
                                 isWeightFocused = true
@@ -130,6 +140,7 @@ struct WeightLogView: View {
                                 }
                                 .foregroundStyle(.pink)
                             }
+                            .accessibilityLabel("Add your first weight entry")
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 20)
@@ -154,6 +165,9 @@ struct WeightLogView: View {
                                     .font(.system(size: 16, weight: .semibold, design: .rounded))
                                     .monospacedDigit()
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(entry.date.formatted(.dateTime.month(.abbreviated).day()))
+                            .accessibilityValue(String(format: "%.1f %@", useMetric ? entry.weightKg : entry.weightLbs, unit))
                         }
                         .onDelete { indexSet in
                             for index in indexSet {
@@ -176,6 +190,8 @@ struct WeightLogView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .accessibilityLabel("Done")
+                        .accessibilityHint("Closes the weight log sheet")
                 }
             }
             .alert("Error", isPresented: $showError) {

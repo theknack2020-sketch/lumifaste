@@ -310,6 +310,9 @@ struct FastDetailView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Note")
+        .accessibilityValue(note)
     }
     
     // MARK: - Helpers

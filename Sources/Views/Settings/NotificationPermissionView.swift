@@ -104,12 +104,16 @@ struct NotificationPermissionView: View {
                                     )
                             )
                     }
+                    .accessibilityLabel("Enable notifications")
+                    .accessibilityHint("Requests permission to send fasting alerts and reminders")
                     
                     Button("Skip for Now") {
                         onComplete()
                     }
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
+                    .accessibilityLabel("Skip for now")
+                    .accessibilityHint("Continue without enabling notifications. You can enable them later in Settings.")
                 }
             }
         }

@@ -57,7 +57,7 @@ struct CircularProgressView: View {
                     ringColor.opacity(0.12),
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
-                .animation(.smoothSpring, value: stage)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             
             // Glow shadow layer (drawn behind progress ring) — intensified
             if progress > 0.01 {
@@ -70,8 +70,8 @@ struct CircularProgressView: View {
                     .rotationEffect(.degrees(-90))
                     .blur(radius: 14)
                     .opacity(0.45)
-                    .animation(.progressSpring, value: progress)
-                    .animation(.smoothSpring, value: stage)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             }
             
             // Progress ring — gradient stroke with glow
@@ -93,8 +93,8 @@ struct CircularProgressView: View {
                 .rotationEffect(.degrees(-90))
                 .shadow(color: ringColor.opacity(0.6), radius: 10, x: 0, y: 0)
                 .shadow(color: ringColor.opacity(0.3), radius: 20, x: 0, y: 0)
-                .animation(.progressSpring, value: progress)
-                .animation(.smoothSpring, value: stage)
+                .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             
             // Bright dot at progress tip
             if progress > 0.01 {
@@ -114,8 +114,8 @@ struct CircularProgressView: View {
                         .position(x: geo.size.width / 2, y: lineWidth / 2)
                         .rotationEffect(.degrees(360 * min(progress, 1.0) - 90), anchor: .center)
                 }
-                .animation(.progressSpring, value: progress)
-                .animation(.smoothSpring, value: stage)
+                .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             }
             
             // Inner decorative ring (thin)

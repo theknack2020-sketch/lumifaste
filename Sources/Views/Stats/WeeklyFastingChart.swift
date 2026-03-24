@@ -67,11 +67,24 @@ struct WeeklyFastingChart: View {
                     .font(.system(size: 11, weight: .medium))
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Weekly fasting chart")
+        .accessibilityValue(weeklyAccessibilitySummary)
         .onAppear {
             withAnimation(.spring(duration: 0.8, bounce: 0.15).delay(0.2)) {
                 animateChart = true
             }
         }
+    }
+    
+    /// Accessibility summary for VoiceOver — reads total hours and active days
+    private var weeklyAccessibilitySummary: String {
+        let totalHours = weekData.reduce(0.0) { $0 + $1.hours }
+        let activeDays = weekData.filter { $0.hours > 0 }.count
+        if totalHours == 0 {
+            return "No fasting this week"
+        }
+        return String(format: "%.1f total hours fasted across %d day%@", totalHours, activeDays, activeDays == 1 ? "" : "s")
     }
 }
 

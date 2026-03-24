@@ -179,6 +179,9 @@ struct HistoryView: View {
             .navigationTitle("History")
             .toolbar { historyToolbar }
             .searchable(text: $searchText, prompt: "Search fasts...")
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: completionFilter)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: sortOption)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8), value: planFilter)
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
@@ -300,8 +303,8 @@ struct HistoryView: View {
     private var deleteAlertButtons: some View {
         Button("Delete", role: .destructive) {
             if let target = deleteTarget {
-                HapticManager.shared.heavyTap()
-                withAnimation(.smoothSpring) {
+                HapticManager.shared.deleteAction()
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                     modelContext.delete(target)
                     let success = DataController.shared.save(modelContext, operation: "delete fasting session")
                     if !success {

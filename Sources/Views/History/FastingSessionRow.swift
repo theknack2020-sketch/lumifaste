@@ -91,6 +91,8 @@ struct FastingSessionRow: View {
             }
         }
         .padding(.vertical, 4)
+        .contentShape(Rectangle())
+        .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)
     }
@@ -128,6 +130,7 @@ struct FastingSessionRow: View {
                         )
                     )
                     .frame(width: max(4, geo.size.width * completionPercent), height: 5)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.7), value: completionPercent)
             }
         }
         .frame(height: 5)

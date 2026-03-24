@@ -4,6 +4,7 @@ import SwiftUI
 /// Mix of free and premium content.
 struct LearnView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(ThemeManager.self) private var themeManager
     @State private var showPaywall = false
     @State private var isLoading = true
     
@@ -78,7 +79,8 @@ struct LearnView: View {
     // MARK: - Quick Links
     
     private var quickLinks: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(alignment: .leading, spacing: 12) {
             Text("Explore")
                 .font(.system(size: 15, weight: .semibold))
             
@@ -92,10 +94,11 @@ struct LearnView: View {
                     QuickLinkCard(
                         title: "Beginner's Guide",
                         icon: "graduationcap.fill",
-                        color: .green
+                        color: .green,
+                        accentColor: accent
                     )
                 }
-                .buttonStyle(.bounce)
+                .buttonStyle(.pressable)
                 
                 NavigationLink {
                     TipsView()
@@ -103,10 +106,11 @@ struct LearnView: View {
                     QuickLinkCard(
                         title: "Fasting Tips",
                         icon: "lightbulb.fill",
-                        color: .yellow
+                        color: .yellow,
+                        accentColor: accent
                     )
                 }
-                .buttonStyle(.bounce)
+                .buttonStyle(.pressable)
                 
                 NavigationLink {
                     FaqView()
@@ -114,10 +118,11 @@ struct LearnView: View {
                     QuickLinkCard(
                         title: "FAQ",
                         icon: "questionmark.circle.fill",
-                        color: .blue
+                        color: .blue,
+                        accentColor: accent
                     )
                 }
-                .buttonStyle(.bounce)
+                .buttonStyle(.pressable)
                 
                 NavigationLink {
                     GlossaryView()
@@ -125,10 +130,11 @@ struct LearnView: View {
                     QuickLinkCard(
                         title: "Glossary",
                         icon: "text.book.closed.fill",
-                        color: .purple
+                        color: .purple,
+                        accentColor: accent
                     )
                 }
-                .buttonStyle(.bounce)
+                .buttonStyle(.pressable)
             }
         }
     }
@@ -136,11 +142,12 @@ struct LearnView: View {
     // MARK: - Fasting Stages
     
     private var stagesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.xaxis.ascending")
                     .font(.system(size: 14))
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(accent)
                 Text("Fasting Stages")
                     .font(.system(size: 15, weight: .semibold))
             }
@@ -149,13 +156,14 @@ struct LearnView: View {
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
             
-            ForEach(FastingEducation.stageDetails) { detail in
+            ForEach(Array(FastingEducation.stageDetails.enumerated()), id: \.element.id) { index, detail in
                 NavigationLink {
                     StageDetailView(detail: detail)
                 } label: {
                     StageCard(detail: detail)
                 }
-                .buttonStyle(.bounce)
+                .buttonStyle(.pressable)
+                .staggeredAppear(index: index)
             }
         }
     }
@@ -163,16 +171,17 @@ struct LearnView: View {
     // MARK: - Articles
     
     private var articlesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "doc.richtext")
                     .font(.system(size: 14))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(accent)
                 Text("Articles")
                     .font(.system(size: 15, weight: .semibold))
             }
             
-            ForEach(FastingEducation.articles) { article in
+            ForEach(Array(FastingEducation.articles.enumerated()), id: \.element.id) { index, article in
                 if article.isPremium && !subscriptionManager.isSubscribed {
                     Button {
                         HapticManager.shared.lightTap()
@@ -180,14 +189,16 @@ struct LearnView: View {
                     } label: {
                         ArticleCard(article: article, isLocked: true)
                     }
-                    .buttonStyle(.bounce)
+                    .buttonStyle(.pressable)
+                    .staggeredAppear(index: index)
                 } else {
                     NavigationLink {
                         ArticleDetailView(article: article)
                     } label: {
                         ArticleCard(article: article, isLocked: false)
                     }
-                    .buttonStyle(.bounce)
+                    .buttonStyle(.pressable)
+                    .staggeredAppear(index: index)
                 }
             }
         }
@@ -225,6 +236,7 @@ private struct QuickLinkCard: View {
     let title: String
     let icon: String
     let color: Color
+    var accentColor: Color = .blue
     
     var body: some View {
         VStack(spacing: 8) {
@@ -242,6 +254,7 @@ private struct QuickLinkCard: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
+                .shadow(color: accentColor.opacity(0.08), radius: 8, y: 3)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
@@ -285,6 +298,7 @@ private struct StageCard: View {
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
+                .shadow(color: detail.stage.color.opacity(0.10), radius: 6, y: 3)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(detail.stage.rawValue) stage, starts at \(Int(detail.stage.startHour)) hours. \(detail.headline)")
@@ -332,6 +346,7 @@ private struct ArticleCard: View {
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
+                .shadow(color: Color.black.opacity(0.05), radius: 6, y: 3)
         )
         .opacity(isLocked ? 0.7 : 1.0)
         .accessibilityElement(children: .combine)
@@ -343,4 +358,5 @@ private struct ArticleCard: View {
 #Preview {
     LearnView()
         .environment(SubscriptionManager())
+        .environment(ThemeManager())
 }

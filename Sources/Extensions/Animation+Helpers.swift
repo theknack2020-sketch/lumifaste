@@ -36,6 +36,30 @@ extension ButtonStyle where Self == BounceButtonStyle {
     static var bounce: BounceButtonStyle { BounceButtonStyle() }
 }
 
+// MARK: - Pressable Button Style (scale + opacity on press)
+
+/// Prominent press effect for major action buttons — start/stop fast, etc.
+/// Combines scale reduction with slight opacity fade for tactile feedback.
+struct PressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
+extension ButtonStyle where Self == PressableButtonStyle {
+    static var pressable: PressableButtonStyle { PressableButtonStyle() }
+}
+
+extension View {
+    /// Apply PressableButtonStyle — shorthand for `.buttonStyle(.pressable)`
+    func pressable() -> some View {
+        buttonStyle(PressableButtonStyle())
+    }
+}
+
 // MARK: - Pulsing Ring Modifier (active timer glow)
 
 struct PulsingModifier: ViewModifier {

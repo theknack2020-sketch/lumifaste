@@ -158,6 +158,7 @@ struct NotificationSettingsView: View {
                         displayedComponents: .hourAndMinute
                     )
                     .datePickerStyle(.compact)
+                    .accessibilityLabel("Daily reminder time")
                 }
             } header: {
                 Text("Reminders")
@@ -199,6 +200,9 @@ struct NotificationSettingsView: View {
                             .foregroundStyle(.indigo)
                     }
                 }
+                .accessibilityLabel("Quiet hours")
+                .accessibilityValue(settings.quietHoursEnabled ? "On" : "Off")
+                .accessibilityHint("Suppresses notifications during your sleep hours")
                 
                 if settings.quietHoursEnabled {
                     DatePicker(
@@ -207,6 +211,7 @@ struct NotificationSettingsView: View {
                         displayedComponents: .hourAndMinute
                     )
                     .datePickerStyle(.compact)
+                    .accessibilityLabel("Quiet hours start time")
                     
                     DatePicker(
                         "Until",
@@ -214,6 +219,7 @@ struct NotificationSettingsView: View {
                         displayedComponents: .hourAndMinute
                     )
                     .datePickerStyle(.compact)
+                    .accessibilityLabel("Quiet hours end time")
                     
                     HStack {
                         Image(systemName: "info.circle")

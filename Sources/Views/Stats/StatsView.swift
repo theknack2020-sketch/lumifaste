@@ -14,6 +14,7 @@ struct StatsView: View {
     
     @State private var showPaywall = false
     @State private var showWeightLog = false
+    @State private var cardsAppeared = false
     
     var body: some View {
         NavigationStack {
@@ -33,6 +34,7 @@ struct StatsView: View {
                         Image(systemName: "scalemass")
                             .font(.system(size: 15))
                     }
+                    .accessibilityLabel("Log weight")
                 }
             }
             .sheet(isPresented: $showPaywall) {
@@ -79,6 +81,8 @@ struct StatsView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
             
             // Mini preview of what they'll see
             HStack(spacing: 16) {
@@ -86,6 +90,8 @@ struct StatsView: View {
                 InsightPreviewPill(icon: "chart.line.uptrend.xyaxis", label: "Trends", color: .green)
                 InsightPreviewPill(icon: "calendar", label: "Calendar", color: .blue)
             }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Unlock Streaks, Trends, and Calendar views")
             
             Spacer()
         }
@@ -99,38 +105,57 @@ struct StatsView: View {
             LazyVStack(spacing: 20) {
                 // Hero stats cards
                 heroStats
-                    .entranceAnimation(delay: 0.1)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.0 * 0.05), value: cardsAppeared)
                 
                 // Streak display
                 streakSection
-                    .entranceAnimation(delay: 0.15)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(1.0 * 0.05), value: cardsAppeared)
                 
                 // Weekly chart
                 weeklyChartSection
-                    .entranceAnimation(delay: 0.2)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(2.0 * 0.05), value: cardsAppeared)
                 
                 // Weekly comparison
                 weeklyComparisonSection
-                    .entranceAnimation(delay: 0.25)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(3.0 * 0.05), value: cardsAppeared)
                 
                 // Monthly calendar
                 monthlyCalendarSection
-                    .entranceAnimation(delay: 0.3)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(4.0 * 0.05), value: cardsAppeared)
                 
                 // Time analysis
                 timeAnalysisSection
-                    .entranceAnimation(delay: 0.35)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(5.0 * 0.05), value: cardsAppeared)
                 
                 // Weight trend
                 weightSection
-                    .entranceAnimation(delay: 0.4)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(6.0 * 0.05), value: cardsAppeared)
                 
                 // Consistency
                 consistencySection
-                    .entranceAnimation(delay: 0.45)
+                    .opacity(cardsAppeared ? 1 : 0)
+                    .offset(y: cardsAppeared ? 0 : 12)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(7.0 * 0.05), value: cardsAppeared)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
+            .onAppear {
+                cardsAppeared = true
+            }
         }
     }
     
@@ -198,9 +223,13 @@ struct StatsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Current streak")
+                .accessibilityValue("\(current) \(current == 1 ? "day" : "days")")
                 
                 Divider()
                     .frame(height: 50)
+                    .accessibilityHidden(true)
                 
                 VStack(spacing: 6) {
                     Text("\(best)")
@@ -214,6 +243,9 @@ struct StatsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Best streak")
+                .accessibilityValue("\(best) \(best == 1 ? "day" : "days")")
             }
         }
     }
@@ -249,6 +281,9 @@ struct StatsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("This week")
+                .accessibilityValue(String(format: "%.1f hours, %d fasts", thisWeekHours, thisWeek.count))
                 
                 VStack(spacing: 4) {
                     HStack(spacing: 4) {
@@ -260,6 +295,9 @@ struct StatsView: View {
                     .foregroundStyle(diff >= 0 ? .green : .red)
                 }
                 .frame(width: 70)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Weekly change")
+                .accessibilityValue(String(format: "%+.0f percent", pctChange))
                 
                 VStack(spacing: 4) {
                     Text("Last Week")
@@ -272,6 +310,9 @@ struct StatsView: View {
                         .foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Last week")
+                .accessibilityValue(String(format: "%.1f hours, %d fasts", lastWeekHours, lastWeek.count))
             }
         }
     }
@@ -307,6 +348,8 @@ struct StatsView: View {
                         Label("Log Weight", systemImage: "plus.circle.fill")
                             .font(.system(size: 14, weight: .medium))
                     }
+                    .accessibilityLabel("Log your first weight entry")
+                    .accessibilityHint("Opens weight logging sheet")
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -345,6 +388,9 @@ struct StatsView: View {
                 .padding(.top, 4)
             }
             .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Consistency rate")
+            .accessibilityValue(String(format: "%.0f percent, %d completed, %d missed", pct, completed, total - completed))
         }
     }
     
@@ -457,6 +503,9 @@ private struct HeroStatCard: View {
                 .fill(Color(.secondarySystemBackground))
                 .shadow(color: color.opacity(0.1), radius: 8, y: 3)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
+        .accessibilityValue("\(value) \(subtitle)")
     }
 }
 
