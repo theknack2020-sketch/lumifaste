@@ -551,12 +551,21 @@ struct TimerView: View {
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     } else {
+                        // Compute elapsed and remaining from same integer base
+                        // This guarantees elapsed + remaining = total plan duration exactly
+                        let elapsedSeconds = Int(manager.elapsedTime)
+                        let totalSeconds: Int = {
+                            guard let s = manager.startDate, let e = manager.targetEndDate else { return 0 }
+                            return Int(e.timeIntervalSince(s))
+                        }()
+                        let remainingSeconds = max(0, totalSeconds - elapsedSeconds)
+                        
                         // Elapsed time — big and prominent
-                        Text(formatDuration(manager.elapsedTime))
+                        Text(String(format: "%02d:%02d:%02d", elapsedSeconds / 3600, (elapsedSeconds % 3600) / 60, elapsedSeconds % 60))
                             .font(.system(size: 56, weight: .bold, design: .rounded))
                             .monospacedDigit()
                             .contentTransition(.numericText(countsDown: false))
-                            .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.elapsedTime))
+                            .animation(.easeInOut(duration: 0.3), value: elapsedSeconds)
                         
                         Text("ELAPSED")
                             .font(.caption)
@@ -571,13 +580,13 @@ struct TimerView: View {
                             .padding(.vertical, 2)
                         
                         // Time remaining display (#4)
-                        if manager.remainingTime > 0 {
-                            Text(formatDuration(manager.remainingTime))
+                        if remainingSeconds > 0 {
+                            Text(String(format: "%02d:%02d:%02d", remainingSeconds / 3600, (remainingSeconds % 3600) / 60, remainingSeconds % 60))
                                 .font(.system(size: 20, weight: .semibold, design: .rounded))
                                 .monospacedDigit()
                                 .foregroundStyle(.secondary)
                                 .contentTransition(.numericText(countsDown: true))
-                                .animation(.easeInOut(duration: 0.3), value: formatDuration(manager.remainingTime))
+                                .animation(.easeInOut(duration: 0.3), value: remainingSeconds)
                             
                             Text("REMAINING")
                                 .font(.caption)
