@@ -6,6 +6,7 @@ import Charts
 /// Free: basic stats (total, avg, streak counts). Premium: full charts, weight, time analysis.
 struct StatsView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(ThemeManager.self) private var themeManager
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
@@ -15,6 +16,10 @@ struct StatsView: View {
     @State private var showPaywall = false
     @State private var showWeightLog = false
     @State private var cardsAppeared = false
+    
+    private var completedSessions: [FastingSession] {
+        sessions.filter(\.isCompleted)
+    }
     
     var body: some View {
         NavigationStack {
@@ -49,13 +54,14 @@ struct StatsView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        VStack(spacing: 24) {
+        let accent = themeManager.selectedTheme.accent
+        
+        return VStack(spacing: 24) {
             Spacer()
             
             ZStack {
-                // Decorative background rings
                 Circle()
-                    .stroke(Color.blue.opacity(0.08), lineWidth: 12)
+                    .stroke(accent.opacity(0.08), lineWidth: 12)
                     .frame(width: 120, height: 120)
                 
                 Circle()
@@ -68,7 +74,7 @@ struct StatsView: View {
                 
                 Image(systemName: "chart.bar.xaxis.ascending")
                     .font(.system(size: 28, weight: .medium))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(accent)
             }
             .accessibilityHidden(true)
             
@@ -84,11 +90,10 @@ struct StatsView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
             
-            // Mini preview of what they'll see
             HStack(spacing: 16) {
                 InsightPreviewPill(icon: "flame.fill", label: "Streaks", color: .orange)
                 InsightPreviewPill(icon: "chart.line.uptrend.xyaxis", label: "Trends", color: .green)
-                InsightPreviewPill(icon: "calendar", label: "Calendar", color: .blue)
+                InsightPreviewPill(icon: "calendar", label: "Calendar", color: accent)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Unlock Streaks, Trends, and Calendar views")
@@ -103,149 +108,204 @@ struct StatsView: View {
     private var statsContent: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
-                // Hero stats cards
-                heroStats
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.0 * 0.05), value: cardsAppeared)
+                // Summary card — 3x2 grid with key metrics
+                summaryCard
+                    .staggeredEntrance(index: 0, appeared: cardsAppeared)
                 
-                // Streak display
-                streakSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(1.0 * 0.05), value: cardsAppeared)
+                // Motivational badge
+                motivationalBadge
+                    .staggeredEntrance(index: 1, appeared: cardsAppeared)
+                
+                // This Week vs Last Week comparison
+                weeklyComparisonSection
+                    .staggeredEntrance(index: 2, appeared: cardsAppeared)
                 
                 // Weekly chart
                 weeklyChartSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(2.0 * 0.05), value: cardsAppeared)
-                
-                // Weekly comparison
-                weeklyComparisonSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(3.0 * 0.05), value: cardsAppeared)
+                    .staggeredEntrance(index: 3, appeared: cardsAppeared)
                 
                 // Monthly calendar
                 monthlyCalendarSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(4.0 * 0.05), value: cardsAppeared)
+                    .staggeredEntrance(index: 4, appeared: cardsAppeared)
                 
                 // Time analysis
                 timeAnalysisSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(5.0 * 0.05), value: cardsAppeared)
+                    .staggeredEntrance(index: 5, appeared: cardsAppeared)
                 
                 // Weight trend
                 weightSection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(6.0 * 0.05), value: cardsAppeared)
+                    .staggeredEntrance(index: 6, appeared: cardsAppeared)
                 
                 // Consistency
                 consistencySection
-                    .opacity(cardsAppeared ? 1 : 0)
-                    .offset(y: cardsAppeared ? 0 : 12)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(7.0 * 0.05), value: cardsAppeared)
+                    .staggeredEntrance(index: 7, appeared: cardsAppeared)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
             .onAppear {
-                cardsAppeared = true
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                    cardsAppeared = true
+                }
             }
         }
     }
     
-    // MARK: - Hero Stats
+    // MARK: - Summary Card (3x2 Grid)
     
-    private var heroStats: some View {
-        let completed = sessions.filter(\.isCompleted)
+    private var summaryCard: some View {
+        let accent = themeManager.selectedTheme.accent
+        let completed = completedSessions
+        let totalFasts = completed.count
         let totalHours = completed.reduce(0.0) { $0 + $1.actualDuration } / 3600
         let avgDuration = completed.isEmpty ? 0 : completed.reduce(0.0) { $0 + $1.actualDuration } / Double(completed.count)
-        let longestFast = completed.map(\.actualDuration).max() ?? 0
+        let completionRate = sessions.isEmpty ? 0 : Double(completed.count) / Double(sessions.count) * 100
+        let (currentStreak, bestStreak) = computeStreaks()
         
-        return VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                HeroStatCard(
-                    title: "Total Hours",
-                    value: String(format: "%.0f", totalHours),
-                    subtitle: "fasted",
-                    icon: "clock.fill",
-                    color: .blue
-                )
-                HeroStatCard(
-                    title: "Avg Duration",
-                    value: formatHoursMinutes(avgDuration),
-                    subtitle: "per fast",
-                    icon: "chart.line.uptrend.xyaxis",
-                    color: .green
-                )
+        return InsightCard(title: "Summary", icon: "square.grid.2x2.fill", color: accent) {
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10),
+                GridItem(.flexible(), spacing: 10)
+            ], spacing: 12) {
+                SummaryMetricCell(icon: "flame.fill", value: "\(totalFasts)", label: "Total Fasts", color: .orange)
+                SummaryMetricCell(icon: "clock.fill", value: String(format: "%.0f", totalHours), label: "Total Hours", color: accent)
+                SummaryMetricCell(icon: "chart.line.uptrend.xyaxis", value: formatHoursMinutes(avgDuration), label: "Avg Duration", color: .green)
+                SummaryMetricCell(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", completionRate), label: "Completion", color: completionRate >= 70 ? .green : .orange)
+                SummaryMetricCell(icon: "bolt.fill", value: "\(currentStreak)", label: "Streak", color: .yellow)
+                SummaryMetricCell(icon: "trophy.fill", value: "\(bestStreak)", label: "Best Streak", color: .purple)
             }
-            
-            HStack(spacing: 12) {
-                HeroStatCard(
-                    title: "Total Fasts",
-                    value: "\(completed.count)",
-                    subtitle: "completed",
-                    icon: "flame.fill",
-                    color: .orange
-                )
-                HeroStatCard(
-                    title: "Longest Fast",
-                    value: formatHoursMinutes(longestFast),
-                    subtitle: "personal best",
-                    icon: "trophy.fill",
-                    color: .yellow
-                )
-            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Summary: \(totalFasts) fasts, \(String(format: "%.0f", totalHours)) hours, \(formatHoursMinutes(avgDuration)) average, \(String(format: "%.0f%%", completionRate)) completion, \(currentStreak) day streak, \(bestStreak) best streak")
         }
     }
     
-    // MARK: - Streak Section
+    // MARK: - Motivational Badge
     
-    private var streakSection: some View {
-        let (current, best) = computeStreaks()
+    private var motivationalBadge: some View {
+        let accent = themeManager.selectedTheme.accent
+        let completed = completedSessions
+        let completionRate = sessions.isEmpty ? 0 : Double(completed.count) / Double(sessions.count) * 100
+        let (currentStreak, _) = computeStreaks()
         
-        return InsightCard(title: "Streaks", icon: "bolt.fill", color: .yellow) {
-            HStack(spacing: 0) {
-                VStack(spacing: 6) {
-                    Text("\(current)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                    Text("Current Streak")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Text(current == 1 ? "day" : "days")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+        let badge = determineBadge(fastCount: completed.count, completionRate: completionRate, currentStreak: currentStreak)
+        
+        return HStack(spacing: 12) {
+            Text(badge.emoji)
+                .font(.system(size: 28))
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(badge.title)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(badge.subtitle)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [accent.opacity(0.08), accent.opacity(0.02)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(badge.title): \(badge.subtitle)")
+    }
+    
+    // MARK: - Weekly Comparison
+    
+    private var weeklyComparisonSection: some View {
+        let accent = themeManager.selectedTheme.accent
+        let (thisWeek, lastWeek) = weeklyComparison()
+        let thisWeekHours = thisWeek.reduce(0.0) { $0 + $1.actualDuration } / 3600
+        let lastWeekHours = lastWeek.reduce(0.0) { $0 + $1.actualDuration } / 3600
+        let diff = thisWeekHours - lastWeekHours
+        let pctChange: Double = lastWeekHours > 0 ? (diff / lastWeekHours) * 100 : (thisWeekHours > 0 ? 100 : 0)
+        let countDiff = thisWeek.count - lastWeek.count
+        
+        return InsightCard(title: "This Week vs Last Week", icon: "arrow.left.arrow.right", color: .purple) {
+            VStack(spacing: 12) {
+                // Hours comparison
+                HStack(spacing: 0) {
+                    VStack(spacing: 4) {
+                        Text("This Week")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%.1fh", thisWeekHours))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                        Text("\(thisWeek.count) fasts")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("This week")
+                    .accessibilityValue(String(format: "%.1f hours, %d fasts", thisWeekHours, thisWeek.count))
+                    
+                    VStack(spacing: 4) {
+                        HStack(spacing: 4) {
+                            Image(systemName: diff >= 0 ? "arrow.up.right" : "arrow.down.right")
+                                .font(.system(size: 12, weight: .bold))
+                            Text(String(format: "%+.0f%%", pctChange))
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                        }
+                        .foregroundStyle(diff >= 0 ? .green : .red)
+                    }
+                    .frame(width: 70)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Weekly change")
+                    .accessibilityValue(String(format: "%+.0f percent", pctChange))
+                    
+                    VStack(spacing: 4) {
+                        Text("Last Week")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                        Text(String(format: "%.1fh", lastWeekHours))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                        Text("\(lastWeek.count) fasts")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Last week")
+                    .accessibilityValue(String(format: "%.1f hours, %d fasts", lastWeekHours, lastWeek.count))
                 }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Current streak")
-                .accessibilityValue("\(current) \(current == 1 ? "day" : "days")")
                 
+                // Delta indicators row
                 Divider()
-                    .frame(height: 50)
-                    .accessibilityHidden(true)
                 
-                VStack(spacing: 6) {
-                    Text("\(best)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundStyle(.primary)
-                    Text("Best Streak")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Text(best == 1 ? "day" : "days")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
+                HStack(spacing: 16) {
+                    ComparisonDelta(
+                        label: "Hours",
+                        delta: diff,
+                        format: "%+.1fh",
+                        accent: accent
+                    )
+                    ComparisonDelta(
+                        label: "Fasts",
+                        delta: Double(countDiff),
+                        format: "%+.0f",
+                        accent: accent
+                    )
+                    
+                    if !thisWeek.isEmpty && !lastWeek.isEmpty {
+                        let thisAvg = thisWeekHours / Double(thisWeek.count)
+                        let lastAvg = lastWeekHours / Double(lastWeek.count)
+                        ComparisonDelta(
+                            label: "Avg/Fast",
+                            delta: thisAvg - lastAvg,
+                            format: "%+.1fh",
+                            accent: accent
+                        )
+                    }
                 }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Best streak")
-                .accessibilityValue("\(best) \(best == 1 ? "day" : "days")")
             }
         }
     }
@@ -255,65 +315,7 @@ struct StatsView: View {
     private var weeklyChartSection: some View {
         InsightCard(title: "This Week", icon: "chart.bar.fill", color: .blue) {
             WeeklyFastingChart(sessions: sessions)
-                .frame(height: 180)
-        }
-    }
-    
-    // MARK: - Weekly Comparison
-    
-    private var weeklyComparisonSection: some View {
-        let (thisWeek, lastWeek) = weeklyComparison()
-        let thisWeekHours = thisWeek.reduce(0.0) { $0 + $1.actualDuration } / 3600
-        let lastWeekHours = lastWeek.reduce(0.0) { $0 + $1.actualDuration } / 3600
-        let diff = thisWeekHours - lastWeekHours
-        let pctChange: Double = lastWeekHours > 0 ? (diff / lastWeekHours) * 100 : (thisWeekHours > 0 ? 100 : 0)
-        
-        return InsightCard(title: "Week vs Week", icon: "arrow.left.arrow.right", color: .purple) {
-            HStack(spacing: 0) {
-                VStack(spacing: 4) {
-                    Text("This Week")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Text(String(format: "%.1fh", thisWeekHours))
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                    Text("\(thisWeek.count) fasts")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("This week")
-                .accessibilityValue(String(format: "%.1f hours, %d fasts", thisWeekHours, thisWeek.count))
-                
-                VStack(spacing: 4) {
-                    HStack(spacing: 4) {
-                        Image(systemName: diff >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.system(size: 12, weight: .bold))
-                        Text(String(format: "%+.0f%%", pctChange))
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
-                    }
-                    .foregroundStyle(diff >= 0 ? .green : .red)
-                }
-                .frame(width: 70)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Weekly change")
-                .accessibilityValue(String(format: "%+.0f percent", pctChange))
-                
-                VStack(spacing: 4) {
-                    Text("Last Week")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                    Text(String(format: "%.1fh", lastWeekHours))
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                    Text("\(lastWeek.count) fasts")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .combine)
-                .accessibilityLabel("Last week")
-                .accessibilityValue(String(format: "%.1f hours, %d fasts", lastWeekHours, lastWeek.count))
-            }
+                .frame(height: 200)
         }
     }
     
@@ -355,7 +357,7 @@ struct StatsView: View {
                 .padding(.vertical, 12)
             } else {
                 WeightTrendChart(entries: Array(weightEntries.reversed()))
-                    .frame(height: 160)
+                    .frame(height: 180)
             }
         }
     }
@@ -364,7 +366,7 @@ struct StatsView: View {
     
     private var consistencySection: some View {
         let total = sessions.count
-        let completed = sessions.filter(\.isCompleted).count
+        let completed = completedSessions.count
         let pct = total > 0 ? Double(completed) / Double(total) * 100 : 0
         
         return InsightCard(title: "Consistency", icon: "checkmark.seal.fill", color: .mint) {
@@ -394,6 +396,34 @@ struct StatsView: View {
         }
     }
     
+    // MARK: - Badge Determination
+    
+    private struct BadgeInfo {
+        let emoji: String
+        let title: String
+        let subtitle: String
+    }
+    
+    private func determineBadge(fastCount: Int, completionRate: Double, currentStreak: Int) -> BadgeInfo {
+        if currentStreak >= 30 {
+            return BadgeInfo(emoji: "👑", title: "Fasting Legend", subtitle: "\(currentStreak)-day streak! Unstoppable.")
+        } else if currentStreak >= 14 {
+            return BadgeInfo(emoji: "🔥", title: "On Fire", subtitle: "\(currentStreak) days in a row — incredible focus.")
+        } else if currentStreak >= 7 {
+            return BadgeInfo(emoji: "⭐", title: "Week Warrior", subtitle: "A full week of consistency. Keep going!")
+        } else if completionRate >= 80 {
+            return BadgeInfo(emoji: "🏆", title: "Consistent Faster", subtitle: "\(Int(completionRate))% completion. You're building a habit.")
+        } else if completionRate >= 70 {
+            return BadgeInfo(emoji: "💪", title: "Building Momentum", subtitle: "\(Int(completionRate))% completion rate. Strong trajectory.")
+        } else if fastCount >= 10 {
+            return BadgeInfo(emoji: "📈", title: "Finding Your Rhythm", subtitle: "\(fastCount) fasts done. Your pattern is forming.")
+        } else if fastCount >= 5 {
+            return BadgeInfo(emoji: "🌱", title: "Growing Stronger", subtitle: "\(fastCount) fasts completed. Momentum building!")
+        } else {
+            return BadgeInfo(emoji: "🚀", title: "Getting Started", subtitle: "\(fastCount) fast\(fastCount == 1 ? "" : "s") so far. Every journey starts here.")
+        }
+    }
+    
     // MARK: - Computation Helpers
     
     private func computeStreaks() -> (current: Int, best: Int) {
@@ -412,7 +442,6 @@ struct StatsView: View {
         var tempStreak = 0
         var checkDate = calendar.startOfDay(for: .now)
         
-        // Current streak — must include today or yesterday
         for day in completedDays {
             if day == checkDate {
                 currentStreak += 1
@@ -427,7 +456,6 @@ struct StatsView: View {
             }
         }
         
-        // Best streak — scan all days
         let sortedAsc = completedDays.sorted()
         for (i, day) in sortedAsc.enumerated() {
             if i == 0 {
@@ -453,7 +481,7 @@ struct StatsView: View {
         let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
         let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek) ?? startOfThisWeek
         
-        let completed = sessions.filter(\.isCompleted)
+        let completed = completedSessions
         let thisWeek = completed.filter { $0.startDate >= startOfThisWeek }
         let lastWeek = completed.filter { $0.startDate >= startOfLastWeek && $0.startDate < startOfThisWeek }
         
@@ -469,43 +497,76 @@ struct StatsView: View {
     }
 }
 
-// MARK: - Hero Stat Card
+// MARK: - Summary Metric Cell
 
-private struct HeroStatCard: View {
-    let title: String
-    let value: String
-    let subtitle: String
+private struct SummaryMetricCell: View {
     let icon: String
+    let value: String
+    let label: String
     let color: Color
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .foregroundStyle(color)
-                Text(title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(color)
             
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             
-            Text(subtitle)
-                .font(.system(size: 11))
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Comparison Delta
+
+private struct ComparisonDelta: View {
+    let label: String
+    let delta: Double
+    let format: String
+    let accent: Color
+    
+    var body: some View {
+        VStack(spacing: 2) {
+            HStack(spacing: 3) {
+                Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "equal")
+                    .font(.system(size: 9, weight: .bold))
+                Text(String(format: format, delta))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(delta > 0 ? .green : delta < 0 ? .red : .secondary)
+            
+            Text(label)
+                .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: color.opacity(0.1), radius: 8, y: 3)
-        )
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(title)
-        .accessibilityValue("\(value) \(subtitle)")
+        .accessibilityLabel("\(label): \(String(format: format, delta))")
+    }
+}
+
+// MARK: - Staggered Entrance Animation
+
+private extension View {
+    func staggeredEntrance(index: Int, appeared: Bool) -> some View {
+        self
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 20)
+            .scaleEffect(appeared ? 1 : 0.97, anchor: .top)
+            .animation(
+                .spring(response: 0.5, dampingFraction: 0.78)
+                .delay(Double(index) * 0.06),
+                value: appeared
+            )
     }
 }
 

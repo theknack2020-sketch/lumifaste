@@ -1,557 +1,902 @@
 import SwiftUI
 import AudioToolbox
 
-/// İlk açılış onboarding akışı — plan seçimi, hedef belirleme, izin istekleri.
-/// Entrance animations on each page, bounce button style, spring transitions.
+// MARK: - OnboardingView
+
+/// Premium 6-page onboarding — personalized quiz → plan recommendation → notifications → launch.
+/// Dark-themed with distinct green-progression gradients per page, capsule page dots,
+/// haptic feedback on every interaction, and polished entrance animations.
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
-    @State private var currentPage = 0
-    @State private var selectedPlan: FastingPlan = .sixteenEight
-    @State private var selectedGoal: FastingGoal = .weightLoss
-    @State private var notificationDenied = false
     @Binding var hasCompletedOnboarding: Bool
-    
+
+    // MARK: - State
+
+    @State private var currentPage = 0
+    @State private var selectedGoal: FastingGoal = .weightLoss
+    @State private var selectedExperience: ExperienceLevel = .beginner
+    @State private var notificationDenied = false
+
+    // Animation triggers
+    @State private var heroGlowPulse = false
+    @State private var bellBounce = 0
+    @State private var checkmarkScale: CGFloat = 0.2
+    @State private var readyContentOpacity: Double = 0
+
+    private let totalPages = 6
+
+    // MARK: - Body
+
     var body: some View {
-        TabView(selection: $currentPage) {
-            // Page 1: Welcome
-            welcomePage
-                .tag(0)
-            
-            // Page 2: Goal
-            goalPage
-                .tag(1)
-            
-            // Page 3: Plan
-            planPage
-                .tag(2)
-            
-            // Page 4: Notifications
-            notificationPage
-                .tag(3)
-            
-            // Page 5: Ready
-            readyPage
-                .tag(4)
-        }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .indexViewStyle(.page(backgroundDisplayMode: .always))
-        .interactiveDismissDisabled()
-    }
-    
-    // MARK: - Welcome
-    
-    private var welcomePage: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            
-            Image(systemName: "leaf.fill")
-                .font(.system(size: 64))
-                .scaleEffect(x: -1, y: 1)
-                .foregroundStyle(themeManager.selectedTheme.accentGradient)
-                .slideIn(from: .trailing, delay: 0.2)
-            
-            Text("Welcome to Lumifaste")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .slideIn(from: .trailing, delay: 0.35)
-            
-            Text("Your honest fasting companion.\nNo ads. No tricks. Just results.")
-                .font(.system(size: 17))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .slideIn(from: .trailing, delay: 0.45)
-            
-            // Benefit micro-copy
-            VStack(alignment: .leading, spacing: 10) {
-                OnboardingBenefit(icon: "timer", color: .blue, text: "Smart timer tracks every fasting stage")
-                OnboardingBenefit(icon: "hand.raised.slash.fill", color: .green, text: "Zero ads — your screen, your focus")
-                OnboardingBenefit(icon: "lock.shield.fill", color: .purple, text: "All data stays on your device")
+        ZStack(alignment: .top) {
+            TabView(selection: $currentPage) {
+                welcomePage.tag(0)
+                goalPage.tag(1)
+                experiencePage.tag(2)
+                planPreviewPage.tag(3)
+                notificationPage.tag(4)
+                getStartedPage.tag(5)
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-            )
-            .entranceAnimation(delay: 0.55)
-            
-            Spacer()
-            
-            nextButton("Get Started") {
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .interactiveDismissDisabled()
+            .onChange(of: currentPage) { _, newPage in
                 HapticManager.shared.selectionChanged()
-                withAnimation(.smoothSpring) { currentPage = 1 }
+                if newPage == 4 {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        bellBounce += 1
+                    }
+                }
+                if newPage == 5 {
+                    triggerReadyAnimations()
+                }
+            }
+
+            // Skip button — top-right, visible on pages 0–4
+            if currentPage < totalPages - 1 {
+                HStack {
+                    Spacer()
+                    Button {
+                        HapticManager.shared.lightTap()
+                        saveAllSelections()
+                        withAnimation(.smoothSpring) { currentPage = totalPages - 1 }
+                    } label: {
+                        Text("Skip")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(.white.opacity(0.07)))
+                    }
+                    .buttonStyle(.pressable)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 12)
+                .transition(.opacity)
+                .animation(.smooth(duration: 0.2), value: currentPage)
             }
         }
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [themeManager.selectedTheme.accent.opacity(0.10), themeManager.selectedTheme.gradientEnd.opacity(0.06), Color(.systemBackground)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        )
+        .preferredColorScheme(.dark)
     }
-    
-    // MARK: - Goal Selection
-    
-    private var goalPage: some View {
-        VStack(spacing: 24) {
+
+    // =========================================================================
+    // MARK: - Page 1: Welcome Hero
+    // =========================================================================
+
+    private var welcomePage: some View {
+        VStack(spacing: 0) {
             Spacer()
-            
-            Text("What's your goal?")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-            
-            Text("We'll recommend the best plan for you")
+
+            // Leaf icon with pulsing radial glow
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                themeManager.selectedTheme.accent.opacity(0.4),
+                                themeManager.selectedTheme.accent.opacity(0.12),
+                                .clear
+                            ],
+                            center: .center,
+                            startRadius: 12,
+                            endRadius: 90
+                        )
+                    )
+                    .frame(width: 180, height: 180)
+                    .scaleEffect(heroGlowPulse ? 1.2 : 0.85)
+                    .opacity(heroGlowPulse ? 0.9 : 0.35)
+
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 72))
+                    .scaleEffect(x: -1, y: 1)
+                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    .shadow(color: themeManager.selectedTheme.accent.opacity(0.5), radius: 24)
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+                    heroGlowPulse = true
+                }
+            }
+            .slideIn(from: .bottom, delay: 0.1)
+
+            Spacer().frame(height: 28)
+
+            Text("Lumifaste")
+                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .slideIn(from: .bottom, delay: 0.25)
+
+            Text("Your honest fasting companion")
+                .font(.system(size: 17))
+                .foregroundStyle(.white.opacity(0.6))
+                .padding(.top, 4)
+                .slideIn(from: .bottom, delay: 0.35)
+
+            Spacer().frame(height: 36)
+
+            // 3 benefit bullets
+            VStack(alignment: .leading, spacing: 16) {
+                OnboardingBenefitRow(icon: "timer", color: .cyan, text: "Smart timer for every stage")
+                OnboardingBenefitRow(icon: "hand.raised.fill", color: .green, text: "Zero ads — your focus")
+                OnboardingBenefitRow(icon: "lock.shield.fill", color: .purple, text: "All data stays private")
+            }
+            .padding(20)
+            .background(onboardingGlassCard)
+            .entranceAnimation(delay: 0.5)
+
+            Spacer()
+
+            onboardingPrimaryButton("Get Started") { advancePage() }
+
+            capsulePageIndicator
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+        }
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 0))
+    }
+
+    // =========================================================================
+    // MARK: - Page 2: Goal Quiz
+    // =========================================================================
+
+    private var goalPage: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 64)
+
+            Text("What's your fasting goal?")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .slideIn(from: .trailing, delay: 0.1)
+
+            Text("This helps us personalize your experience")
                 .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-            
+                .foregroundStyle(.white.opacity(0.5))
+                .padding(.top, 6)
+                .slideIn(from: .trailing, delay: 0.2)
+
+            Spacer().frame(height: 32)
+
             VStack(spacing: 12) {
                 ForEach(Array(FastingGoal.allCases.enumerated()), id: \.element.id) { index, goal in
-                    GoalCard(
+                    OnboardingGoalCard(
                         goal: goal,
                         isSelected: selectedGoal == goal,
-                        accentColor: themeManager.selectedTheme.accent
+                        accent: themeManager.selectedTheme.accent
                     ) {
                         HapticManager.shared.selectionChanged()
-                        withAnimation(.tapSpring) {
-                            selectedGoal = goal
-                        }
+                        withAnimation(.tapSpring) { selectedGoal = goal }
                     }
                     .staggeredAppear(index: index)
                 }
             }
-            .padding(.top, 8)
-            
+
             Spacer()
-            
-            nextButton("Continue") {
-                HapticManager.shared.selectionChanged()
-                withAnimation(.smoothSpring) { currentPage = 2 }
+
+            onboardingPrimaryButton("Continue") {
+                UserDefaults.standard.set(selectedGoal.rawValue, forKey: "lf_fasting_goal")
+                advancePage()
             }
+
+            capsulePageIndicator
+                .padding(.top, 20)
+                .padding(.bottom, 16)
         }
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [themeManager.selectedTheme.gradientStart.opacity(0.08), themeManager.selectedTheme.accent.opacity(0.05), Color(.systemBackground)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 1))
     }
-    
-    // MARK: - Plan Selection
-    
-    private var planPage: some View {
-        VStack(spacing: 24) {
-            Spacer()
-                .frame(height: 20)
-            
-            Text("Choose your plan")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-            
-            Text("You can change this anytime — no commitment")
+
+    // =========================================================================
+    // MARK: - Page 3: Experience Level
+    // =========================================================================
+
+    private var experiencePage: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 64)
+
+            Text("Your fasting experience?")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .multilineTextAlignment(.center)
+                .slideIn(from: .trailing, delay: 0.1)
+
+            Text("We'll recommend the right plan for you")
                 .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-            
-            ScrollView {
-                VStack(spacing: 10) {
-                    ForEach(Array(FastingPlan.allCases.filter { $0 != .custom && $0 != .fiveTwo }.enumerated()), id: \.element.id) { index, plan in
-                        PlanCard(
-                            plan: plan,
-                            isSelected: selectedPlan == plan,
-                            isRecommended: recommendedPlan == plan,
-                            accentColor: themeManager.selectedTheme.accent
-                        ) {
-                            HapticManager.shared.selectionChanged()
-                            withAnimation(.tapSpring) {
-                                selectedPlan = plan
-                            }
-                        }
-                        .staggeredAppear(index: index)
+                .foregroundStyle(.white.opacity(0.5))
+                .padding(.top, 6)
+                .slideIn(from: .trailing, delay: 0.2)
+
+            Spacer().frame(height: 32)
+
+            VStack(spacing: 12) {
+                ForEach(Array(ExperienceLevel.allCases.enumerated()), id: \.element.id) { index, level in
+                    OnboardingExperienceCard(
+                        level: level,
+                        isSelected: selectedExperience == level,
+                        accent: themeManager.selectedTheme.accent,
+                        recommendedPlan: level.recommendedPlan
+                    ) {
+                        HapticManager.shared.selectionChanged()
+                        withAnimation(.tapSpring) { selectedExperience = level }
                     }
+                    .staggeredAppear(index: index)
                 }
             }
-            
-            nextButton("Continue") {
-                HapticManager.shared.selectionChanged()
-                withAnimation(.smoothSpring) { currentPage = 3 }
-            }
-        }
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [themeManager.selectedTheme.gradientEnd.opacity(0.07), themeManager.selectedTheme.gradientStart.opacity(0.04), Color(.systemBackground)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        )
-    }
-    
-    // MARK: - Notifications
-    
-    private var notificationPage: some View {
-        VStack(spacing: 24) {
+
             Spacer()
-            
+
+            onboardingPrimaryButton("Continue") {
+                UserDefaults.standard.set(selectedExperience.rawValue, forKey: "lf_experience_level")
+                advancePage()
+            }
+
+            capsulePageIndicator
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+        }
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 2))
+    }
+
+    // =========================================================================
+    // MARK: - Page 4: Plan Preview
+    // =========================================================================
+
+    private var planPreviewPage: some View {
+        let plan = recommendedPlan
+
+        return VStack(spacing: 0) {
+            Spacer().frame(height: 64)
+
+            Text("Your recommended plan")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .slideIn(from: .trailing, delay: 0.1)
+
+            Text("Based on your goals and experience")
+                .font(.system(size: 15))
+                .foregroundStyle(.white.opacity(0.5))
+                .padding(.top, 6)
+                .slideIn(from: .trailing, delay: 0.2)
+
+            Spacer().frame(height: 36)
+
+            // Mini timer ring visualization
+            planTimerRing(plan: plan)
+                .entranceAnimation(delay: 0.3)
+
+            Spacer().frame(height: 28)
+
+            // Plan details card
+            VStack(spacing: 14) {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 15))
+                        .foregroundStyle(themeManager.selectedTheme.accent)
+                    Text("You'll fast for **\(Int(plan.fastingHours)) hours**")
+                        .font(.system(size: 16))
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "fork.knife")
+                        .font(.system(size: 15))
+                        .foregroundStyle(.orange)
+                    Text("Eat in an **\(Int(plan.eatingHours))-hour** window")
+                        .font(.system(size: 16))
+                }
+
+                Divider().overlay(Color.white.opacity(0.08))
+
+                Text("You can change your plan anytime in Settings")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity)
+            .background(onboardingGlassCard)
+            .entranceAnimation(delay: 0.45)
+
+            Spacer()
+
+            onboardingPrimaryButton("Looks Good") {
+                UserDefaults.standard.set(plan.rawValue, forKey: "lf_fasting_plan")
+                advancePage()
+            }
+
+            capsulePageIndicator
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+        }
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 3))
+    }
+
+    // =========================================================================
+    // MARK: - Page 5: Notifications
+    // =========================================================================
+
+    private var notificationPage: some View {
+        VStack(spacing: 0) {
+            Spacer()
+
+            // Bell with radial glow and bounce
             ZStack {
                 Circle()
-                    .fill(Color.blue.opacity(0.12))
-                    .frame(width: 100, height: 100)
-                
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.blue.opacity(0.2), .clear],
+                            center: .center,
+                            startRadius: 10,
+                            endRadius: 65
+                        )
+                    )
+                    .frame(width: 130, height: 130)
+
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 44))
+                    .font(.system(size: 56))
                     .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    .symbolEffect(.bounce, value: bellBounce)
             }
-            .slideIn(from: .trailing, delay: 0.2)
-            
-            Text("Stay on Track")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
-                .slideIn(from: .trailing, delay: 0.35)
-            
-            Text("Get notified when you hit milestones,\nenter new fasting stages, and reach your goal")
+            .slideIn(from: .bottom, delay: 0.1)
+
+            Spacer().frame(height: 24)
+
+            Text("Never miss a milestone")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .slideIn(from: .trailing, delay: 0.25)
+
+            Text("Stay motivated with timely updates")
                 .font(.system(size: 15))
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .slideIn(from: .trailing, delay: 0.45)
-            
-            VStack(alignment: .leading, spacing: 12) {
-                notifBenefit(icon: "flag.checkered", color: .green, text: "Milestone alerts at 25%, 50%, 75%")
-                notifBenefit(icon: "flame.fill", color: .orange, text: "Fat Burning & Ketosis stage alerts")
-                notifBenefit(icon: "trophy.fill", color: .yellow, text: "Celebration when you reach your goal")
-                notifBenefit(icon: "bolt.fill", color: .purple, text: "Streak reminders to stay consistent")
+                .foregroundStyle(.white.opacity(0.5))
+                .padding(.top, 6)
+                .slideIn(from: .trailing, delay: 0.35)
+
+            Spacer().frame(height: 28)
+
+            // Notification benefits
+            VStack(alignment: .leading, spacing: 16) {
+                OnboardingBenefitRow(icon: "flag.checkered", color: .green, text: "Stage alerts as you progress")
+                OnboardingBenefitRow(icon: "bell.fill", color: .cyan, text: "Daily reminders to stay consistent")
+                OnboardingBenefitRow(icon: "flame.fill", color: .orange, text: "Streak protection so you never miss")
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-            )
-            
-            Spacer()
-            
+            .padding(20)
+            .background(onboardingGlassCard)
+            .entranceAnimation(delay: 0.45)
+
             // Inline denial message
             if notificationDenied {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle.fill")
                         .font(.system(size: 14))
                         .foregroundStyle(.orange)
-                    Text("No worries! You can enable notifications later in Settings.")
+                    Text("No worries — enable anytime in Settings.")
                         .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.6))
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.orange.opacity(0.1))
+                        .fill(Color.orange.opacity(0.12))
                 )
+                .padding(.top, 12)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
-            
-            nextButton("Enable Notifications") {
-                HapticManager.shared.selectionChanged()
+
+            Spacer()
+
+            onboardingPrimaryButton("Enable Notifications") {
+                HapticManager.shared.mediumTap()
                 Task {
                     let granted = await NotificationManager.shared.requestPermission()
                     if granted {
                         NotificationManager.shared.scheduleDailyReminder()
-                        withAnimation(.smoothSpring) { currentPage = 4 }
+                        advancePage()
                     } else {
-                        withAnimation(.smoothSpring) {
-                            notificationDenied = true
-                        }
-                        // Auto-advance after a brief pause so user sees the message
+                        withAnimation(.smoothSpring) { notificationDenied = true }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                            withAnimation(.smoothSpring) { currentPage = 4 }
+                            advancePage()
                         }
                     }
                 }
             }
-            
-            Button("Skip for Now") {
-                HapticManager.shared.selectionChanged()
-                withAnimation(.smoothSpring) { currentPage = 4 }
-            }
-            .font(.system(size: 15))
-            .foregroundStyle(.secondary)
+
+            onboardingSecondaryButton("Maybe Later") { advancePage() }
+
+            capsulePageIndicator
+                .padding(.top, 12)
+                .padding(.bottom, 16)
         }
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [themeManager.selectedTheme.accent.opacity(0.07), themeManager.selectedTheme.gradientEnd.opacity(0.04), Color(.systemBackground)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 4))
     }
-    
-    private func notifBenefit(icon: String, color: Color, text: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(color)
-                .frame(width: 24)
-            Text(text)
-                .font(.system(size: 14))
-        }
-    }
-    
-    // MARK: - Ready
-    
-    private var readyPage: some View {
-        VStack(spacing: 24) {
+
+    // =========================================================================
+    // MARK: - Page 6: Get Started
+    // =========================================================================
+
+    private var getStartedPage: some View {
+        VStack(spacing: 0) {
             Spacer()
-            
+
+            // Checkmark with spring scale
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 64))
+                .font(.system(size: 80))
                 .foregroundStyle(.green)
-                .slideIn(from: .trailing, delay: 0.2)
-            
-            Text("You're all set!")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
-                .slideIn(from: .trailing, delay: 0.35)
-            
-            VStack(spacing: 8) {
-                Text("Your plan: **\(selectedPlan.rawValue)**")
-                Text("\(Int(selectedPlan.fastingHours))h fasting · \(Int(selectedPlan.eatingHours))h eating")
-                    .foregroundStyle(.secondary)
+                .scaleEffect(checkmarkScale)
+                .shadow(color: .green.opacity(0.45), radius: 24)
+
+            Spacer().frame(height: 24)
+
+            Text("You're Ready!")
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .opacity(readyContentOpacity)
+
+            Spacer().frame(height: 16)
+
+            // Selection summary
+            VStack(spacing: 10) {
+                onboardingSummaryRow(icon: "star.fill", color: .yellow, label: "Goal", value: selectedGoal.rawValue)
+                onboardingSummaryRow(icon: "chart.bar.fill", color: .cyan, label: "Level", value: selectedExperience.rawValue)
+                onboardingSummaryRow(icon: "timer", color: themeManager.selectedTheme.accent, label: "Plan", value: "\(recommendedPlan.rawValue) — \(Int(recommendedPlan.fastingHours))h fast")
             }
-            .font(.system(size: 17))
-            .slideIn(from: .trailing, delay: 0.45)
-            
-            // Ready benefits
-            VStack(alignment: .leading, spacing: 10) {
-                OnboardingBenefit(icon: "bell.badge.fill", color: .cyan, text: "Stage alerts keep you motivated")
-                OnboardingBenefit(icon: "chart.bar.fill", color: .blue, text: "Track progress with detailed insights")
-                OnboardingBenefit(icon: "flame.fill", color: .orange, text: "Build streaks and earn achievements")
-            }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-            )
-            .entranceAnimation(delay: 0.55)
-            
+            .padding(20)
+            .background(onboardingGlassCard)
+            .opacity(readyContentOpacity)
+
             Spacer()
-            
-            nextButton("Start Fasting") {
-                HapticManager.shared.success()
-                // Sound 1057: tock on final onboarding step
-                AudioServicesPlaySystemSound(1057)
-                // Save selections
-                UserDefaults.standard.set(selectedPlan.rawValue, forKey: "lf_fasting_plan")
-                UserDefaults.standard.set(selectedGoal.rawValue, forKey: "lf_fasting_goal")
-                withAnimation(.smoothSpring) {
-                    hasCompletedOnboarding = true
-                }
+
+            onboardingPrimaryButton("Start Your First Fast") {
+                completeOnboarding()
+            }
+
+            onboardingSecondaryButton("Explore First") {
+                completeOnboarding()
+            }
+
+            capsulePageIndicator
+                .padding(.top, 12)
+                .padding(.bottom, 16)
+        }
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 5))
+    }
+
+    // =========================================================================
+    // MARK: - Shared Components
+    // =========================================================================
+
+    private var capsulePageIndicator: some View {
+        HStack(spacing: 8) {
+            ForEach(0..<totalPages, id: \.self) { index in
+                Capsule()
+                    .fill(index == currentPage ? Color.white : Color.white.opacity(0.25))
+                    .frame(width: index == currentPage ? 24 : 8, height: 8)
+                    .animation(.spring(duration: 0.35, bounce: 0.3), value: currentPage)
             }
         }
-        .padding(24)
-        .background(
-            LinearGradient(
-                colors: [themeManager.selectedTheme.gradientStart.opacity(0.09), themeManager.selectedTheme.accent.opacity(0.05), Color(.systemBackground)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
-        )
     }
-    
-    // MARK: - Helpers
-    
-    private var recommendedPlan: FastingPlan {
-        switch selectedGoal {
-        case .weightLoss: .sixteenEight
-        case .metabolicHealth: .sixteenEight
-        case .mentalClarity: .eighteenSix
-        case .longevity: .twentyFour
-        case .general: .fourteenTen
+
+    private func planTimerRing(plan: FastingPlan) -> some View {
+        let ratio = plan.fastingHours / 24.0
+
+        return ZStack {
+            // Outer ambient glow
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [themeManager.selectedTheme.accent.opacity(0.12), .clear],
+                        center: .center,
+                        startRadius: 65,
+                        endRadius: 130
+                    )
+                )
+                .frame(width: 260, height: 260)
+
+            // Background ring
+            Circle()
+                .stroke(Color.white.opacity(0.07), lineWidth: 18)
+
+            // Fasting arc
+            Circle()
+                .trim(from: 0, to: ratio)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [
+                            themeManager.selectedTheme.accent.opacity(0.4),
+                            themeManager.selectedTheme.accent.opacity(0.8),
+                            themeManager.selectedTheme.accent
+                        ]),
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360 * ratio)
+                    ),
+                    style: StrokeStyle(lineWidth: 18, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.5), radius: 14)
+
+            // Bright dot at arc tip
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [.white, themeManager.selectedTheme.accent],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 8
+                    )
+                )
+                .frame(width: 10, height: 10)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.8), radius: 8)
+                .offset(y: -90)
+                .rotationEffect(.degrees(360 * ratio - 90))
+
+            // Center label
+            VStack(spacing: 6) {
+                Text(plan.rawValue)
+                    .font(.system(size: 38, weight: .bold, design: .rounded))
+
+                Text("\(Int(plan.fastingHours))h fasting · \(Int(plan.eatingHours))h eating")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
         }
+        .frame(width: 200, height: 200)
     }
-    
-    private func nextButton(_ title: String, action: @escaping () -> Void) -> some View {
+
+    /// Glass-morphism card background
+    private var onboardingGlassCard: some View {
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(.white.opacity(0.05))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(.white.opacity(0.08), lineWidth: 1)
+            )
+    }
+
+    private func onboardingPrimaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 17, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
+                .frame(height: 56)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .fill(themeManager.selectedTheme.accentGradient)
                 )
-                .shadow(color: themeManager.selectedTheme.accent.opacity(0.35), radius: 12, y: 5)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.4), radius: 14, y: 6)
         }
         .buttonStyle(.pressable)
     }
+
+    private func onboardingSecondaryButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button {
+            HapticManager.shared.lightTap()
+            action()
+        } label: {
+            Text(title)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(.white.opacity(0.45))
+                .padding(.vertical, 10)
+        }
+        .buttonStyle(.pressable)
+    }
+
+    private func onboardingSummaryRow(icon: String, color: Color, label: String, value: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 15))
+                .foregroundStyle(color)
+                .frame(width: 24)
+
+            Text(label)
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.45))
+                .frame(width: 44, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+
+            Spacer()
+        }
+    }
+
+    // =========================================================================
+    // MARK: - Page Gradients
+    // =========================================================================
+
+    /// Distinct dark gradient per page — green progression: dark forest → emerald → teal → mint → blue-green → bright
+    private func pageGradient(for page: Int) -> some View {
+        let colors: [Color] = switch page {
+        case 0: [Color(red: 0.03, green: 0.14, blue: 0.06), .black]
+        case 1: [Color(red: 0.04, green: 0.19, blue: 0.10), Color(red: 0.01, green: 0.05, blue: 0.03)]
+        case 2: [Color(red: 0.03, green: 0.17, blue: 0.17), Color(red: 0.01, green: 0.04, blue: 0.04)]
+        case 3: [Color(red: 0.04, green: 0.21, blue: 0.14), Color(red: 0.01, green: 0.06, blue: 0.04)]
+        case 4: [Color(red: 0.03, green: 0.12, blue: 0.21), Color(red: 0.01, green: 0.03, blue: 0.06)]
+        default: [Color(red: 0.06, green: 0.24, blue: 0.12), Color(red: 0.02, green: 0.07, blue: 0.04)]
+        }
+
+        return LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
+            .ignoresSafeArea()
+    }
+
+    // =========================================================================
+    // MARK: - Logic
+    // =========================================================================
+
+    private var recommendedPlan: FastingPlan {
+        selectedExperience.recommendedPlan
+    }
+
+    private func advancePage() {
+        HapticManager.shared.selectionChanged()
+        withAnimation(.smoothSpring) {
+            currentPage = min(currentPage + 1, totalPages - 1)
+        }
+    }
+
+    private func triggerReadyAnimations() {
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.45)) {
+            checkmarkScale = 1.0
+        }
+        withAnimation(.smooth(duration: 0.5).delay(0.3)) {
+            readyContentOpacity = 1.0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            HapticManager.shared.success()
+        }
+    }
+
+    private func saveAllSelections() {
+        UserDefaults.standard.set(selectedGoal.rawValue, forKey: "lf_fasting_goal")
+        UserDefaults.standard.set(selectedExperience.rawValue, forKey: "lf_experience_level")
+        UserDefaults.standard.set(recommendedPlan.rawValue, forKey: "lf_fasting_plan")
+    }
+
+    private func completeOnboarding() {
+        HapticManager.shared.success()
+        AudioServicesPlaySystemSound(1025)
+        saveAllSelections()
+        UserDefaults.standard.set(true, forKey: "lf_onboarding_complete")
+        withAnimation(.smoothSpring) {
+            hasCompletedOnboarding = true
+        }
+    }
 }
 
+// =============================================================================
 // MARK: - Fasting Goal
+// =============================================================================
 
 enum FastingGoal: String, CaseIterable, Identifiable {
     case weightLoss = "Weight Loss"
-    case metabolicHealth = "Metabolic Health"
+    case health = "Health"
     case mentalClarity = "Mental Clarity"
     case longevity = "Longevity"
-    case general = "General Wellness"
-    
+
     var id: String { rawValue }
-    
+
     var icon: String {
         switch self {
         case .weightLoss: "scalemass"
-        case .metabolicHealth: "heart.fill"
+        case .health: "heart.fill"
         case .mentalClarity: "brain.head.profile"
-        case .longevity: "leaf.fill"
-        case .general: "figure.walk"
+        case .longevity: "figure.walk"
         }
     }
-    
+
     var subtitle: String {
         switch self {
-        case .weightLoss: "Burn fat and lose weight"
-        case .metabolicHealth: "Improve insulin sensitivity"
-        case .mentalClarity: "Sharpen focus and energy"
-        case .longevity: "Cellular repair and renewal"
-        case .general: "Feel better every day"
+        case .weightLoss: "Burn fat and reach your target weight"
+        case .health: "Improve metabolic health and energy"
+        case .mentalClarity: "Sharpen focus and mental performance"
+        case .longevity: "Activate cellular repair and renewal"
         }
     }
 }
 
-// MARK: - Goal Card
+// =============================================================================
+// MARK: - Experience Level
+// =============================================================================
 
-private struct GoalCard: View {
+enum ExperienceLevel: String, CaseIterable, Identifiable {
+    case beginner = "Beginner"
+    case intermediate = "Intermediate"
+    case experienced = "Experienced"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .beginner: "leaf"
+        case .intermediate: "leaf.fill"
+        case .experienced: "tree.fill"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .beginner: "New to fasting — start easy"
+        case .intermediate: "Some experience with fasting"
+        case .experienced: "Regularly fast and want a challenge"
+        }
+    }
+
+    var recommendedPlan: FastingPlan {
+        switch self {
+        case .beginner: .twelveTwelve
+        case .intermediate: .sixteenEight
+        case .experienced: .eighteenSix
+        }
+    }
+}
+
+// =============================================================================
+// MARK: - Goal Card
+// =============================================================================
+
+private struct OnboardingGoalCard: View {
     let goal: FastingGoal
     let isSelected: Bool
-    let accentColor: Color
+    let accent: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 14) {
-                Image(systemName: goal.icon)
-                    .font(.system(size: 20))
-                    .scaleEffect(x: goal.icon == "leaf.fill" ? -1 : 1)
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .frame(width: 32)
-                
-                VStack(alignment: .leading, spacing: 2) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? accent.opacity(0.15) : Color.white.opacity(0.05))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: goal.icon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(isSelected ? accent : .white.opacity(0.5))
+                }
+
+                VStack(alignment: .leading, spacing: 3) {
                     Text(goal.rawValue)
                         .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
                     Text(goal.subtitle)
                         .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.45))
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .animation(.tapSpring, value: isSelected)
+                    .foregroundStyle(isSelected ? accent : .white.opacity(0.2))
             }
             .padding(14)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-                    .shadow(color: isSelected ? accentColor.opacity(0.15) : Color.black.opacity(0.04), radius: isSelected ? 8 : 4, y: 2)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.white.opacity(isSelected ? 0.07 : 0.03))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? accentColor : .clear, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? accent : .white.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
             )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.pressable)
     }
 }
 
-// MARK: - Plan Card
+// =============================================================================
+// MARK: - Experience Card
+// =============================================================================
 
-private struct PlanCard: View {
-    let plan: FastingPlan
+private struct OnboardingExperienceCard: View {
+    let level: ExperienceLevel
     let isSelected: Bool
-    let isRecommended: Bool
-    let accentColor: Color
+    let accent: Color
+    let recommendedPlan: FastingPlan
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(plan.rawValue)
-                            .font(.system(size: 17, weight: .bold))
-                        
-                        if isRecommended {
-                            Text("RECOMMENDED")
-                                .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Capsule().fill(accentColor))
-                        }
-                    }
-                    
-                    Text(plan.subtitle)
-                        .font(.system(size: 13))
-                        .foregroundStyle(.secondary)
-                    
-                    // Difficulty dots
-                    HStack(spacing: 3) {
-                        ForEach(1...5, id: \.self) { level in
-                            Circle()
-                                .fill(level <= plan.difficulty ? accentColor : Color(.systemGray4))
-                                .frame(width: 6, height: 6)
-                        }
-                        Text("Difficulty")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
-                    }
+            HStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? accent.opacity(0.15) : Color.white.opacity(0.05))
+                        .frame(width: 44, height: 44)
+
+                    Image(systemName: level.icon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(isSelected ? accent : .white.opacity(0.5))
                 }
-                
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(level.rawValue)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(.white)
+                    Text(level.subtitle)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
+
                 Spacer()
-                
+
+                VStack(alignment: .trailing, spacing: 3) {
+                    Text(recommendedPlan.rawValue)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(isSelected ? accent : .white.opacity(0.35))
+                    Text("plan")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.white.opacity(0.25))
+                }
+
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .animation(.tapSpring, value: isSelected)
+                    .font(.system(size: 22))
+                    .foregroundStyle(isSelected ? accent : .white.opacity(0.2))
             }
             .padding(14)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-                    .shadow(color: isSelected ? accentColor.opacity(0.15) : Color.black.opacity(0.04), radius: isSelected ? 8 : 4, y: 2)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.white.opacity(isSelected ? 0.07 : 0.03))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(isSelected ? accentColor : .clear, lineWidth: 1.5)
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(isSelected ? accent : .white.opacity(0.06), lineWidth: isSelected ? 1.5 : 0.5)
             )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.pressable)
     }
 }
 
-// MARK: - Onboarding Benefit Row
+// =============================================================================
+// MARK: - Benefit Row
+// =============================================================================
 
-private struct OnboardingBenefit: View {
+private struct OnboardingBenefitRow: View {
     let icon: String
     let color: Color
     let text: String
-    
+
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(.system(size: 16))
-                .foregroundStyle(color)
-                .frame(width: 24)
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                Image(systemName: icon)
+                    .font(.system(size: 15))
+                    .foregroundStyle(color)
+            }
             Text(text)
-                .font(.system(size: 14))
-                .foregroundStyle(.primary)
+                .font(.system(size: 15))
+                .foregroundStyle(.white.opacity(0.85))
         }
     }
 }
+
+// =============================================================================
+// MARK: - Preview
+// =============================================================================
 
 #Preview {
     OnboardingView(hasCompletedOnboarding: .constant(false))
