@@ -30,7 +30,7 @@ struct WeightTrendChart: View {
     private var trendLine: (slope: Double, intercept: Double)? {
         guard displayEntries.count >= 2 else { return nil }
         
-        let firstDate = displayEntries.first!.date.timeIntervalSince1970
+        let firstDate = (displayEntries.first?.date.timeIntervalSince1970 ?? 0)
         let n = Double(displayEntries.count)
         
         // x = days since first entry, y = weight
@@ -57,8 +57,8 @@ struct WeightTrendChart: View {
     private var trendLinePoints: [(date: Date, weight: Double)]? {
         guard let trend = trendLine, displayEntries.count >= 2 else { return nil }
         
-        let firstDate = displayEntries.first!.date
-        let lastDate = displayEntries.last!.date
+        let firstDate = displayEntries.first?.date ?? Date()
+        let lastDate = displayEntries.last?.date ?? Date()
         let firstDays = 0.0
         let lastDays = lastDate.timeIntervalSince(firstDate) / 86400
         
