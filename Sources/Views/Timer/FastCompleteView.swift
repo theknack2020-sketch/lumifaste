@@ -119,6 +119,7 @@ struct FastCompleteView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityIdentifier("closeButton")
                     .accessibilityLabel("Close")
                 }
             }

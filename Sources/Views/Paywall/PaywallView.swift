@@ -50,6 +50,7 @@ struct PaywallView: View {
                             .font(.system(size: 22))
                             .foregroundStyle(.secondary)
                     }
+                    .accessibilityIdentifier("closeButton")
                 }
             }
             .task {

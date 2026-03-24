@@ -39,6 +39,7 @@ struct StatsView: View {
                         Image(systemName: "scalemass")
                             .font(.system(size: 15))
                     }
+                    .accessibilityIdentifier("weightLogButton")
                     .accessibilityLabel("Log weight")
                 }
             }

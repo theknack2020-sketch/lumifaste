@@ -253,6 +253,7 @@ struct WeightLogView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .accessibilityIdentifier("doneButton")
                         .accessibilityLabel("Done")
                         .accessibilityHint("Closes the weight log sheet")
                 }

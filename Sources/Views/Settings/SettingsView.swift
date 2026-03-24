@@ -827,6 +827,7 @@ struct HealthDisclaimerView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .fontWeight(.semibold)
+                        .accessibilityIdentifier("doneButton")
                         .accessibilityLabel("Dismiss health disclaimer")
                 }
             }

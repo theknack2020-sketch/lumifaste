@@ -277,6 +277,7 @@ struct HistoryView: View {
         }
         .buttonStyle(.pressable)
         .accessibilityLabel("Filters\(activeFilterCount > 0 ? ", \(activeFilterCount) active" : "")")
+        .accessibilityIdentifier("filterButton")
     }
     
     // MARK: - Export Menu
@@ -302,6 +303,7 @@ struct HistoryView: View {
             Image(systemName: "square.and.arrow.up")
         }
         .accessibilityLabel("Export history")
+        .accessibilityIdentifier("exportButton")
     }
     
     // MARK: - Delete Alert
@@ -854,6 +856,7 @@ struct HistoryFilterSheet: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { onDismiss() }
                         .fontWeight(.semibold)
+                        .accessibilityIdentifier("doneButton")
                 }
             }
         }

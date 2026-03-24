@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab = 0
     @State private var fastingStatusManager = FastingManager()
     
@@ -45,6 +46,7 @@ struct ContentView: View {
                     .accessibilityHint("App settings and preferences")
             }
             .tint(themeManager.selectedTheme.accent)
+            .modifier(iPadTabViewModifier(isRegular: horizontalSizeClass == .regular))
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: selectedTab)
             .onAppear {
                 let tabBarAppearance = UITabBarAppearance()
@@ -73,6 +75,21 @@ struct ContentView: View {
                 .transition(.move(edge: .top).combined(with: .opacity))
                 .animation(.smoothSpring, value: selectedTab)
             }
+        }
+    }
+}
+
+// MARK: - iPad Tab View Modifier
+
+/// On iPad (regular width), uses sidebar-adaptable tab style for better layout.
+private struct iPadTabViewModifier: ViewModifier {
+    let isRegular: Bool
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *), isRegular {
+            content.tabViewStyle(.sidebarAdaptable)
+        } else {
+            content.tabViewStyle(.automatic)
         }
     }
 }

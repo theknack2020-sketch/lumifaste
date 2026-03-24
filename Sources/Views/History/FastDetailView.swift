@@ -59,6 +59,7 @@ struct FastDetailView: View {
                     Image(systemName: "square.and.arrow.up")
                 }
                 .buttonStyle(.pressable)
+                .accessibilityIdentifier("shareButton")
                 .accessibilityLabel("Share fast details")
             }
         }

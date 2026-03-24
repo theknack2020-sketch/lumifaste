@@ -482,6 +482,7 @@ struct TimerView: View {
                 .fill((manager.isPaused ? Color.orange : Color.green).opacity(0.12))
         )
         .accessibilityLabel(manager.isPaused ? "Fast is paused" : "Currently fasting")
+        .accessibilityIdentifier("fastingStatusBadge")
     }
     
     // MARK: - Nudge Banner (#13)
@@ -1258,6 +1259,7 @@ struct EditStartTimeSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancelButton")
                 }
             }
             .onAppear {
@@ -1335,6 +1337,7 @@ struct ExtendFastSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancelButton")
                 }
             }
         }
@@ -1415,6 +1418,7 @@ struct CustomPlanSheet: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("cancelButton")
                 }
             }
             .animation(.smoothSpring, value: InputValidator.isExtremeFast(hours: hours))
