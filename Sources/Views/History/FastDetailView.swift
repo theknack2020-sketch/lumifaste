@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Full breakdown of a completed fast — tapped from history row.
 /// Shows timeline, stages reached, duration breakdown, mood, notes, water intake.
+/// Visual polish: glassmorphism cards, layered shadows, accent bars, monospacedDigit — matches Timer.
 struct FastDetailView: View {
     let session: FastingSession
     @Environment(\.dismiss) private var dismiss
@@ -16,9 +17,13 @@ struct FastDetailView: View {
         return min(session.actualDuration / session.plan.fastingDuration, 1.0)
     }
     
+    private var statusColor: Color {
+        session.isCompleted ? .green : .orange
+    }
+    
     var body: some View {
         ScrollView {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 // MARK: - Header
                 headerCard
                     .entranceAnimation(delay: 0.05)
@@ -53,6 +58,7 @@ struct FastDetailView: View {
                 } label: {
                     Image(systemName: "square.and.arrow.up")
                 }
+                .buttonStyle(.pressable)
                 .accessibilityLabel("Share fast details")
             }
         }
@@ -71,6 +77,7 @@ struct FastDetailView: View {
                 Circle()
                     .fill(statusColor.opacity(0.15))
                     .frame(width: 64, height: 64)
+                    .shadow(color: statusColor.opacity(0.25), radius: 10, x: 0, y: 4)
                 
                 Image(systemName: session.isCompleted ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: 32))
@@ -78,7 +85,7 @@ struct FastDetailView: View {
             }
             
             Text(session.isCompleted ? "Completed" : "Ended Early")
-                .font(.system(.headline, weight: .semibold))
+                .font(.system(.headline, design: .rounded, weight: .semibold))
                 .foregroundStyle(statusColor)
             
             Text(session.plan.rawValue)
@@ -90,77 +97,95 @@ struct FastDetailView: View {
                 .monospacedDigit()
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
+        .padding(.vertical, 24)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: statusColor.opacity(0.1), radius: 12, x: 0, y: 2)
         )
     }
     
     // MARK: - Duration Card
     
     private var durationCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label("Duration", systemImage: "clock.fill")
-                .font(.system(.subheadline, weight: .semibold))
-                .foregroundStyle(.secondary)
+        HStack(spacing: 0) {
+            // Accent left bar
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(session.stage.color)
+                .frame(width: 3)
+                .padding(.vertical, 8)
             
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color(.tertiarySystemFill))
-                        .frame(height: 12)
-                    
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [session.stage.color.opacity(0.7), session.stage.color],
-                                startPoint: .leading,
-                                endPoint: .trailing
+            VStack(alignment: .leading, spacing: 12) {
+                Label("Duration", systemImage: "clock.fill")
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                
+                // Progress bar
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color(.tertiarySystemFill))
+                            .frame(height: 12)
+                        
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [session.stage.color.opacity(0.7), session.stage.color],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(width: geo.size.width * completionPercent, height: 12)
+                            .frame(width: geo.size.width * completionPercent, height: 12)
+                            .shadow(color: session.stage.color.opacity(0.3), radius: 4, x: 0, y: 2)
+                    }
                 }
-            }
-            .frame(height: 12)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Start")
-                        .font(.system(.caption, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    Text(session.startDate.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                        .font(.system(.footnote))
+                .frame(height: 12)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Start")
+                            .font(.system(.caption, design: .rounded, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Text(session.startDate.formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                            .font(.system(.footnote))
+                            .monospacedDigit()
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("End")
+                            .font(.system(.caption, design: .rounded, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Text((session.endDate ?? session.startDate.addingTimeInterval(session.actualDuration)).formatted(.dateTime.month(.abbreviated).day().hour().minute()))
+                            .font(.system(.footnote))
+                            .monospacedDigit()
+                    }
                 }
                 
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("End")
-                        .font(.system(.caption, weight: .medium))
-                        .foregroundStyle(.secondary)
-                    Text((session.endDate ?? session.startDate.addingTimeInterval(session.actualDuration)).formatted(.dateTime.month(.abbreviated).day().hour().minute()))
-                        .font(.system(.footnote))
+                if session.totalPausedDuration > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "pause.circle.fill")
+                            .font(.system(.caption))
+                            .foregroundStyle(.orange)
+                        Text("Paused: \(formatDuration(session.totalPausedDuration))")
+                            .font(.system(.caption))
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
-            
-            if session.totalPausedDuration > 0 {
-                HStack(spacing: 4) {
-                    Image(systemName: "pause.circle.fill")
-                        .font(.system(.caption))
-                        .foregroundStyle(.orange)
-                    Text("Paused: \(formatDuration(session.totalPausedDuration))")
-                        .font(.system(.caption))
-                        .foregroundStyle(.secondary)
-                }
-            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 16)
         }
-        .padding()
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
     
     // MARK: - Stages Card
@@ -168,7 +193,7 @@ struct FastDetailView: View {
     private var stagesCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Stages Reached", systemImage: "flame.fill")
-                .font(.system(.subheadline, weight: .semibold))
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 .foregroundStyle(.secondary)
             
             ForEach(FastingStage.allCases) { stage in
@@ -179,6 +204,7 @@ struct FastDetailView: View {
                         Circle()
                             .fill(reached ? stage.color.opacity(0.15) : Color(.tertiarySystemFill))
                             .frame(width: 36, height: 36)
+                            .shadow(color: reached ? stage.color.opacity(0.2) : .clear, radius: 4, x: 0, y: 2)
                         
                         Image(systemName: stage.icon)
                             .font(.system(.caption, weight: .medium))
@@ -187,7 +213,7 @@ struct FastDetailView: View {
                     
                     VStack(alignment: .leading, spacing: 1) {
                         Text(stage.rawValue)
-                            .font(.system(.subheadline, weight: reached ? .semibold : .regular))
+                            .font(.system(.subheadline, design: .rounded, weight: reached ? .semibold : .regular))
                             .foregroundStyle(reached ? .primary : .tertiary)
                         
                         Text(stage.subtitle)
@@ -204,15 +230,18 @@ struct FastDetailView: View {
                     } else {
                         Text("\(Int(stage.startHour))h")
                             .font(.system(.caption, design: .rounded))
+                            .monospacedDigit()
                             .foregroundStyle(.tertiary)
                     }
                 }
             }
         }
-        .padding()
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
         )
     }
     
@@ -270,24 +299,33 @@ struct FastDetailView: View {
     
     private func detailCell(icon: String, title: String, value: String, color: Color) -> some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.system(.body))
-                .foregroundStyle(color)
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: icon)
+                    .font(.system(.body))
+                    .foregroundStyle(color)
+            }
             
             Text(value)
                 .font(.system(.title3, design: .rounded, weight: .semibold))
+                .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             
             Text(title)
-                .font(.system(.caption))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+                .shadow(color: color.opacity(0.08), radius: 8, x: 0, y: 2)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
@@ -296,30 +334,38 @@ struct FastDetailView: View {
     // MARK: - Note Card
     
     private func noteCard(_ note: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Note", systemImage: "note.text")
-                .font(.system(.subheadline, weight: .semibold))
-                .foregroundStyle(.secondary)
+        HStack(spacing: 0) {
+            // Accent left bar
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(Color.yellow)
+                .frame(width: 3)
+                .padding(.vertical, 8)
             
-            Text(note)
-                .font(.system(.body))
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(alignment: .leading, spacing: 8) {
+                Label("Note", systemImage: "note.text")
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                
+                Text(note)
+                    .font(.system(.body))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
         }
-        .padding()
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Note")
         .accessibilityValue(note)
     }
     
     // MARK: - Helpers
-    
-    private var statusColor: Color {
-        session.isCompleted ? .green : .orange
-    }
     
     private func formatDuration(_ duration: TimeInterval) -> String {
         let hours = Int(duration) / 3600

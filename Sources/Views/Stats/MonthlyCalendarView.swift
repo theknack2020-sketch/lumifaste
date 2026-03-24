@@ -292,8 +292,9 @@ struct MonthlyCalendarView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(.tertiarySystemBackground))
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
     }
     
     private func formatDuration(_ duration: TimeInterval) -> String {

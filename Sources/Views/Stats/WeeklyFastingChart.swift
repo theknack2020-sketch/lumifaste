@@ -176,8 +176,9 @@ struct WeeklyFastingChart: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color(.tertiarySystemBackground))
+                        .fill(.ultraThinMaterial)
                 )
+                .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
                 .transition(.asymmetric(
                     insertion: .move(edge: .top).combined(with: .opacity),
                     removal: .opacity

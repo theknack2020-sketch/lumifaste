@@ -183,30 +183,38 @@ struct WeightTrendChart: View {
         return HStack(spacing: 6) {
             Text(String(format: "%.1f %@", latest.weight, unit))
                 .font(.system(size: 20, weight: .bold, design: .rounded))
+                .monospacedDigit()
             
             HStack(spacing: 2) {
                 Image(systemName: diff <= 0 ? "arrow.down.right" : "arrow.up.right")
                     .font(.system(size: 10, weight: .bold))
                 Text(String(format: "%+.1f", diff))
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
             }
             .foregroundStyle(diff <= 0 ? .green : .red)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill((diff <= 0 ? Color.green : Color.red).opacity(0.12))
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        Capsule()
+                            .fill((diff <= 0 ? Color.green : Color.red).opacity(0.12))
+                    )
             )
+            .shadow(color: (diff <= 0 ? Color.green : Color.red).opacity(0.15), radius: 4, y: 2)
             
             if let rate = weeklyRate, abs(rate) > 0.01 {
                 Text(String(format: "%+.1f/wk", rate))
                     .font(.system(size: 10, weight: .medium, design: .rounded))
+                    .monospacedDigit()
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
                     .background(
                         Capsule()
-                            .fill(Color(.systemGray5))
+                            .fill(.ultraThinMaterial)
                     )
             }
         }
@@ -236,11 +244,16 @@ struct WeightTrendChart: View {
             
             Spacer()
         }
-        .padding(8)
+        .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill((isLoss ? Color.green : Color.red).opacity(0.06))
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill((isLoss ? Color.green : Color.red).opacity(0.06))
+                )
         )
+        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(String(format: "Total change: %+.1f %@ over %d days", change, unit, daysSince))
     }

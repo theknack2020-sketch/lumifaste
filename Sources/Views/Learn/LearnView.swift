@@ -82,7 +82,7 @@ struct LearnView: View {
         let accent = themeManager.selectedTheme.accent
         return VStack(alignment: .leading, spacing: 12) {
             Text("Explore")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.headline, design: .rounded))
             
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 10),
@@ -149,7 +149,7 @@ struct LearnView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(accent)
                 Text("Fasting Stages")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
             }
             
             Text("Understand what happens to your body at each stage of fasting.")
@@ -178,7 +178,7 @@ struct LearnView: View {
                     .font(.system(size: 14))
                     .foregroundStyle(accent)
                 Text("Articles")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
             }
             
             ForEach(Array(FastingEducation.articles.enumerated()), id: \.element.id) { index, article in
@@ -214,7 +214,7 @@ struct LearnView: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("Health Disclaimer")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                 Text(FastingEducation.shortDisclaimer)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -225,8 +225,19 @@ struct LearnView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.red.opacity(0.06))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.red.opacity(0.06))
+                )
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(Color.red.gradient)
+                .frame(width: 3)
+                .padding(.vertical, 8)
+        }
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
     }
 }
 
@@ -253,9 +264,10 @@ private struct QuickLinkCard: View {
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: accentColor.opacity(0.08), radius: 8, y: 3)
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: color.opacity(0.1), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(title)
     }
@@ -268,6 +280,11 @@ private struct StageCard: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            // Accent left bar
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(detail.stage.color.gradient)
+                .frame(width: 3, height: 40)
+            
             Image(systemName: detail.stage.icon)
                 .font(.system(size: 18))
                 .foregroundStyle(detail.stage.color)
@@ -275,7 +292,7 @@ private struct StageCard: View {
             
             VStack(alignment: .leading, spacing: 3) {
                 Text(detail.stage.rawValue)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                     .foregroundStyle(.primary)
                 Text(detail.headline)
                     .font(.system(size: 12))
@@ -287,6 +304,7 @@ private struct StageCard: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(Int(detail.stage.startHour))h+")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .monospacedDigit()
                     .foregroundStyle(detail.stage.color)
             }
             
@@ -297,9 +315,10 @@ private struct StageCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: detail.stage.color.opacity(0.10), radius: 6, y: 3)
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: detail.stage.color.opacity(0.12), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(detail.stage.rawValue) stage, starts at \(Int(detail.stage.startHour)) hours. \(detail.headline)")
     }
@@ -313,6 +332,11 @@ private struct ArticleCard: View {
     
     var body: some View {
         HStack(spacing: 12) {
+            // Accent left bar
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(isLocked ? Color.gray.gradient : article.iconColor.gradient)
+                .frame(width: 3, height: 40)
+            
             Image(systemName: article.icon)
                 .font(.system(size: 20))
                 .foregroundStyle(isLocked ? .secondary : article.iconColor)
@@ -321,13 +345,18 @@ private struct ArticleCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(article.title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.headline, design: .rounded))
                         .foregroundStyle(.primary)
                     
                     if isLocked {
                         Image(systemName: "lock.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
+                            .padding(4)
+                            .background(
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                            )
                     }
                 }
                 
@@ -345,9 +374,10 @@ private struct ArticleCard: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: Color.black.opacity(0.05), radius: 6, y: 3)
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: (isLocked ? Color.gray : article.iconColor).opacity(0.08), radius: 6, y: 2)
         .opacity(isLocked ? 0.7 : 1.0)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(isLocked ? "\(article.title), Premium content, locked" : article.title)

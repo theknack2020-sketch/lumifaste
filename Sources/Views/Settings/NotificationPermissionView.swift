@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Pre-permission explanation screen — shown before the system notification prompt.
 /// Explains why notifications matter for fasting. Shows in onboarding and settings.
+/// Visual polish: glassmorphism cards, layered shadows, accent bars — matches Timer.
 struct NotificationPermissionView: View {
     @State private var permissionGranted = false
     @State private var permissionDenied = false
@@ -16,6 +17,7 @@ struct NotificationPermissionView: View {
                 Circle()
                     .fill(Color.blue.opacity(0.12))
                     .frame(width: 100, height: 100)
+                    .shadow(color: .blue.opacity(0.15), radius: 12, x: 0, y: 4)
                 
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 44))
@@ -30,7 +32,7 @@ struct NotificationPermissionView: View {
             
             VStack(spacing: 10) {
                 Text("Stay on Track")
-                    .font(.system(size: 26, weight: .bold))
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
                 
                 Text("Notifications help you reach your fasting goals")
                     .font(.system(size: 16))
@@ -38,7 +40,7 @@ struct NotificationPermissionView: View {
                     .multilineTextAlignment(.center)
             }
             
-            // Benefits list
+            // Benefits list — glassmorphism card
             VStack(alignment: .leading, spacing: 14) {
                 benefitRow(
                     icon: "flag.checkered",
@@ -68,7 +70,9 @@ struct NotificationPermissionView: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                    .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
             )
             
             Spacer()
@@ -89,7 +93,7 @@ struct NotificationPermissionView: View {
                         }
                     } label: {
                         Text("Enable Notifications")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
@@ -102,8 +106,10 @@ struct NotificationPermissionView: View {
                                             endPoint: .trailing
                                         )
                                     )
+                                    .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 4)
                             )
                     }
+                    .buttonStyle(.pressable)
                     .accessibilityLabel("Enable notifications")
                     .accessibilityHint("Requests permission to send fasting alerts and reminders")
                     
@@ -112,6 +118,7 @@ struct NotificationPermissionView: View {
                     }
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
+                    .buttonStyle(.pressable)
                     .accessibilityLabel("Skip for now")
                     .accessibilityHint("Continue without enabling notifications. You can enable them later in Settings.")
                 }
@@ -124,10 +131,15 @@ struct NotificationPermissionView: View {
     
     private func benefitRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(color)
-                .frame(width: 28)
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(color.opacity(0.15))
+                    .frame(width: 34, height: 34)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(color)
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -164,19 +176,26 @@ struct NotificationPermissionView: View {
                 }
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.blue)
+                .buttonStyle(.pressable)
                 
                 Button("Continue Without") {
                     onComplete()
                 }
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
+                .buttonStyle(.pressable)
             }
             .padding(.top, 4)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.red.opacity(0.06))
+                )
+                .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
         )
     }
 }
@@ -187,9 +206,15 @@ struct NotificationPermissionView: View {
 struct NotificationDeniedBanner: View {
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: "bell.slash.fill")
-                .font(.system(size: 18))
-                .foregroundStyle(.red)
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Color.red.opacity(0.12))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: "bell.slash.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.red)
+            }
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Notifications Disabled")
@@ -208,11 +233,18 @@ struct NotificationDeniedBanner: View {
             }
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.blue)
+            .buttonStyle(.pressable)
         }
-        .padding(12)
+        .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.red.opacity(0.08))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.red.opacity(0.06))
+                )
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: .red.opacity(0.1), radius: 10, x: 0, y: 2)
         )
     }
 }

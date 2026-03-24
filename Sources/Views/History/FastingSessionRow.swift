@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Enhanced fasting session row — shows stage reached, duration progress bar,
-/// color-coded completion status, mood, water, notes preview, and overnight indicator.
+/// Enhanced fasting session row — glassmorphism card, accent left bar,
+/// layered shadows, monospacedDigit numbers — matches Timer visual polish.
 struct FastingSessionRow: View {
     let session: FastingSession
     
@@ -10,89 +10,104 @@ struct FastingSessionRow: View {
         return min(session.actualDuration / session.plan.fastingDuration, 1.0)
     }
     
+    /// Accent color: green for completed, orange for ended early
+    private var accentColor: Color {
+        session.isCompleted ? .green : .orange
+    }
+    
     var body: some View {
-        HStack(spacing: 14) {
-            // Status icon with color coding
-            statusIcon
+        HStack(spacing: 0) {
+            // Accent left bar — completion status indicator
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
+                .fill(accentColor)
+                .frame(width: 3)
+                .padding(.vertical, 6)
             
-            // Info column
-            VStack(alignment: .leading, spacing: 5) {
-                // Top row: plan + stage badge + mood
-                HStack(spacing: 6) {
-                    Text(session.plan.rawValue)
-                        .font(.system(.subheadline, weight: .semibold))
-                    
-                    Text(session.stage.rawValue)
-                        .font(.system(.caption2, weight: .medium))
-                        .foregroundStyle(session.stage.color)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(session.stage.color.opacity(0.12))
-                        .clipShape(Capsule())
-                    
-                    if let mood = session.mood {
-                        Text(mood)
-                            .font(.system(size: 14))
-                    }
-                }
+            HStack(spacing: 14) {
+                // Status icon with color coding
+                statusIcon
                 
-                // Duration progress bar
-                durationBar
-                
-                // Date row with water
-                HStack(spacing: 8) {
-                    Text(formatSessionDate(session.startDate))
-                        .font(.system(.footnote))
-                        .foregroundStyle(.secondary)
-                    
-                    if session.waterCount > 0 {
-                        HStack(spacing: 2) {
-                            Image(systemName: "drop.fill")
-                                .font(.system(size: 9))
-                                .foregroundStyle(.cyan)
-                            Text("\(session.waterCount)")
-                                .font(.system(size: 11))
-                                .foregroundStyle(.cyan)
+                // Info column
+                VStack(alignment: .leading, spacing: 5) {
+                    // Top row: plan + stage badge + mood
+                    HStack(spacing: 6) {
+                        Text(session.plan.rawValue)
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                        
+                        Text(session.stage.rawValue)
+                            .font(.system(.caption2, weight: .medium))
+                            .foregroundStyle(session.stage.color)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(session.stage.color.opacity(0.12))
+                            .clipShape(Capsule())
+                        
+                        if let mood = session.mood {
+                            Text(mood)
+                                .font(.system(size: 14))
                         }
                     }
                     
-                    if spannedMidnight {
-                        Text("overnight")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.tertiary)
+                    // Duration progress bar
+                    durationBar
+                    
+                    // Date row with water
+                    HStack(spacing: 8) {
+                        Text(formatSessionDate(session.startDate))
+                            .font(.system(.footnote))
+                            .foregroundStyle(.secondary)
+                        
+                        if session.waterCount > 0 {
+                            HStack(spacing: 2) {
+                                Image(systemName: "drop.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.cyan)
+                                Text("\(session.waterCount)")
+                                    .font(.system(size: 11, design: .rounded))
+                                    .monospacedDigit()
+                                    .foregroundStyle(.cyan)
+                            }
+                        }
+                        
+                        if spannedMidnight {
+                            Text("overnight")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    
+                    // Note preview
+                    if let note = session.note, !note.isEmpty {
+                        HStack(spacing: 4) {
+                            Image(systemName: "note.text")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.tertiary)
+                            Text(note)
+                                .font(.system(.caption))
+                                .foregroundStyle(.tertiary)
+                                .lineLimit(1)
+                        }
                     }
                 }
                 
-                // Note preview
-                if let note = session.note, !note.isEmpty {
-                    HStack(spacing: 4) {
-                        Image(systemName: "note.text")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.tertiary)
-                        Text(note)
-                            .font(.system(.caption))
-                            .foregroundStyle(.tertiary)
-                            .lineLimit(1)
-                    }
+                Spacer()
+                
+                // Duration + completion indicator
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(formatDuration(session.actualDuration))
+                        .font(.system(.body, design: .rounded, weight: .semibold))
+                        .monospacedDigit()
+                    
+                    Text("\(Int(completionPercent * 100))%")
+                        .font(.system(.caption2, design: .rounded, weight: .medium))
+                        .monospacedDigit()
+                        .foregroundStyle(accentColor)
                 }
             }
-            
-            Spacer()
-            
-            // Duration + completion indicator
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(formatDuration(session.actualDuration))
-                    .font(.system(.body, design: .rounded, weight: .semibold))
-                    .monospacedDigit()
-                
-                Text("\(Int(completionPercent * 100))%")
-                    .font(.system(.caption2, design: .rounded, weight: .medium))
-                    .foregroundStyle(statusColor)
-            }
+            .padding(.leading, 10)
         }
         .padding(.vertical, 4)
         .contentShape(Rectangle())
-        .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityText)
     }
@@ -102,12 +117,13 @@ struct FastingSessionRow: View {
     private var statusIcon: some View {
         ZStack {
             Circle()
-                .fill(statusColor.opacity(0.15))
+                .fill(accentColor.opacity(0.15))
                 .frame(width: 40, height: 40)
+                .shadow(color: accentColor.opacity(0.15), radius: 4, x: 0, y: 2)
             
             Image(systemName: session.isCompleted ? "checkmark.circle.fill" : "xmark.circle")
                 .font(.system(.body, weight: .medium))
-                .foregroundStyle(statusColor)
+                .foregroundStyle(accentColor)
         }
         .accessibilityHidden(true)
     }
@@ -146,10 +162,6 @@ struct FastingSessionRow: View {
     }
     
     // MARK: - Helpers
-    
-    private var statusColor: Color {
-        session.isCompleted ? .green : .orange
-    }
     
     private var spannedMidnight: Bool {
         guard let endDate = session.endDate else { return false }
@@ -204,6 +216,13 @@ struct FastingSessionRow: View {
             s.waterCount = 6
             return s
         }())
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 4)
+        )
         
         FastingSessionRow(session: {
             let s = FastingSession(
@@ -211,12 +230,18 @@ struct FastingSessionRow: View {
                 targetEndDate: Date.now.addingTimeInterval(-2 * 3600),
                 planType: .eighteenSix
             )
-            // Not completed — ended early
             s.endDate = Date.now.addingTimeInterval(-2 * 3600)
             s.actualDuration = 10 * 3600
             s.stageReached = FastingStage.stage(for: 10 * 3600).rawValue
             return s
         }())
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 4)
+        )
         
         FastingSessionRow(session: {
             let s = FastingSession(
@@ -227,5 +252,12 @@ struct FastingSessionRow: View {
             s.complete()
             return s
         }())
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .padding(.vertical, 2)
+                .padding(.horizontal, 4)
+        )
     }
 }

@@ -35,7 +35,7 @@ struct AchievementsView: View {
                             .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
                         
                         Text("Your First Badge Awaits")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.system(.headline, design: .rounded))
                         
                         Text("Complete fasts to unlock achievements.\nEvery journey starts with a single step.")
                             .font(.system(size: 14))
@@ -46,8 +46,13 @@ struct AchievementsView: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(themeManager.selectedTheme.accent.opacity(0.06))
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                    .fill(themeManager.selectedTheme.accent.opacity(0.06))
+                            )
                     )
+                    .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.15)
                 }
@@ -108,13 +113,32 @@ struct AchievementsView: View {
         let accent = themeManager.selectedTheme.accent
         return VStack(spacing: 12) {
             ZStack {
+                // Outer glow ring
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [accent.opacity(0.3), accent.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 3
+                    )
+                    .frame(width: 96, height: 96)
+                
                 Circle()
                     .stroke(Color(.systemGray4), lineWidth: 8)
                     .frame(width: 80, height: 80)
                 
                 Circle()
                     .trim(from: 0, to: achievementManager.completionPercent / 100)
-                    .stroke(accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(
+                        LinearGradient(
+                            colors: [accent, accent.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    )
                     .frame(width: 80, height: 80)
                     .rotationEffect(.degrees(-90))
                     .animation(.progressSpring, value: achievementManager.completionPercent)
@@ -122,17 +146,25 @@ struct AchievementsView: View {
                 VStack(spacing: 0) {
                     Text("\(achievementManager.earnedCount)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .monospacedDigit()
                     Text("of \(achievementManager.totalCount)")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
             }
+            .shadow(color: accent.opacity(0.2), radius: 12, y: 2)
             
             Text(String(format: "%.0f%% Complete", achievementManager.completionPercent))
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(achievementManager.earnedCount) of \(achievementManager.totalCount) achievements earned, \(String(format: "%.0f", achievementManager.completionPercent)) percent complete")
     }
@@ -149,7 +181,7 @@ struct AchievementsView: View {
                 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tell a friend about Lumifaste")
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.headline, design: .rounded))
                     Text("Share the app with friends who want a clean, ad-free fasting tracker")
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -173,16 +205,25 @@ struct AchievementsView: View {
                 .frame(height: 44)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(accent)
+                        .fill(
+                            LinearGradient(
+                                colors: [accent, accent.opacity(0.8)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
+                .shadow(color: accent.opacity(0.35), radius: 10, y: 4)
+                .shadow(color: accent.opacity(0.15), radius: 4, y: 2)
             }
             .buttonStyle(.bounce)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
     }
 }
 
@@ -207,12 +248,12 @@ struct AchievementBadge: View {
                 Circle()
                     .fill(isEarned ? achievement.color.opacity(0.15) : Color(.systemGray5))
                     .frame(width: 56, height: 56)
-                    .shadow(color: isEarned ? achievement.color.opacity(0.25) : .clear, radius: 6, y: 2)
                 
                 Image(systemName: achievement.icon)
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(isEarned ? achievement.color : Color(.systemGray3))
             }
+            .shadow(color: isEarned ? achievement.color.opacity(0.3) : .black.opacity(0.08), radius: isEarned ? 8 : 4, y: isEarned ? 3 : 2)
             .scaleEffect(isAnimating ? 1.3 : 1.0)
             .opacity(isAnimating ? 0.7 : 1.0)
             .goldGlow(when: isAnimating)
@@ -237,7 +278,12 @@ struct AchievementBadge: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .shadow(color: isEarned ? achievement.color.opacity(0.15) : .black.opacity(0.08), radius: isEarned ? 6 : 3, y: 2)
         .opacity(isEarned ? 1.0 : 0.5)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(achievement.title), \(isEarned ? "earned" : "locked"). \(achievement.subtitle)")
@@ -262,7 +308,7 @@ struct AchievementUnlockOverlay: View {
                     .font(.system(size: 48))
                 
                 Text("Achievement Unlocked!")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                 
                 ZStack {
                     Circle()
@@ -273,9 +319,10 @@ struct AchievementUnlockOverlay: View {
                         .font(.system(size: 36, weight: .semibold))
                         .foregroundStyle(achievement.color)
                 }
+                .shadow(color: achievement.color.opacity(0.4), radius: 12, y: 4)
                 
                 Text(achievement.title)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                 
                 Text(achievement.subtitle)
                     .font(.system(size: 14))
@@ -291,17 +338,24 @@ struct AchievementUnlockOverlay: View {
                         .frame(width: 160, height: 44)
                         .background(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(achievement.color)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [achievement.color, achievement.color.opacity(0.8)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
                         )
+                        .shadow(color: achievement.color.opacity(0.4), radius: 10, y: 4)
                 }
                 .buttonStyle(.bounce)
             }
             .padding(32)
             .background(
                 RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .fill(Color(.systemBackground))
+                    .fill(.ultraThinMaterial)
             )
-            .shadow(color: .black.opacity(0.15), radius: 20, y: 8)
+            .shadow(color: .black.opacity(0.2), radius: 20, y: 8)
             .scaleEffect(appeared ? 1 : 0.6)
             .opacity(appeared ? 1 : 0)
             .padding(.horizontal, 40)

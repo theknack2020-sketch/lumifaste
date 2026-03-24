@@ -80,7 +80,7 @@ struct StatsView: View {
             
             VStack(spacing: 10) {
                 Text("Insights Await")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                 
                 Text("Complete a few fasts to unlock\ncharts, streaks, and trends.")
                     .font(.system(size: 15))
@@ -195,7 +195,7 @@ struct StatsView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(badge.title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                 Text(badge.subtitle)
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
@@ -206,14 +206,20 @@ struct StatsView: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [accent.opacity(0.08), accent.opacity(0.02)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [accent.opacity(0.1), accent.opacity(0.02)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: accent.opacity(0.1), radius: 12, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(badge.title): \(badge.subtitle)")
     }
@@ -239,6 +245,7 @@ struct StatsView: View {
                             .foregroundStyle(.secondary)
                         Text(String(format: "%.1fh", thisWeekHours))
                             .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .monospacedDigit()
                         Text("\(thisWeek.count) fasts")
                             .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
@@ -254,6 +261,7 @@ struct StatsView: View {
                                 .font(.system(size: 12, weight: .bold))
                             Text(String(format: "%+.0f%%", pctChange))
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .monospacedDigit()
                         }
                         .foregroundStyle(diff >= 0 ? .green : .red)
                     }
@@ -268,6 +276,7 @@ struct StatsView: View {
                             .foregroundStyle(.secondary)
                         Text(String(format: "%.1fh", lastWeekHours))
                             .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .monospacedDigit()
                         Text("\(lastWeek.count) fasts")
                             .font(.system(size: 11))
                             .foregroundStyle(.tertiary)
@@ -368,24 +377,58 @@ struct StatsView: View {
         let total = sessions.count
         let completed = completedSessions.count
         let pct = total > 0 ? Double(completed) / Double(total) * 100 : 0
+        let accent = themeManager.selectedTheme.accent
         
         return InsightCard(title: "Consistency", icon: "checkmark.seal.fill", color: .mint) {
             VStack(spacing: 8) {
                 Text(String(format: "%.0f%%", pct))
                     .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(pct >= 80 ? .green : pct >= 50 ? .orange : .red)
+                    .monospacedDigit()
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                pct >= 80 ? .green : pct >= 50 ? .orange : .red,
+                                pct >= 80 ? .mint : pct >= 50 ? .yellow : .orange
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
                 
                 Text("of fasts completed")
                     .font(.system(size: 13))
                     .foregroundStyle(.secondary)
                 
                 HStack(spacing: 24) {
-                    Label("\(completed) done", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.green)
-                    Label("\(total - completed) missed", systemImage: "xmark.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.red)
+                    HStack(spacing: 5) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.green)
+                        Text("\(completed) done")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(.green.opacity(0.1))
+                    )
+                    
+                    HStack(spacing: 5) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.red)
+                        Text("\(total - completed) missed")
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(.red.opacity(0.1))
+                    )
                 }
                 .padding(.top, 4)
             }
@@ -513,6 +556,7 @@ private struct SummaryMetricCell: View {
             
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
+                .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             
@@ -522,7 +566,12 @@ private struct SummaryMetricCell: View {
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .shadow(color: color.opacity(0.12), radius: 4, y: 2)
     }
 }
 
@@ -541,6 +590,7 @@ private struct ComparisonDelta: View {
                     .font(.system(size: 9, weight: .bold))
                 Text(String(format: format, delta))
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
             }
             .foregroundStyle(delta > 0 ? .green : delta < 0 ? .red : .secondary)
             
@@ -585,7 +635,7 @@ struct InsightCard<Content: View>: View {
                     .font(.system(size: 14))
                     .foregroundStyle(color)
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -593,7 +643,7 @@ struct InsightCard<Content: View>: View {
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [color.opacity(0.12), color.opacity(0.04)],
+                            colors: [color.opacity(0.15), color.opacity(0.05)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -606,9 +656,10 @@ struct InsightCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: Color.black.opacity(0.05), radius: 8, y: 3)
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: color.opacity(0.08), radius: 12, y: 2)
     }
 }
 
@@ -632,8 +683,13 @@ private struct InsightPreviewPill: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(color.opacity(0.08))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(color.opacity(0.08))
+                )
         )
+        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
     }
 }
 

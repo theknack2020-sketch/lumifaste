@@ -379,6 +379,11 @@ struct WeightLogView: View {
     
     private func entryRow(entry: WeightEntry) -> some View {
         HStack {
+            // Accent left bar
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(Color.pink.gradient)
+                .frame(width: 3, height: 36)
+            
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.date.formatted(.dateTime.month(.abbreviated).day()))
                     .font(.system(size: 14, weight: .medium))
@@ -401,6 +406,7 @@ struct WeightLogView: View {
                     let entryBmi = entry.weightKg / pow(heightCm / 100, 2)
                     Text(String(format: "BMI %.1f", entryBmi))
                         .font(.system(size: 10, design: .rounded))
+                        .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
@@ -416,8 +422,9 @@ struct WeightLogView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(Color.pink.opacity(0.08))
+                    .fill(.ultraThinMaterial)
                     .frame(width: 80, height: 80)
+                    .shadow(color: .pink.opacity(0.15), radius: 8, y: 4)
                 
                 Image(systemName: "scalemass.fill")
                     .font(.system(size: 32, weight: .light))
@@ -427,7 +434,7 @@ struct WeightLogView: View {
             
             VStack(spacing: 6) {
                 Text("No Entries Yet")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                 
                 Text("Track your weight to see trends\nand how fasting affects your body.")
                     .font(.system(size: 14))
@@ -447,7 +454,14 @@ struct WeightLogView: View {
                         .font(.system(size: 14, weight: .semibold))
                 }
                 .foregroundStyle(.pink)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(.pink.opacity(0.1))
+                )
             }
+            .buttonStyle(.pressable)
             .accessibilityLabel("Add your first weight entry")
         }
         .frame(maxWidth: .infinity)

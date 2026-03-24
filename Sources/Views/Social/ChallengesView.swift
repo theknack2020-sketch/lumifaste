@@ -109,13 +109,32 @@ struct ChallengesView: View {
         
         return VStack(spacing: 12) {
             ZStack {
+                // Outer glow ring
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [accent.opacity(0.3), accent.opacity(0.05)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 3
+                    )
+                    .frame(width: 96, height: 96)
+                
                 Circle()
                     .stroke(Color(.systemGray4), lineWidth: 8)
                     .frame(width: 80, height: 80)
                 
                 Circle()
                     .trim(from: 0, to: percent / 100)
-                    .stroke(accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(
+                        LinearGradient(
+                            colors: [accent, accent.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    )
                     .frame(width: 80, height: 80)
                     .rotationEffect(.degrees(-90))
                     .animation(.progressSpring, value: percent)
@@ -123,17 +142,25 @@ struct ChallengesView: View {
                 VStack(spacing: 0) {
                     Text("\(challengeManager.completedCount)")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .monospacedDigit()
                     Text("of \(challengeManager.totalCount)")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
             }
+            .shadow(color: accent.opacity(0.2), radius: 12, y: 2)
             
             Text(String(format: "%.0f%% Complete", percent))
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.secondary)
         }
-        .padding(.vertical, 8)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .padding(.horizontal, 16)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(challengeManager.completedCount) of \(challengeManager.totalCount) challenges completed, \(String(format: "%.0f", percent)) percent")
     }
@@ -146,7 +173,7 @@ struct ChallengesView: View {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(color)
             Text(title)
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(.headline, design: .rounded))
         }
     }
     
@@ -159,7 +186,7 @@ struct ChallengesView: View {
                 .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
             
             Text("Ready to Challenge Yourself?")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(.headline, design: .rounded))
             
             Text("Complete fasts to make progress on challenges.\nEach fast brings you closer to earning badges.")
                 .font(.system(size: 14))
@@ -170,8 +197,13 @@ struct ChallengesView: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(themeManager.selectedTheme.accent.opacity(0.06))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(themeManager.selectedTheme.accent.opacity(0.06))
+                )
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
     }
 }
 
@@ -197,11 +229,12 @@ struct ChallengeCard: View {
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(challenge.color)
                 }
+                .shadow(color: challenge.color.opacity(0.2), radius: 4, y: 2)
                 
                 // Title + subtitle
                 VStack(alignment: .leading, spacing: 3) {
                     Text(challenge.title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.headline, design: .rounded))
                     Text(challenge.subtitle)
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -233,6 +266,7 @@ struct ChallengeCard: View {
                             )
                         )
                         .frame(width: geo.size.width * fraction, height: 8)
+                        .shadow(color: challenge.color.opacity(0.3), radius: 4, y: 1)
                         .animation(.progressSpring, value: fraction)
                 }
             }
@@ -241,8 +275,16 @@ struct ChallengeCard: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(challenge.color.gradient)
+                .frame(width: 3)
+                .padding(.vertical, 10)
+        }
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: challenge.color.opacity(0.1), radius: 6, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(challenge.title), \(progress) of \(challenge.targetCount). \(challenge.subtitle)")
     }
@@ -268,12 +310,12 @@ struct CompletedBadge: View {
                 Circle()
                     .fill(challenge.color.opacity(0.15))
                     .frame(width: 52, height: 52)
-                    .shadow(color: challenge.color.opacity(0.25), radius: 6, y: 2)
                 
                 Image(systemName: challenge.badgeIcon)
                     .font(.system(size: 24, weight: .semibold))
                     .foregroundStyle(challenge.color)
             }
+            .shadow(color: challenge.color.opacity(0.35), radius: 8, y: 3)
             .scaleEffect(isAnimating ? 1.3 : 1.0)
             .goldGlow(when: isAnimating)
             .animation(.spring(duration: 0.5, bounce: 0.5), value: isAnimating)
@@ -293,8 +335,17 @@ struct CompletedBadge: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(challenge.color.opacity(0.04))
+                )
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(challenge.color.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: challenge.color.opacity(0.2), radius: 6, y: 3)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(challenge.title), completed\(formattedDate.map { " on \($0)" } ?? "")")
     }

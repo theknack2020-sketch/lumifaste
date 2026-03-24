@@ -97,13 +97,26 @@ struct PaywallView: View {
     // MARK: - Header
     
     private var headerSection: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 44))
-                .foregroundStyle(themeManager.selectedTheme.accentGradient)
+        let accent = themeManager.selectedTheme.accent
+        return VStack(spacing: 12) {
+            ZStack {
+                // Radial glow behind icon
+                RadialGradient(
+                    colors: [accent.opacity(0.3), accent.opacity(0.05), .clear],
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 60
+                )
+                .frame(width: 120, height: 120)
+                
+                Image(systemName: "sparkles")
+                    .font(.system(size: 44))
+                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    .shadow(color: accent.opacity(0.4), radius: 12, y: 4)
+            }
             
             Text("Lumifaste Premium")
-                .font(.system(size: 26, weight: .bold))
+                .font(.system(size: 26, weight: .bold, design: .rounded))
             
             Text("Unlock your full fasting potential")
                 .font(.system(size: 16))
@@ -154,8 +167,9 @@ struct PaywallView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+                .fill(.ultraThinMaterial)
         )
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
     }
     
     // MARK: - Products
@@ -172,7 +186,7 @@ struct PaywallView: View {
                         .font(.system(size: 24))
                         .foregroundStyle(.secondary)
                     Text("Couldn't load prices")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(.headline, design: .rounded))
                     Text("Check your internet connection and tap to retry.")
                         .font(.system(size: 13))
                         .foregroundStyle(.secondary)
@@ -257,8 +271,8 @@ struct PaywallView: View {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    themeManager.selectedTheme.gradientStart,
-                                    themeManager.selectedTheme.gradientEnd,
+                                    Color.green,
+                                    Color.teal,
                                     themeManager.selectedTheme.accent
                                 ],
                                 startPoint: .topLeading,
@@ -266,8 +280,9 @@ struct PaywallView: View {
                             )
                         )
                 )
-                .shadow(color: themeManager.selectedTheme.accent.opacity(0.45), radius: 16, y: 6)
-                .shadow(color: themeManager.selectedTheme.accent.opacity(0.2), radius: 6, y: 2)
+                .shadow(color: Color.green.opacity(0.4), radius: 16, y: 6)
+                .shadow(color: Color.teal.opacity(0.25), radius: 8, y: 3)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.15), radius: 4, y: 1)
             }
             .buttonStyle(.pressable)
             .disabled(selectedProduct == nil || subscriptionManager.isPurchasing)
@@ -345,7 +360,7 @@ private struct FeatureRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(title)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(.headline, design: .rounded))
                     if isFree {
                         Text("FREE")
                             .font(.system(size: 9, weight: .bold))
@@ -360,10 +375,15 @@ private struct FeatureRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.ultraThinMaterial.opacity(0.5))
+                .padding(.horizontal, -8)
+                .padding(.vertical, -4)
+        )
     }
 }
-
-// MARK: - Product Card
 
 // MARK: - Trust Indicator
 
@@ -381,6 +401,12 @@ private struct TrustIndicator: View {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+        .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
     }
 }
 
@@ -401,7 +427,7 @@ private struct ProductCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 8) {
                         Text(label)
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(.headline, design: .rounded))
                         
                         if let badge {
                             Text(badge)
@@ -410,14 +436,22 @@ private struct ProductCard: View {
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
                                 .background(
-                                    Capsule().fill(accentColor)
+                                    Capsule().fill(
+                                        LinearGradient(
+                                            colors: [accentColor, accentColor.opacity(0.8)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
                                 )
+                                .shadow(color: accentColor.opacity(0.3), radius: 4, y: 2)
                         }
                     }
                     
                     HStack(spacing: 4) {
                         Text(product.displayPrice)
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, design: .rounded))
+                            .monospacedDigit()
                             .foregroundStyle(.secondary)
                         Text("/ \(label.lowercased())")
                             .font(.system(size: 14))
@@ -426,6 +460,7 @@ private struct ProductCard: View {
                         if savings > 0 {
                             Text("Save \(savings)%")
                                 .font(.system(size: 12, weight: .medium))
+                                .monospacedDigit()
                                 .foregroundStyle(.green)
                         }
                     }
@@ -441,9 +476,10 @@ private struct ProductCard: View {
             .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color(.secondarySystemBackground))
-                    .shadow(color: isSelected ? accentColor.opacity(0.25) : Color.black.opacity(0.06), radius: isSelected ? 14 : 6, y: isSelected ? 5 : 2)
+                    .fill(.ultraThinMaterial)
             )
+            .shadow(color: isSelected ? accentColor.opacity(0.3) : .black.opacity(0.1), radius: isSelected ? 14 : 6, y: isSelected ? 5 : 2)
+            .shadow(color: isSelected ? accentColor.opacity(0.15) : .clear, radius: 6, y: 2)
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .stroke(isSelected ? accentColor : .clear, lineWidth: 2)
@@ -483,9 +519,10 @@ struct SoftPaywallView: View {
             Image(systemName: reason.icon)
                 .font(.system(size: 36))
                 .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.3), radius: 8, y: 3)
             
             Text(reason.title)
-                .font(.system(size: 20, weight: .bold))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
                 .multilineTextAlignment(.center)
             
             Text(reason.subtitle)
@@ -499,6 +536,12 @@ struct SoftPaywallView: View {
                 SoftPaywallBenefit(icon: "chart.bar.fill", text: "Get detailed reports after every fast", accentColor: themeManager.selectedTheme.accent)
                 SoftPaywallBenefit(icon: "bolt.fill", text: "Track your streak and build consistency", accentColor: themeManager.selectedTheme.accent)
             }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
             .padding(.horizontal, 8)
             
             Button {
@@ -518,8 +561,16 @@ struct SoftPaywallView: View {
                 .frame(height: 50)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(themeManager.selectedTheme.accentGradient)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.green, Color.teal],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                 )
+                .shadow(color: Color.green.opacity(0.35), radius: 10, y: 4)
+                .shadow(color: Color.teal.opacity(0.2), radius: 4, y: 2)
             }
             
             Button("Not Now") {

@@ -211,18 +211,24 @@ struct TimeAnalysisView: View {
                     .foregroundStyle(.indigo)
                 Text(peakStartHour.map { formatHour($0) } ?? "--")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .monospacedDigit()
                 Text("Usual start")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .shadow(color: .indigo.opacity(0.1), radius: 4, y: 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Usual fasting start time")
             .accessibilityValue(peakStartHour.map { formatHour($0) } ?? "No data")
             
-            Divider()
-                .frame(height: 40)
-                .accessibilityHidden(true)
+            Spacer()
+                .frame(width: 12)
             
             VStack(spacing: 4) {
                 Image(systemName: "sun.max.fill")
@@ -230,11 +236,18 @@ struct TimeAnalysisView: View {
                     .foregroundStyle(.orange)
                 Text(peakEndHour.map { formatHour($0) } ?? "--")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .monospacedDigit()
                 Text("Usual end")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .shadow(color: .orange.opacity(0.1), radius: 4, y: 2)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Usual fasting end time")
             .accessibilityValue(peakEndHour.map { formatHour($0) } ?? "No data")
@@ -251,7 +264,7 @@ struct TimeAnalysisView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Best time to start: \(formatHour(recommendation.hour))")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.system(.headline, design: .rounded))
                 Text(recommendation.reason)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
@@ -259,11 +272,22 @@ struct TimeAnalysisView: View {
             
             Spacer()
         }
-        .padding(10)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(accent.opacity(0.06))
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(accent.opacity(0.06))
+                )
         )
+        .overlay(alignment: .leading) {
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(accent.gradient)
+                .frame(width: 3)
+                .padding(.vertical, 6)
+        }
+        .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Best time to start fasting: \(formatHour(recommendation.hour)). \(recommendation.reason)")
     }
@@ -283,8 +307,7 @@ struct TimeAnalysisView: View {
         
         return VStack(alignment: .leading, spacing: 8) {
             Text("Activity Heatmap")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .font(.system(.headline, design: .rounded))
             
             HeatmapGrid(
                 timeBlocks: timeBlocks,
@@ -364,8 +387,7 @@ private struct DayOfWeekBarChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("By Day of Week")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.secondary)
+                .font(.system(.headline, design: .rounded))
             
             HStack(spacing: 4) {
                 ForEach(data) { day in

@@ -42,6 +42,7 @@ enum DateGrouping: String, CaseIterable, Identifiable {
 
 /// Full-featured history with search, filter, sort, grouping, export, and detail navigation.
 /// Free: last 7 fasts. Premium: unlimited + streak.
+/// Visual polish: glassmorphism cards, layered shadows, rounded typography — matches Timer.
 struct HistoryView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(\.modelContext) private var modelContext
@@ -240,12 +241,16 @@ struct HistoryView: View {
                 .foregroundStyle(.green)
             Text("\(completedCount)")
                 .font(.system(.caption, design: .rounded, weight: .bold))
+                .monospacedDigit()
                 .foregroundStyle(.green)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(.green.opacity(0.12))
-        .clipShape(Capsule())
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .shadow(color: .green.opacity(0.15), radius: 4, x: 0, y: 2)
+        )
         .accessibilityLabel("\(completedCount) completed fasts")
     }
     
@@ -262,6 +267,7 @@ struct HistoryView: View {
                 if activeFilterCount > 0 {
                     Text("\(activeFilterCount)")
                         .font(.system(size: 9, weight: .bold))
+                        .monospacedDigit()
                         .foregroundStyle(.white)
                         .frame(width: 14, height: 14)
                         .background(Circle().fill(.red))
@@ -269,6 +275,7 @@ struct HistoryView: View {
                 }
             }
         }
+        .buttonStyle(.pressable)
         .accessibilityLabel("Filters\(activeFilterCount > 0 ? ", \(activeFilterCount) active" : "")")
     }
     
@@ -344,6 +351,7 @@ struct HistoryView: View {
                         )
                     )
                     .frame(width: 130, height: 130)
+                    .shadow(color: .orange.opacity(0.15), radius: 16, x: 0, y: 6)
                 
                 Circle()
                     .fill(Color.orange.opacity(0.06))
@@ -358,7 +366,7 @@ struct HistoryView: View {
             
             VStack(spacing: 10) {
                 Text("Your Fasting Journey\nStarts Here")
-                    .font(.system(.title3, weight: .bold))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                     .multilineTextAlignment(.center)
                 
                 Text("Start your first fast to see your\nhistory, streaks, and progress.")
@@ -367,16 +375,13 @@ struct HistoryView: View {
                     .multilineTextAlignment(.center)
             }
             
-            // CTA button navigating to Timer tab
-            NavigationLink {
-                // This is a visual CTA — in a TabView app, switching tabs is handled by parent.
-                // Using a label that signals the action.
-            } label: {
+            // Empty state card
+            VStack(spacing: 14) {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 14))
                     Text("Start Your First Fast")
-                        .font(.system(.subheadline, weight: .semibold))
+                        .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 28)
@@ -384,10 +389,10 @@ struct HistoryView: View {
                 .background(
                     Capsule()
                         .fill(Color.orange.gradient)
+                        .shadow(color: .orange.opacity(0.4), radius: 12, x: 0, y: 4)
                 )
-                .shadow(color: .orange.opacity(0.3), radius: 10, y: 4)
             }
-            .buttonStyle(.bounce)
+            .buttonStyle(.pressable)
             .padding(.top, 4)
             
             HStack(spacing: 6) {
@@ -397,6 +402,12 @@ struct HistoryView: View {
                     .font(.system(.caption))
             }
             .foregroundStyle(.tertiary)
+            .padding(10)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+            )
             .padding(.top, 4)
             
             Spacer()
@@ -446,6 +457,7 @@ struct HistoryView: View {
             } header: {
                 if !group.key.isEmpty {
                     Text(group.key)
+                        .font(.system(.footnote, design: .rounded, weight: .bold))
                 }
             }
         }
@@ -460,8 +472,9 @@ struct HistoryView: View {
         }
         .listRowBackground(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
-                .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                .shadow(color: .black.opacity(0.04), radius: 2, x: 0, y: 1)
                 .padding(.vertical, 2)
                 .padding(.horizontal, 4)
         )
@@ -489,12 +502,18 @@ struct HistoryView: View {
     private var noResultsSection: some View {
         Section {
             VStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.tertiary)
+                ZStack {
+                    Circle()
+                        .fill(Color(.tertiarySystemFill))
+                        .frame(width: 56, height: 56)
+                    
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.tertiary)
+                }
                 
                 Text("No matching fasts")
-                    .font(.system(.subheadline, weight: .medium))
+                    .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .foregroundStyle(.secondary)
                 
                 Text("Try adjusting your search or filters")
@@ -505,7 +524,7 @@ struct HistoryView: View {
                     Button("Clear Filters") {
                         withAnimation(.smoothSpring) { resetFilters() }
                     }
-                    .font(.system(.caption, weight: .medium))
+                    .font(.system(.caption, design: .rounded, weight: .medium))
                     .buttonStyle(.bounce)
                 }
             }
@@ -543,8 +562,9 @@ struct HistoryView: View {
                     Button("Clear All") {
                         withAnimation(.smoothSpring) { resetFilters() }
                     }
-                    .font(.system(.caption, weight: .medium))
+                    .font(.system(.caption, design: .rounded, weight: .medium))
                     .foregroundStyle(.red)
+                    .buttonStyle(.pressable)
                 }
             }
         }
@@ -555,7 +575,7 @@ struct HistoryView: View {
     
     private var statsSection: some View {
         Section {
-            HStack(spacing: 0) {
+            HStack(spacing: 10) {
                 HistoryStatCard(
                     title: "Total Fasts",
                     value: "\(sessions.count)",
@@ -601,26 +621,45 @@ struct HistoryView: View {
                 showSoftPaywall = true
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(.body))
-                        .foregroundStyle(.purple)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .fill(Color.purple.opacity(0.12))
+                            .frame(width: 36, height: 36)
+                        
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 15))
+                            .foregroundStyle(.purple)
+                    }
                     
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Unlock Full History")
-                            .font(.system(.subheadline, weight: .semibold))
+                            .font(.system(.subheadline, design: .rounded, weight: .semibold))
                             .foregroundStyle(.primary)
                         Text("\(sessions.count - freeLimit) more fasts · Upgrade to Premium")
                             .font(.system(.footnote))
+                            .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
                     
                     Spacer()
                     
                     Image(systemName: "chevron.right")
-                        .font(.system(.caption))
+                        .font(.system(.caption, weight: .semibold))
                         .foregroundStyle(.tertiary)
                 }
             }
+            .buttonStyle(.pressable)
+            .listRowBackground(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.purple.opacity(0.04))
+                    )
+                    .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+                    .padding(.vertical, 2)
+                    .padding(.horizontal, 4)
+            )
             .accessibilityLabel("Unlock full history. \(sessions.count - freeLimit) more fasts available with Premium.")
             .accessibilityHint("Double tap to see upgrade options")
         }
@@ -680,7 +719,7 @@ struct HistoryView: View {
     }
 }
 
-// MARK: - Filter Pill
+// MARK: - Filter Pill — Glassmorphism capsule
 
 private struct HistoryFilterPill: View {
     let text: String
@@ -689,21 +728,25 @@ private struct HistoryFilterPill: View {
     var body: some View {
         HStack(spacing: 4) {
             Text(text)
-                .font(.system(.caption, weight: .medium))
+                .font(.system(.caption, design: .rounded, weight: .medium))
             
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 12))
             }
+            .buttonStyle(.pressable)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 5)
-        .background(Color(.tertiarySystemFill))
-        .clipShape(Capsule())
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.12), radius: 4, x: 0, y: 2)
+        )
     }
 }
 
-// MARK: - Stat Card
+// MARK: - Stat Card — Glassmorphism + shadow
 
 private struct HistoryStatCard: View {
     let title: String
@@ -713,25 +756,38 @@ private struct HistoryStatCard: View {
     
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(.body))
-                .foregroundStyle(color)
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(color)
+            }
             
             Text(value)
                 .font(.system(.title2, design: .rounded, weight: .bold))
+                .monospacedDigit()
             
             Text(title)
-                .font(.system(.caption))
+                .font(.system(.caption, design: .rounded))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
+                .shadow(color: color.opacity(0.08), radius: 8, x: 0, y: 2)
+        )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(value)")
     }
 }
 
-// MARK: - Locked Stat Card
+// MARK: - Locked Stat Card — Glassmorphism + shadow
 
 private struct HistoryLockedStatCard: View {
     let title: String
@@ -742,20 +798,31 @@ private struct HistoryLockedStatCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(.body))
-                    .foregroundStyle(color.opacity(0.4))
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.08))
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 14))
+                        .foregroundStyle(color.opacity(0.4))
+                }
                 
                 Image(systemName: "lock.fill")
                     .font(.system(.footnote))
                     .foregroundStyle(.secondary)
                 
                 Text(title)
-                    .font(.system(.caption))
+                    .font(.system(.caption, design: .rounded))
                     .foregroundStyle(.secondary)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.12), radius: 6, x: 0, y: 3)
+            )
         }
         .buttonStyle(.bounce)
         .accessibilityLabel("\(title): Premium feature, locked")
