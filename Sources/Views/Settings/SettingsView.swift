@@ -44,6 +44,7 @@ struct SettingsView: View {
                 VStack(spacing: 20) {
                     premiumSection
                     activitySection
+                    iCloudSection
                     themeSection
                     appearanceSection
                     soundsSection
@@ -490,6 +491,40 @@ struct SettingsView: View {
     }
     
     // MARK: - Data Section
+    
+    // MARK: - iCloud Sync
+    
+    private var iCloudSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("iCloud")
+            
+            glassCard {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "cloud.fill")
+                            .font(.system(.title3))
+                            .foregroundStyle(.green)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("iCloud Sync")
+                                .font(.system(.body, design: .rounded, weight: .medium))
+                            Text("Enabled")
+                                .font(.system(.caption))
+                                .foregroundStyle(.green)
+                        }
+                        Spacer()
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("iCloud Sync enabled")
+                    
+                    Text("Your fasting data syncs automatically across all your devices via iCloud.")
+                        .font(.system(.caption))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+    }
     
     private var dataSection: some View {
         VStack(alignment: .leading, spacing: 8) {

@@ -14,7 +14,7 @@ struct LumifasteApp: App {
     init() {
         do {
             let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
-            let config = ModelConfiguration(schema: schema)
+            let config = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
             modelContainer = try ModelContainer(
                 for: schema,
                 migrationPlan: LumifasteMigrationPlan.self,
