@@ -13,6 +13,7 @@ struct ContentView: View {
                         Label("Timer", systemImage: "timer")
                     }
                     .tag(0)
+                    .accessibilityIdentifier("tab_timer")
                     .accessibilityLabel("Timer tab")
                     .accessibilityHint("Fasting timer and controls")
                 
@@ -21,6 +22,7 @@ struct ContentView: View {
                         Label("History", systemImage: "clock.arrow.circlepath")
                     }
                     .tag(1)
+                    .accessibilityIdentifier("tab_history")
                     .accessibilityLabel("History tab")
                     .accessibilityHint("View past fasting sessions")
                 
@@ -29,6 +31,7 @@ struct ContentView: View {
                         Label("Learn", systemImage: "book.fill")
                     }
                     .tag(2)
+                    .accessibilityIdentifier("tab_learn")
                     .accessibilityLabel("Learn tab")
                     .accessibilityHint("Educational content about fasting")
                 
@@ -37,6 +40,7 @@ struct ContentView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                     .tag(3)
+                    .accessibilityIdentifier("tab_settings")
                     .accessibilityLabel("Settings tab")
                     .accessibilityHint("App settings and preferences")
             }
