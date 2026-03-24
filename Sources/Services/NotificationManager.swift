@@ -319,9 +319,9 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             scheduleMilestoneNotifications(startDate: startDate, targetDuration: targetDuration)
         }
         
-        // 2. Stage transition notifications
+        // 2. Stage transition notifications (enhanced messaging)
         if settings.stageTransitionEnabled {
-            scheduleStageNotifications(startDate: startDate, targetDuration: targetDuration)
+            scheduleEnhancedStageNotifications(startDate: startDate, targetDuration: targetDuration)
         }
         
         // 3. Fast complete notification
@@ -506,6 +506,266 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["streak_reminder"])
     }
     
+    // MARK: - Enhanced Streak Notification (#14)
+    
+    /// Schedule a daily streak notification with personalized, streak-length-aware messaging.
+    /// Fires at 9 AM tomorrow (or the daily reminder time if set).
+    func scheduleDailyStreakNotification(currentStreak: Int) {
+        let id = "daily_streak"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        guard settings.streakReminderEnabled, currentStreak >= 1 else { return }
+        
+        let message = streakMotivationalMessage(for: currentStreak)
+        let content = makeContent(
+            title: "Day \(currentStreak + 1)! 🔥 Don't break your streak",
+            body: message,
+            category: .streakReminder,
+            interruptionLevel: .timeSensitive
+        )
+        
+        // Schedule for 9 AM tomorrow
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date.now)
+        if let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date.now) {
+            components = Calendar.current.dateComponents([.year, .month, .day], from: tomorrow)
+        }
+        components.hour = 9
+        components.minute = 0
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        let streak = currentStreak
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule daily streak notification: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled daily streak notification for \(streak)-day streak")
+            }
+        }
+    }
+    
+    /// Returns a motivational message that varies by streak length.
+    private func streakMotivationalMessage(for streak: Int) -> String {
+        switch streak {
+        case 1...2:
+            return "You're building a habit! Every day counts. Keep going 💪"
+        case 3...6:
+            return "Your body is adapting to your fasting rhythm. Consistency is key! 🌱"
+        case 7...13:
+            return "A full week and counting! Your discipline is paying off 🔥"
+        case 14...29:
+            return "Two weeks strong! You're in the top tier of fasters. Amazing willpower ⚡"
+        case 30...59:
+            return "A whole month! Your metabolism thanks you. This is extraordinary 🏆"
+        case 60...99:
+            return "Over \(streak) days — you've made fasting a lifestyle. Legendary! 👑"
+        default:
+            return "\(streak) days! You're an absolute inspiration. Never stop 🌟"
+        }
+    }
+    
+    // MARK: - Enhanced Stage-Aware Push (#15)
+    
+    /// Schedule stage transition notifications with enhanced, engaging messaging.
+    func scheduleEnhancedStageNotifications(startDate: Date, targetDuration: TimeInterval) {
+        // These are already scheduled in scheduleStageNotifications but we enhance messaging here
+        // Called from scheduleFastingNotifications
+        let stages: [(hours: Double, title: String, body: String)] = [
+            (4, "Early Fasting Begins 🌅",
+             "Blood sugar is dropping — your body is switching from food to stored energy. Stay hydrated!"),
+            (12, "Fat Burning Activated 🔥",
+             "Your body just entered Fat Burning! Stored fat is now your primary fuel. You're in the zone."),
+            (18, "Ketosis Unlocked ⚡",
+             "Ketone production is surging — your brain is running on premium fuel. Deep benefits are kicking in."),
+            (24, "Autophagy Mode ✨",
+             "Cellular cleanup activated! Your body is recycling damaged cells and building new ones. Elite level.")
+        ]
+        
+        for stageInfo in stages {
+            let triggerDate = startDate.addingTimeInterval(stageInfo.hours * 3600)
+            guard stageInfo.hours <= (targetDuration / 3600) + 2 else { continue }
+            guard triggerDate > Date.now else { continue }
+            guard !isDuringQuietHours(triggerDate) else { continue }
+            
+            let content = makeContent(
+                title: stageInfo.title,
+                body: stageInfo.body,
+                category: .fastingStage,
+                interruptionLevel: .timeSensitive
+            )
+            content.threadIdentifier = "fasting_stages"
+            
+            scheduleNotification(
+                id: "fast_stage_\(Int(stageInfo.hours))h",
+                content: content,
+                date: triggerDate
+            )
+        }
+    }
+    
+    // MARK: - Morning Nudge (#16)
+    
+    /// Schedule a morning nudge with the user's average start time.
+    /// "Ready for today's fast? Your average start time is 8:30 PM"
+    func scheduleMorningNudge(averageStartTime: String?) {
+        let id = "morning_nudge"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        guard settings.dailyReminderEnabled else { return }
+        
+        let body: String
+        if let avgTime = averageStartTime {
+            body = "Ready for today's fast? Your average start time is \(avgTime) — keep the rhythm going! 🍃"
+        } else {
+            body = "Ready for today's fast? Start when it feels right — every hour counts! 🍃"
+        }
+        
+        let content = makeContent(
+            title: "Good Morning! ☀️",
+            body: body,
+            category: .dailyReminder
+        )
+        
+        // Schedule for 8 AM tomorrow
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date.now)
+        if let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date.now) {
+            components = Calendar.current.dateComponents([.year, .month, .day], from: tomorrow)
+        }
+        components.hour = 8
+        components.minute = 0
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule morning nudge: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled morning nudge")
+            }
+        }
+    }
+    
+    // MARK: - Inactivity Nudge (#17)
+    
+    /// Schedule an inactivity nudge if user hasn't fasted in 3+ days.
+    /// "We miss you 🌿 Even a 12-hour fast makes a difference"
+    func scheduleInactivityNudge(daysSinceLastFast: Int?) {
+        let id = "inactivity_nudge"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        
+        guard let days = daysSinceLastFast, days >= 3 else { return }
+        
+        let body: String
+        switch days {
+        case 3...5:
+            body = "We miss you 🌿 Even a 12-hour fast makes a difference. Your body remembers the rhythm."
+        case 6...13:
+            body = "It's been \(days) days since your last fast. A gentle 12:12 is all it takes to get back on track 🌱"
+        default:
+            body = "Welcome back whenever you're ready. A simple 12-hour fast is a great restart 🍃"
+        }
+        
+        let content = makeContent(
+            title: "We Miss You! 🌿",
+            body: body,
+            category: .dailyReminder
+        )
+        
+        // Schedule for tomorrow 10 AM
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date.now)
+        if let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date.now) {
+            components = Calendar.current.dateComponents([.year, .month, .day], from: tomorrow)
+        }
+        components.hour = 10
+        components.minute = 0
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule inactivity nudge: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled inactivity nudge (days since last fast: \(days))")
+            }
+        }
+    }
+    
+    // MARK: - Weekly Summary (#18)
+    
+    /// Schedule a weekly summary notification.
+    /// "This week: 3 fasts, 48 hours, 5-day streak!"
+    func scheduleWeeklySummary(stats: FastingManager.WeeklyStats, currentStreak: Int) {
+        let id = "weekly_summary"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        
+        guard stats.fastCount > 0 else { return }
+        
+        let streakPart: String
+        if currentStreak > 0 {
+            streakPart = "\(currentStreak)-day streak! 🔥"
+        } else {
+            streakPart = "Start a streak this week!"
+        }
+        
+        let hoursString = stats.totalHours >= 1 ? "\(Int(stats.totalHours))" : String(format: "%.1f", stats.totalHours)
+        
+        let content = makeContent(
+            title: "Your Week in Review 📊",
+            body: "This week: \(stats.fastCount) fast\(stats.fastCount == 1 ? "" : "s"), \(hoursString) hours fasted, \(streakPart)",
+            category: .motivationalQuote
+        )
+        
+        // Schedule for Sunday 6 PM
+        var components = DateComponents()
+        components.weekday = 1 // Sunday
+        components.hour = 18
+        components.minute = 0
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule weekly summary: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled weekly summary notification")
+            }
+        }
+    }
+    
+    // MARK: - Schedule All Retention Notifications
+    
+    /// Schedule all retention-related notifications.
+    /// Call on app foreground after fetching sessions data.
+    func scheduleRetentionNotifications(
+        sessions: [FastingSession],
+        currentStreak: Int,
+        isCurrentlyFasting: Bool
+    ) {
+        let daysSince = FastingManager.daysSinceLastFast(sessions: sessions)
+        let avgTime = FastingManager.formattedAverageStartTime(sessions: sessions)
+        let stats = FastingManager.weeklyStats(sessions: sessions, currentStreak: currentStreak)
+        
+        // Daily streak
+        if currentStreak > 0 && !isCurrentlyFasting {
+            scheduleDailyStreakNotification(currentStreak: currentStreak)
+        }
+        
+        // Morning nudge (only if not currently fasting)
+        if !isCurrentlyFasting {
+            scheduleMorningNudge(averageStartTime: avgTime)
+        }
+        
+        // Inactivity nudge (only if not currently fasting and 3+ days since last)
+        if !isCurrentlyFasting {
+            scheduleInactivityNudge(daysSinceLastFast: daysSince)
+        }
+        
+        // Weekly summary
+        scheduleWeeklySummary(stats: stats, currentStreak: currentStreak)
+    }
+    
     // MARK: - Cancel
     
     func cancelAllFastingNotifications() {
@@ -521,6 +781,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func cancelAllNotifications() {
         UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
         logger.info("Cancelled all pending notifications")
+    }
+    
+    /// Cancel all retention-related notifications (streak, nudge, morning, weekly).
+    func cancelRetentionNotifications() {
+        let ids = ["daily_streak", "morning_nudge", "inactivity_nudge", "weekly_summary"]
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
     
     // MARK: - Quiet Hours

@@ -38,6 +38,7 @@ struct TimerView: View {
     
     @State private var showError = false
     @State private var errorMessage: String?
+    @State private var journeyManager = OnboardingJourneyManager()
     
     /// Tracks whether we've shown the soft paywall this session to avoid repeat
     @AppStorage("lf_soft_paywall_shown") private var softPaywallShown = false
@@ -145,6 +146,14 @@ struct TimerView: View {
                         dateAndStreakHeader
                             .padding(.horizontal, 20)
                             .padding(.top, 8)
+                        
+                        // Onboarding journey banner (#19-22)
+                        if let banner = journeyManager.currentDayBanner() {
+                            onboardingBanner(banner: banner)
+                                .padding(.horizontal, 20)
+                                .padding(.top, 8)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
                         
                         // Nudge banner (#13)
                         if showNudge && !manager.isActive {
@@ -344,6 +353,16 @@ struct TimerView: View {
                 if !manager.isActive && completedFastCount > 0 {
                     showNudge = FastingManager.shouldShowNudge(sessions: allSessions)
                 }
+                // Schedule retention notifications (#14-18)
+                Task { @MainActor in
+                    let status = await NotificationManager.shared.authorizationStatus()
+                    guard status == .authorized else { return }
+                    NotificationManager.shared.scheduleRetentionNotifications(
+                        sessions: allSessions,
+                        currentStreak: currentStreak,
+                        isCurrentlyFasting: manager.isActive
+                    )
+                }
             }
             .onDisappear {
                 productLoadTask?.cancel()
@@ -399,6 +418,7 @@ struct TimerView: View {
         }
         Task { @MainActor in
             NotificationManager.shared.scheduleStreakReminder(currentStreak: currentStreak)
+            NotificationManager.shared.scheduleDailyStreakNotification(currentStreak: currentStreak)
         }
     }
     
@@ -519,6 +539,46 @@ struct TimerView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color.orange.opacity(0.1))
         )
+    }
+    
+    // MARK: - Onboarding Journey Banner (#19-22)
+    
+    private func onboardingBanner(banner: OnboardingJourneyManager.Banner) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: banner.icon)
+                .font(.system(size: 20))
+                .foregroundStyle(themeManager.selectedTheme.accent)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(banner.title)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(banner.message)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+            }
+            
+            Spacer()
+            
+            Button {
+                withAnimation(.smoothSpring) {
+                    journeyManager.dismissBanner()
+                }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(themeManager.selectedTheme.accent.opacity(0.08))
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.1), radius: 6, x: 0, y: 2)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(banner.title) \(banner.message)")
+        .accessibilityAddTraits(.isButton)
     }
     
     // MARK: - Timer Ring (redesigned)
@@ -662,6 +722,15 @@ struct TimerView: View {
                     .padding(.horizontal, 8)
                     .contentTransition(.opacity)
                     .transition(.opacity)
+            } else if !subscriptionManager.isSubscribed {
+                HStack(spacing: 4) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9))
+                    Text("Unlock stage science with Pro")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundStyle(.purple.opacity(0.7))
+                .padding(.top, 2)
             }
         }
         .padding(.vertical, 12)
@@ -1178,9 +1247,21 @@ private struct PlanCard: View {
                         .font(.system(size: 16, weight: isSelected ? .bold : .semibold))
                         .foregroundStyle(isSelected ? themeAccent : .primary)
                     if isLocked {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 9))
-                            .foregroundStyle(.secondary)
+                        Text("PRO")
+                            .font(.system(size: 9, weight: .heavy, design: .rounded))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.purple, .pink],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                            )
                     }
                 }
                 

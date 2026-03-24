@@ -9,6 +9,7 @@ struct JournalEntryView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
     
     @State private var selectedMood: FastingMood?
     @State private var energy: Double = 3
@@ -16,6 +17,7 @@ struct JournalEntryView: View {
     @State private var saved = false
     @State private var showError = false
     @State private var errorMessage: String?
+    @State private var showPaywall = false
     
     var body: some View {
         NavigationStack {
@@ -25,17 +27,35 @@ struct JournalEntryView: View {
                     headerSection
                         .entranceAnimation(delay: 0.05)
                     
-                    // Mood picker
+                    // Mood picker — always available
                     moodSection
                         .entranceAnimation(delay: 0.15)
                     
-                    // Energy slider
-                    energySection
+                    // Energy slider — Pro only
+                    if subscriptionManager.isSubscribed {
+                        energySection
+                            .entranceAnimation(delay: 0.25)
+                    } else {
+                        journalProLockedSection(
+                            icon: "battery.100percent.bolt",
+                            title: "Energy Tracking",
+                            subtitle: "Track your energy levels with Pro"
+                        )
                         .entranceAnimation(delay: 0.25)
+                    }
                     
-                    // Notes
-                    notesSection
+                    // Notes — Pro only
+                    if subscriptionManager.isSubscribed {
+                        notesSection
+                            .entranceAnimation(delay: 0.35)
+                    } else {
+                        journalProLockedSection(
+                            icon: "note.text",
+                            title: "Detailed Notes",
+                            subtitle: "Add notes to your journal with Pro"
+                        )
                         .entranceAnimation(delay: 0.35)
+                    }
                     
                     // Save button
                     saveButton
@@ -73,6 +93,9 @@ struct JournalEntryView: View {
                 Button("OK") {}
             } message: {
                 Text(errorMessage ?? "Something went wrong.")
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView()
             }
         }
     }
@@ -281,6 +304,68 @@ struct JournalEntryView: View {
         .accessibilityLabel(saved ? "Journal saved" : "Save journal entry")
     }
     
+    // MARK: - Pro Locked Journal Section
+    
+    private func journalProLockedSection(icon: String, title: String, subtitle: String) -> some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                Spacer()
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+            }
+            
+            Text(subtitle)
+                .font(.system(size: 13))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Button {
+                showPaywall = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11))
+                    Text("Upgrade to Pro")
+                        .font(.system(size: 13, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 4)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.secondarySystemBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
+                )
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(subtitle). Upgrade to Pro to unlock.")
+        .accessibilityAddTraits(.isButton)
+    }
+    
     // MARK: - Save
     
     private func saveJournal() {
@@ -331,4 +416,5 @@ struct JournalEntryView: View {
     return JournalEntryView(session: session)
         .modelContainer(for: [FastingSession.self, FastingJournal.self], inMemory: true)
         .environment(ThemeManager())
+        .environment(SubscriptionManager())
 }

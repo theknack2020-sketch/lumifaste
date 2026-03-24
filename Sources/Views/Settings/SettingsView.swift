@@ -533,25 +533,39 @@ struct SettingsView: View {
             glassCard {
                 VStack(alignment: .leading, spacing: 8) {
                     Button {
-                        HapticManager.shared.exportCompleted()
-                        exportData()
+                        if subscriptionManager.isSubscribed {
+                            HapticManager.shared.exportCompleted()
+                            exportData()
+                        } else {
+                            HapticManager.shared.warning()
+                            showPaywall = true
+                        }
                     } label: {
                         HStack {
                             Label("Export Fasting History", systemImage: "square.and.arrow.up")
                             Spacer()
+                            if !subscriptionManager.isSubscribed {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.secondary)
+                            }
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
                         }
                     }
                     .buttonStyle(.pressable)
-                    .disabled(sessions.isEmpty)
+                    .disabled(sessions.isEmpty && subscriptionManager.isSubscribed)
                     .accessibilityLabel("Export fasting history as CSV")
-                    .accessibilityHint(sessions.isEmpty
+                    .accessibilityHint(!subscriptionManager.isSubscribed
+                        ? "Pro feature. Upgrade to export your data."
+                        : sessions.isEmpty
                         ? "No fasting data to export"
                         : "Exports \(sessions.count) fasting sessions as a CSV file")
                     
-                    Text("Export your fasting history as a CSV file. Your data always stays on your device unless you choose to share it.")
+                    Text(subscriptionManager.isSubscribed
+                        ? "Export your fasting history as a CSV file. Your data always stays on your device unless you choose to share it."
+                        : "Export is a Pro feature. Upgrade to download your fasting history as CSV.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
                 }

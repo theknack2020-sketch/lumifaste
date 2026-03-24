@@ -109,37 +109,38 @@ struct StatsView: View {
     private var statsContent: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
-                // Summary card — 3x2 grid with key metrics
+                // Summary card — always visible (free: total fasts, streak, best streak)
                 summaryCard
                     .staggeredEntrance(index: 0, appeared: cardsAppeared)
                 
-                // Motivational badge
+                // Motivational badge — always visible
                 motivationalBadge
                     .staggeredEntrance(index: 1, appeared: cardsAppeared)
                 
-                // This Week vs Last Week comparison
-                weeklyComparisonSection
-                    .staggeredEntrance(index: 2, appeared: cardsAppeared)
+                // Pro-only sections: blurred preview + lock overlay for free users
+                proGatedSection(index: 2) {
+                    weeklyComparisonSection
+                }
                 
-                // Weekly chart
-                weeklyChartSection
-                    .staggeredEntrance(index: 3, appeared: cardsAppeared)
+                proGatedSection(index: 3) {
+                    weeklyChartSection
+                }
                 
-                // Monthly calendar
-                monthlyCalendarSection
-                    .staggeredEntrance(index: 4, appeared: cardsAppeared)
+                proGatedSection(index: 4) {
+                    monthlyCalendarSection
+                }
                 
-                // Time analysis
-                timeAnalysisSection
-                    .staggeredEntrance(index: 5, appeared: cardsAppeared)
+                proGatedSection(index: 5) {
+                    timeAnalysisSection
+                }
                 
-                // Weight trend
-                weightSection
-                    .staggeredEntrance(index: 6, appeared: cardsAppeared)
+                proGatedSection(index: 6) {
+                    weightSection
+                }
                 
-                // Consistency
-                consistencySection
-                    .staggeredEntrance(index: 7, appeared: cardsAppeared)
+                proGatedSection(index: 7) {
+                    consistencySection
+                }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -149,6 +150,70 @@ struct StatsView: View {
                 }
             }
         }
+    }
+    
+    /// Wraps a section with a blur + lock overlay for free users, or shows it fully for Pro.
+    private func proGatedSection<Content: View>(index: Int, @ViewBuilder content: () -> Content) -> some View {
+        Group {
+            if subscriptionManager.isSubscribed {
+                content()
+                    .staggeredEntrance(index: index, appeared: cardsAppeared)
+            } else {
+                content()
+                    .blur(radius: 6)
+                    .allowsHitTesting(false)
+                    .overlay {
+                        proLockedOverlay
+                    }
+                    .staggeredEntrance(index: index, appeared: cardsAppeared)
+            }
+        }
+    }
+    
+    /// Lock overlay shown on premium-only chart sections
+    private var proLockedOverlay: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "lock.fill")
+                .font(.system(size: 24))
+                .foregroundStyle(.secondary)
+            Text("Pro Feature")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+            Text("Upgrade to unlock full charts & trends")
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+            Button {
+                showPaywall = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 12))
+                    Text("Upgrade to Pro")
+                        .font(.system(size: 14, weight: .semibold))
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [.purple, .pink],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(.ultraThinMaterial.opacity(0.7))
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pro feature. Upgrade to unlock full charts and trends.")
+        .accessibilityAddTraits(.isButton)
     }
     
     // MARK: - Summary Card (3x2 Grid)

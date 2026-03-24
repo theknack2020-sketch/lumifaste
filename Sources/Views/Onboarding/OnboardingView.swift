@@ -16,6 +16,7 @@ struct OnboardingView: View {
     @State private var selectedGoal: FastingGoal = .weightLoss
     @State private var selectedExperience: ExperienceLevel = .beginner
     @State private var notificationDenied = false
+    @State private var showTrialPaywall = false
 
     // Animation triggers
     @State private var heroGlowPulse = false
@@ -467,6 +468,29 @@ struct OnboardingView: View {
                 completeOnboarding()
             }
 
+            // Free trial CTA — secondary action below primary
+            Button {
+                HapticManager.shared.lightTap()
+                showTrialPaywall = true
+            } label: {
+                VStack(spacing: 3) {
+                    HStack(spacing: 5) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 12))
+                        Text("Start with 7-day free trial")
+                            .font(.system(size: 15, weight: .medium))
+                    }
+                    .foregroundStyle(themeManager.selectedTheme.accent)
+
+                    Text("Full access to all Pro features for 7 days, cancel anytime")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.white.opacity(0.4))
+                }
+                .padding(.vertical, 10)
+            }
+            .buttonStyle(.pressable)
+            .opacity(readyContentOpacity)
+
             onboardingSecondaryButton("Explore First") {
                 completeOnboarding()
             }
@@ -477,6 +501,9 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 24)
         .background(pageGradient(for: 5))
+        .sheet(isPresented: $showTrialPaywall) {
+            PaywallView()
+        }
     }
 
     // =========================================================================

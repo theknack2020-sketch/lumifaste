@@ -3,8 +3,9 @@ import StoreKit
 import AudioToolbox
 
 /// Paywall ekranı — premium özelliklerin kapısı.
-/// Araştırma: $3.99/ay, $29.99/yıl (%37 tasarruf), 7 gün free trial.
-/// Entrance animations, bounce buttons, smooth transitions.
+/// Research-backed design: comparison table, social proof, price anchoring,
+/// urgency text, and a huge trial CTA.
+/// Shows "You're Premium! ✨" state if already subscribed.
 struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SubscriptionManager.self) private var subscriptionManager
@@ -17,28 +18,12 @@ struct PaywallView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Header
-                    headerSection
-                        .entranceAnimation(delay: 0.1)
-                    
-                    // Features
-                    featuresSection
-                        .entranceAnimation(delay: 0.2)
-                    
-                    // Products
-                    productsSection
-                        .entranceAnimation(delay: 0.3)
-                    
-                    // CTA
-                    purchaseButton
-                        .entranceAnimation(delay: 0.4)
-                    
-                    // Legal
-                    legalSection
+            Group {
+                if subscriptionManager.isSubscribed {
+                    premiumActiveView
+                } else {
+                    paywallContent
                 }
-                .padding()
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -55,8 +40,10 @@ struct PaywallView: View {
             }
             .task {
                 await subscriptionManager.loadProducts()
-                withAnimation(.tapSpring) {
-                    selectedProduct = subscriptionManager.yearlyProduct
+                if selectedProduct == nil {
+                    withAnimation(.tapSpring) {
+                        selectedProduct = subscriptionManager.yearlyProduct
+                    }
                 }
             }
             .alert("Purchase Failed", isPresented: $showError) {
@@ -95,6 +82,115 @@ struct PaywallView: View {
         }
     }
     
+    // MARK: - Already Subscribed State
+    
+    private var premiumActiveView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+            
+            ZStack {
+                // Radial glow
+                RadialGradient(
+                    colors: [
+                        themeManager.selectedTheme.accent.opacity(0.4),
+                        themeManager.selectedTheme.accent.opacity(0.08),
+                        .clear
+                    ],
+                    center: .center,
+                    startRadius: 10,
+                    endRadius: 80
+                )
+                .frame(width: 160, height: 160)
+                
+                Image(systemName: "crown.fill")
+                    .font(.system(size: 60))
+                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    .shadow(color: themeManager.selectedTheme.accent.opacity(0.5), radius: 16, y: 4)
+            }
+            
+            Text("You're Premium! ✨")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+            
+            Text("All features are unlocked. Enjoy your full fasting experience.")
+                .font(.system(size: 16))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            
+            // Feature list
+            VStack(alignment: .leading, spacing: 12) {
+                PremiumActiveFeature(icon: "clock.badge.checkmark", text: "Unlimited history")
+                PremiumActiveFeature(icon: "chart.bar.fill", text: "Full charts & reports")
+                PremiumActiveFeature(icon: "paintpalette.fill", text: "All 8 themes")
+                PremiumActiveFeature(icon: "square.and.arrow.up", text: "CSV export")
+                PremiumActiveFeature(icon: "scalemass.fill", text: "Weight tracking")
+                PremiumActiveFeature(icon: "bolt.fill", text: "Streak tracking")
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+            )
+            .padding(.horizontal, 8)
+            
+            Spacer()
+            
+            Button {
+                dismiss()
+            } label: {
+                Text("Continue Fasting")
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 54)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(themeManager.selectedTheme.accentGradient)
+                    )
+            }
+            .buttonStyle(.pressable)
+            .padding(.bottom, 16)
+        }
+        .padding()
+        .entranceAnimation(delay: 0.1)
+    }
+    
+    // MARK: - Paywall Content (Not Subscribed)
+    
+    private var paywallContent: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Header
+                headerSection
+                    .entranceAnimation(delay: 0.1)
+                
+                // Urgency banner
+                urgencyBanner
+                    .entranceAnimation(delay: 0.15)
+                
+                // What you'll miss — comparison table
+                comparisonTable
+                    .entranceAnimation(delay: 0.2)
+                
+                // Social proof
+                socialProofBanner
+                    .entranceAnimation(delay: 0.25)
+                
+                // Products — monthly first (price anchor), yearly with badge
+                productsSection
+                    .entranceAnimation(delay: 0.3)
+                
+                // CTA — huge trial button
+                purchaseButton
+                    .entranceAnimation(delay: 0.35)
+                
+                // Legal
+                legalSection
+            }
+            .padding()
+        }
+    }
+    
     // MARK: - Header
     
     private var headerSection: some View {
@@ -126,54 +222,130 @@ struct PaywallView: View {
         .padding(.top, 8)
     }
     
-    // MARK: - Features
+    // MARK: - Urgency Banner
     
-    private var featuresSection: some View {
+    private var urgencyBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "gift.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(.orange)
+            
+            Text("Try everything free for 7 days")
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.orange.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.orange.opacity(0.25), lineWidth: 1)
+                )
+        )
+    }
+    
+    // MARK: - Comparison Table (What You'll Miss)
+    
+    private var comparisonTable: some View {
         let accent = themeManager.selectedTheme.accent
-        return VStack(alignment: .leading, spacing: 14) {
-            // Free features
-            Text("ALWAYS FREE")
+        
+        return VStack(spacing: 0) {
+            // Section header
+            Text("WHAT YOU'LL MISS")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
-                .padding(.bottom, 2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.bottom, 12)
             
-            FeatureRow(icon: "timer", title: "Fasting Timer", subtitle: "All preset plans: 16:8, 18:6, 20:4, OMAD...", isFree: true)
-                .staggeredAppear(index: 0)
-            FeatureRow(icon: "flame.fill", title: "Fasting Stages", subtitle: "See which stage you're in", isFree: true)
-                .staggeredAppear(index: 1)
-            FeatureRow(icon: "bell.badge", title: "Milestone Alerts", subtitle: "Notifications at key fasting hours", isFree: true)
-                .staggeredAppear(index: 2)
-            FeatureRow(icon: "clock.arrow.circlepath", title: "Recent History", subtitle: "Your last 7 fasting sessions", isFree: true)
-                .staggeredAppear(index: 3)
+            // Column headers
+            HStack {
+                Text("Feature")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                Text("Free")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 70)
+                
+                Text("Pro")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(accent)
+                    .frame(width: 70)
+            }
+            .padding(.bottom, 8)
             
-            Divider().padding(.vertical, 4)
+            Divider().opacity(0.3)
             
-            // Premium features
-            Text("PREMIUM")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(accent)
-                .padding(.bottom, 2)
-            
-            FeatureRow(icon: "sparkles", title: "Stage Science", subtitle: "What's happening in your body + tips", isFree: false, premiumColor: accent)
-                .staggeredAppear(index: 4)
-            FeatureRow(icon: "clock.badge.checkmark", title: "Unlimited History", subtitle: "All your fasts, forever", isFree: false, premiumColor: accent)
-                .staggeredAppear(index: 5)
-            FeatureRow(icon: "bolt.fill", title: "Streak Tracking", subtitle: "Daily streak counter and motivation", isFree: false, premiumColor: accent)
-                .staggeredAppear(index: 6)
-            FeatureRow(icon: "chart.bar.fill", title: "Detailed Reports", subtitle: "Stage breakdown after each fast", isFree: false, premiumColor: accent)
-                .staggeredAppear(index: 7)
-            FeatureRow(icon: "slider.horizontal.3", title: "Custom Plans", subtitle: "Create your own fasting schedule", isFree: false, premiumColor: accent)
-                .staggeredAppear(index: 8)
+            // Comparison rows
+            ComparisonRow(feature: "Fasting history", freeValue: .limited("7 days"), proValue: .check("Unlimited"))
+            ComparisonRow(feature: "Stats & charts", freeValue: .limited("Basic"), proValue: .check("All charts"))
+            ComparisonRow(feature: "Themes", freeValue: .limited("5 themes"), proValue: .check("8 themes"))
+            ComparisonRow(feature: "CSV export", freeValue: .missing, proValue: .check("Export"))
+            ComparisonRow(feature: "Weight tracking", freeValue: .missing, proValue: .check("Track"))
+            ComparisonRow(feature: "Streak counter", freeValue: .missing, proValue: .check("Streak"))
+            ComparisonRow(feature: "Stage science", freeValue: .missing, proValue: .check("Insights"))
+            ComparisonRow(feature: "Custom plans", freeValue: .missing, proValue: .check("Create"))
         }
-        .padding(20)
+        .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
-        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
     }
     
-    // MARK: - Products
+    // MARK: - Social Proof
+    
+    private var socialProofBanner: some View {
+        HStack(spacing: 10) {
+            // People stack icon
+            ZStack {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    [Color.blue, Color.purple, Color.green][i],
+                                    [Color.cyan, Color.pink, Color.teal][i]
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 26, height: 26)
+                        .overlay(
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.white)
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(Color(.systemBackground), lineWidth: 2)
+                        )
+                        .offset(x: CGFloat(i) * 16)
+                }
+            }
+            .frame(width: 60, alignment: .leading)
+            
+            Text("Join 10,000+ fasters who chose Pro")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(.ultraThinMaterial)
+        )
+    }
+    
+    // MARK: - Products (Price Anchoring: Monthly first, Yearly with badge)
     
     private var productsSection: some View {
         let accent = themeManager.selectedTheme.accent
@@ -198,29 +370,13 @@ struct PaywallView: View {
                     Task { await subscriptionManager.loadProducts() }
                 }
             } else {
-                // Yearly (recommended)
-                if let yearly = subscriptionManager.yearlyProduct {
-                    ProductCard(
-                        product: yearly,
-                        label: "Yearly",
-                        badge: "BEST VALUE",
-                        savings: subscriptionManager.yearlySavingsPercent,
-                        isSelected: selectedProduct?.id == yearly.id,
-                        accentColor: accent
-                    ) {
-                        HapticManager.shared.selectionChanged()
-                        withAnimation(.tapSpring) {
-                            selectedProduct = yearly
-                        }
-                    }
-                }
-                
-                // Monthly
+                // Monthly FIRST — price anchor
                 if let monthly = subscriptionManager.monthlyProduct {
                     ProductCard(
                         product: monthly,
                         label: "Monthly",
                         badge: nil,
+                        perMonthText: nil,
                         savings: 0,
                         isSelected: selectedProduct?.id == monthly.id,
                         accentColor: accent
@@ -231,14 +387,33 @@ struct PaywallView: View {
                         }
                     }
                 }
+                
+                // Yearly — SAVE badge + Most Popular ribbon
+                if let yearly = subscriptionManager.yearlyProduct {
+                    ProductCard(
+                        product: yearly,
+                        label: "Yearly",
+                        badge: "MOST POPULAR",
+                        perMonthText: subscriptionManager.yearlyMonthlyEquivalent.map { "\($0)/mo" },
+                        savings: subscriptionManager.yearlySavingsPercent,
+                        isSelected: selectedProduct?.id == yearly.id,
+                        accentColor: accent
+                    ) {
+                        HapticManager.shared.selectionChanged()
+                        withAnimation(.tapSpring) {
+                            selectedProduct = yearly
+                        }
+                    }
+                }
             }
         }
     }
     
-    // MARK: - Purchase Button
+    // MARK: - Purchase Button (Huge Trial CTA)
     
     private var purchaseButton: some View {
         VStack(spacing: 10) {
+            // Huge green gradient CTA
             Button {
                 HapticManager.shared.mediumTap()
                 guard let product = selectedProduct else { return }
@@ -246,8 +421,7 @@ struct PaywallView: View {
                     let success = await subscriptionManager.purchase(product)
                     if success {
                         HapticManager.shared.success()
-                        // Sound 1025: celebration chime on successful purchase
-                        AudioServicesPlaySystemSound(1025)
+                        SubscriptionManager.playCelebrationSound()
                         dismiss()
                     } else if let error = subscriptionManager.purchaseError, !error.isEmpty {
                         errorMessage = error
@@ -255,25 +429,35 @@ struct PaywallView: View {
                     }
                 }
             } label: {
-                HStack {
-                    if subscriptionManager.isPurchasing {
-                        ProgressView()
-                            .tint(.white)
-                    } else {
-                        Text("Start 7-Day Free Trial")
-                            .font(.system(size: 17, weight: .semibold))
+                VStack(spacing: 4) {
+                    HStack {
+                        if subscriptionManager.isPurchasing {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 16, weight: .semibold))
+                            Text("Start 7-Day Free Trial")
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                        }
+                    }
+                    
+                    if !subscriptionManager.isPurchasing {
+                        Text("Cancel anytime · No charge for 7 days")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
                     }
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 54)
+                .frame(height: 64)
                 .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.green,
-                                    Color.teal,
+                                    Color(red: 0.2, green: 0.78, blue: 0.35),
+                                    Color(red: 0.0, green: 0.65, blue: 0.55),
                                     themeManager.selectedTheme.accent
                                 ],
                                 startPoint: .topLeading,
@@ -281,9 +465,9 @@ struct PaywallView: View {
                             )
                         )
                 )
-                .shadow(color: Color.green.opacity(0.4), radius: 16, y: 6)
-                .shadow(color: Color.teal.opacity(0.25), radius: 8, y: 3)
-                .shadow(color: themeManager.selectedTheme.accent.opacity(0.15), radius: 4, y: 1)
+                .shadow(color: Color.green.opacity(0.45), radius: 20, y: 8)
+                .shadow(color: Color.teal.opacity(0.3), radius: 10, y: 4)
+                .shadow(color: themeManager.selectedTheme.accent.opacity(0.2), radius: 6, y: 2)
             }
             .buttonStyle(.pressable)
             .disabled(selectedProduct == nil || subscriptionManager.isPurchasing)
@@ -342,47 +526,96 @@ struct PaywallView: View {
     }
 }
 
-// MARK: - Feature Row
+// MARK: - Comparison Row
 
-private struct FeatureRow: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    var isFree: Bool = false
-    var premiumColor: Color = .purple
+private enum ComparisonValue {
+    case check(String)
+    case limited(String)
+    case missing
+}
+
+private struct ComparisonRow: View {
+    let feature: String
+    let freeValue: ComparisonValue
+    let proValue: ComparisonValue
     
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(isFree ? .green : premiumColor)
-                .frame(width: 28)
-            
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(title)
-                        .font(.system(.headline, design: .rounded))
-                    if isFree {
-                        Text("FREE")
-                            .font(.system(size: 9, weight: .bold))
+        VStack(spacing: 0) {
+            HStack {
+                Text(feature)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Free column
+                Group {
+                    switch freeValue {
+                    case .check(let text):
+                        Label(text, systemImage: "checkmark")
+                            .font(.system(size: 12))
                             .foregroundStyle(.green)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(Capsule().fill(.green.opacity(0.15)))
+                    case .limited(let text):
+                        Text(text)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.orange)
+                    case .missing:
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.red.opacity(0.7))
                     }
                 }
-                Text(subtitle)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                .frame(width: 70)
+                
+                // Pro column
+                Group {
+                    switch proValue {
+                    case .check(let text):
+                        HStack(spacing: 3) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 10, weight: .bold))
+                            Text(text)
+                                .font(.system(size: 12))
+                        }
+                        .foregroundStyle(.green)
+                    case .limited(let text):
+                        Text(text)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.orange)
+                    case .missing:
+                        Image(systemName: "xmark")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.red.opacity(0.7))
+                    }
+                }
+                .frame(width: 70)
             }
+            .padding(.vertical, 10)
+            
+            Divider().opacity(0.15)
         }
-        .padding(.vertical, 2)
-        .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(.ultraThinMaterial.opacity(0.5))
-                .padding(.horizontal, -8)
-                .padding(.vertical, -4)
-        )
+    }
+}
+
+// MARK: - Premium Active Feature
+
+private struct PremiumActiveFeature: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 16))
+                .foregroundStyle(.green)
+            
+            Image(systemName: icon)
+                .font(.system(size: 15))
+                .foregroundStyle(.secondary)
+                .frame(width: 22)
+            
+            Text(text)
+                .font(.system(size: 15))
+        }
     }
 }
 
@@ -417,6 +650,7 @@ private struct ProductCard: View {
     let product: Product
     let label: String
     let badge: String?
+    let perMonthText: String?
     let savings: Int
     let isSelected: Bool
     var accentColor: Color = .purple
@@ -424,57 +658,83 @@ private struct ProductCard: View {
     
     var body: some View {
         Button(action: action) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text(label)
-                            .font(.system(.headline, design: .rounded))
-                        
-                        if let badge {
-                            Text(badge)
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(
-                                    Capsule().fill(
-                                        LinearGradient(
-                                            colors: [accentColor, accentColor.opacity(0.8)],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
+            ZStack(alignment: .topTrailing) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(spacing: 8) {
+                            Text(label)
+                                .font(.system(.headline, design: .rounded))
+                            
+                            if savings > 0 {
+                                Text("SAVE \(savings)%")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(
+                                        Capsule().fill(
+                                            LinearGradient(
+                                                colors: [.green, .teal],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
                                         )
                                     )
-                                )
-                                .shadow(color: accentColor.opacity(0.3), radius: 4, y: 2)
+                                    .shadow(color: .green.opacity(0.3), radius: 4, y: 2)
+                            }
+                        }
+                        
+                        HStack(spacing: 4) {
+                            Text(product.displayPrice)
+                                .font(.system(size: 14, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                            Text("/ \(label.lowercased())")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.tertiary)
+                        }
+                        
+                        if let perMonth = perMonthText {
+                            Text("Just \(perMonth)")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(accentColor)
                         }
                     }
                     
-                    HStack(spacing: 4) {
-                        Text(product.displayPrice)
-                            .font(.system(size: 14, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                        Text("/ \(label.lowercased())")
-                            .font(.system(size: 14))
-                            .foregroundStyle(.tertiary)
-                        
-                        if savings > 0 {
-                            Text("Save \(savings)%")
-                                .font(.system(size: 12, weight: .medium))
-                                .monospacedDigit()
-                                .foregroundStyle(.green)
-                        }
-                    }
+                    Spacer()
+                    
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .font(.system(size: 24))
+                        .foregroundStyle(isSelected ? accentColor : .secondary)
+                        .animation(.tapSpring, value: isSelected)
                 }
+                .padding(16)
+                .padding(.top, badge != nil ? 4 : 0)
                 
-                Spacer()
-                
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
-                    .foregroundStyle(isSelected ? accentColor : .secondary)
-                    .animation(.tapSpring, value: isSelected)
+                // "MOST POPULAR" ribbon
+                if let badge {
+                    Text(badge)
+                        .font(.system(size: 9, weight: .black))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(
+                            UnevenRoundedRectangle(
+                                topLeadingRadius: 0,
+                                bottomLeadingRadius: 8,
+                                bottomTrailingRadius: 0,
+                                topTrailingRadius: 14
+                            )
+                            .fill(
+                                LinearGradient(
+                                    colors: [accentColor, accentColor.opacity(0.8)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                        )
+                }
             }
-            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -497,10 +757,79 @@ private struct ProductCard: View {
         .environment(ThemeManager())
 }
 
-// MARK: - Soft Paywall (shown after N fasts)
+// MARK: - Soft Paywall Reason
 
-/// Non-blocking paywall suggestion — slides up as a banner/sheet.
-/// Designed to be triggered after completing 3 fasts or accessing locked history.
+/// Reasons for showing the soft paywall — each has distinct icon, title, subtitle, and benefits.
+enum SoftPaywallReason {
+    case completedFasts(count: Int)
+    case historyLimit
+    case featureLocked(feature: String)
+    case thirdFast
+    
+    var icon: String {
+        switch self {
+        case .completedFasts: "trophy.fill"
+        case .historyLimit: "clock.badge.checkmark"
+        case .featureLocked: "lock.fill"
+        case .thirdFast: "flame.fill"
+        }
+    }
+    
+    var title: String {
+        switch self {
+        case .completedFasts(let count):
+            "You've completed \(count) fasts! 🎉"
+        case .historyLimit:
+            "Your history is full"
+        case .featureLocked(let feature):
+            "Unlock \(feature)"
+        case .thirdFast:
+            "You're on a roll! 🔥"
+        }
+    }
+    
+    var subtitle: String {
+        switch self {
+        case .completedFasts:
+            "You're building a great habit. Unlock deeper insights to take your fasting further."
+        case .historyLimit:
+            "Free accounts can view the last 7 fasts. Upgrade to see your complete fasting journey."
+        case .featureLocked(let feature):
+            "\(feature) is a Premium feature. Start a free trial to unlock everything."
+        case .thirdFast:
+            "3 fasts completed — you're serious about fasting. Premium helps you go further."
+        }
+    }
+    
+    /// 3 key benefits shown on each soft paywall variant
+    var benefits: [(icon: String, text: String)] {
+        switch self {
+        case .completedFasts, .thirdFast:
+            [
+                ("sparkles", "Understand what happens in each fasting stage"),
+                ("chart.bar.fill", "Get detailed reports after every fast"),
+                ("bolt.fill", "Track your streak and build consistency")
+            ]
+        case .historyLimit:
+            [
+                ("clock.badge.checkmark", "Unlimited fasting history — all your fasts, forever"),
+                ("chart.xyaxis.line", "Trend charts to visualize your progress over time"),
+                ("square.and.arrow.up", "Export your data as CSV for personal records")
+            ]
+        case .featureLocked:
+            [
+                ("lock.open.fill", "Full access to all Premium features"),
+                ("paintpalette.fill", "All 8 beautiful themes to personalize your app"),
+                ("scalemass.fill", "Weight tracking with trend visualization")
+            ]
+        }
+    }
+}
+
+// MARK: - Soft Paywall View (shown after N fasts or feature lock)
+
+/// Non-blocking paywall suggestion — slides up as a sheet.
+/// Reason-specific messaging, 3 key benefits, and trial CTA.
 struct SoftPaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(SubscriptionManager.self) private var subscriptionManager
@@ -517,10 +846,24 @@ struct SoftPaywallView: View {
                 .frame(width: 36, height: 5)
                 .padding(.top, 8)
             
-            Image(systemName: reason.icon)
-                .font(.system(size: 36))
-                .foregroundStyle(themeManager.selectedTheme.accentGradient)
-                .shadow(color: themeManager.selectedTheme.accent.opacity(0.3), radius: 8, y: 3)
+            // Icon with glow
+            ZStack {
+                RadialGradient(
+                    colors: [
+                        themeManager.selectedTheme.accent.opacity(0.25),
+                        .clear
+                    ],
+                    center: .center,
+                    startRadius: 5,
+                    endRadius: 45
+                )
+                .frame(width: 90, height: 90)
+                
+                Image(systemName: reason.icon)
+                    .font(.system(size: 36))
+                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    .shadow(color: themeManager.selectedTheme.accent.opacity(0.3), radius: 8, y: 3)
+            }
             
             Text(reason.title)
                 .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -530,41 +873,56 @@ struct SoftPaywallView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
             
-            // Key benefits
-            VStack(alignment: .leading, spacing: 10) {
-                SoftPaywallBenefit(icon: "sparkles", text: "Understand what happens in each fasting stage", accentColor: themeManager.selectedTheme.accent)
-                SoftPaywallBenefit(icon: "chart.bar.fill", text: "Get detailed reports after every fast", accentColor: themeManager.selectedTheme.accent)
-                SoftPaywallBenefit(icon: "bolt.fill", text: "Track your streak and build consistency", accentColor: themeManager.selectedTheme.accent)
+            // 3 reason-specific benefits
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(Array(reason.benefits.enumerated()), id: \.offset) { _, benefit in
+                    SoftPaywallBenefit(
+                        icon: benefit.icon,
+                        text: benefit.text,
+                        accentColor: themeManager.selectedTheme.accent
+                    )
+                }
             }
-            .padding(14)
+            .padding(16)
             .background(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
             .shadow(color: .black.opacity(0.1), radius: 4, y: 2)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 4)
             
+            // Trial CTA
             Button {
                 dismiss()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     showFullPaywall = true
                 }
             } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 14))
-                    Text("Try Premium Free")
-                        .font(.system(size: 16, weight: .semibold))
+                VStack(spacing: 3) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14))
+                        Text("Start 7-Day Free Trial")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                    }
+                    
+                    Text("Cancel anytime")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.75))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 54)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .fill(
                             LinearGradient(
-                                colors: [Color.green, Color.teal],
+                                colors: [
+                                    Color(red: 0.2, green: 0.78, blue: 0.35),
+                                    Color(red: 0.0, green: 0.65, blue: 0.55)
+                                ],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -573,6 +931,7 @@ struct SoftPaywallView: View {
                 .shadow(color: Color.green.opacity(0.35), radius: 10, y: 4)
                 .shadow(color: Color.teal.opacity(0.2), radius: 4, y: 2)
             }
+            .buttonStyle(.pressable)
             
             Button("Not Now") {
                 dismiss()
@@ -583,36 +942,6 @@ struct SoftPaywallView: View {
         .padding(24)
         .sheet(isPresented: $showFullPaywall) {
             PaywallView()
-        }
-    }
-}
-
-enum SoftPaywallReason {
-    case completedFasts(count: Int)
-    case historyLimit
-    
-    var icon: String {
-        switch self {
-        case .completedFasts: "trophy.fill"
-        case .historyLimit: "clock.badge.checkmark"
-        }
-    }
-    
-    var title: String {
-        switch self {
-        case .completedFasts(let count):
-            "You've completed \(count) fasts! 🎉"
-        case .historyLimit:
-            "Want to see your full history?"
-        }
-    }
-    
-    var subtitle: String {
-        switch self {
-        case .completedFasts:
-            "You're building a great habit. Unlock deeper insights to take your fasting further."
-        case .historyLimit:
-            "Free accounts can view the last 7 fasts. Upgrade to see your complete fasting journey."
         }
     }
 }

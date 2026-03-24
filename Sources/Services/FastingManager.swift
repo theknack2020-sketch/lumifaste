@@ -373,4 +373,78 @@ final class FastingManager {
         UserDefaults.standard.removeObject(forKey: softPaywallTriggeredKey)
         logger.info("Soft paywall state reset")
     }
+    
+    // MARK: - Retention Helpers (#14-18)
+    
+    /// Weekly stats: number of completed fasts and total fasting hours this calendar week.
+    struct WeeklyStats {
+        let fastCount: Int
+        let totalHours: Double
+        let streakActive: Bool
+    }
+    
+    /// Compute average start time (hour component) from completed sessions.
+    /// Returns nil if no completed sessions exist.
+    static func averageStartTime(sessions: [FastingSession]) -> DateComponents? {
+        let completed = sessions.filter(\.isCompleted)
+        guard !completed.isEmpty else { return nil }
+        
+        let calendar = Calendar.current
+        var totalMinutesSinceMidnight: Double = 0
+        
+        for session in completed {
+            let comps = calendar.dateComponents([.hour, .minute], from: session.startDate)
+            totalMinutesSinceMidnight += Double(comps.hour ?? 0) * 60 + Double(comps.minute ?? 0)
+        }
+        
+        let avgMinutes = Int(totalMinutesSinceMidnight / Double(completed.count))
+        var result = DateComponents()
+        result.hour = avgMinutes / 60
+        result.minute = avgMinutes % 60
+        return result
+    }
+    
+    /// Format average start time as a readable string like "8:30 PM".
+    static func formattedAverageStartTime(sessions: [FastingSession]) -> String? {
+        guard let comps = averageStartTime(sessions: sessions) else { return nil }
+        var dateComps = DateComponents()
+        dateComps.hour = comps.hour
+        dateComps.minute = comps.minute
+        guard let date = Calendar.current.date(from: dateComps) else { return nil }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
+    }
+    
+    /// Number of days since the last completed fast. Returns nil if no fasts exist.
+    static func daysSinceLastFast(sessions: [FastingSession]) -> Int? {
+        let completed = sessions.filter(\.isCompleted)
+        guard let lastFast = completed.max(by: { $0.startDate < $1.startDate }) else { return nil }
+        let calendar = Calendar.current
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: lastFast.startDate), to: calendar.startOfDay(for: .now)).day
+        return days
+    }
+    
+    /// Compute stats for the current calendar week (Mon–Sun).
+    static func weeklyStats(sessions: [FastingSession], currentStreak: Int) -> WeeklyStats {
+        let calendar = Calendar.current
+        let now = Date.now
+        
+        // Find start of this week (Monday)
+        let weekday = calendar.component(.weekday, from: now)
+        let daysFromMonday = (weekday + 5) % 7  // Mon=0, Tue=1, ..., Sun=6
+        guard let weekStart = calendar.date(byAdding: .day, value: -daysFromMonday, to: calendar.startOfDay(for: now)) else {
+            return WeeklyStats(fastCount: 0, totalHours: 0, streakActive: currentStreak > 0)
+        }
+        
+        let thisWeek = sessions.filter { $0.isCompleted && $0.startDate >= weekStart }
+        let totalHours = thisWeek.reduce(0.0) { $0 + $1.actualDuration } / 3600
+        let rounded = (totalHours * 10).rounded(.down) / 10 // 1 decimal
+        
+        return WeeklyStats(
+            fastCount: thisWeek.count,
+            totalHours: rounded,
+            streakActive: currentStreak > 0
+        )
+    }
 }

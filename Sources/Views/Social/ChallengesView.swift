@@ -7,9 +7,14 @@ import AudioToolbox
 struct ChallengesView: View {
     let challengeManager: ChallengeManager
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(SubscriptionManager.self) private var subscriptionManager
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var animatingChallenge: FastingChallenge?
+    @State private var showPaywall = false
+    
+    /// Free users can have only 1 active challenge
+    private let freeChallengeLimit = 1
     
     var body: some View {
         ScrollView {
@@ -24,14 +29,67 @@ struct ChallengesView: View {
                         sectionHeader("Active Challenges", icon: "target", color: themeManager.selectedTheme.accent)
                         
                         ForEach(Array(challengeManager.activeChallenges.enumerated()), id: \.element.id) { index, challenge in
-                            ChallengeCard(
-                                challenge: challenge,
-                                progress: challengeManager.currentProgress(challenge),
-                                isCompleted: false,
-                                fraction: challengeManager.progressFraction(challenge),
-                                accentColor: themeManager.selectedTheme.accent
-                            )
-                            .staggeredAppear(index: index)
+                            let isLocked = !subscriptionManager.isSubscribed && index >= freeChallengeLimit
+                            
+                            if isLocked {
+                                // Locked challenge — blurred with lock overlay
+                                ChallengeCard(
+                                    challenge: challenge,
+                                    progress: challengeManager.currentProgress(challenge),
+                                    isCompleted: false,
+                                    fraction: challengeManager.progressFraction(challenge),
+                                    accentColor: themeManager.selectedTheme.accent
+                                )
+                                .blur(radius: 4)
+                                .allowsHitTesting(false)
+                                .overlay {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "lock.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundStyle(.secondary)
+                                        Text("Pro Feature")
+                                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                        Button {
+                                            showPaywall = true
+                                        } label: {
+                                            Text("Upgrade")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 16)
+                                                .padding(.vertical, 6)
+                                                .background(
+                                                    Capsule()
+                                                        .fill(
+                                                            LinearGradient(
+                                                                colors: [.purple, .pink],
+                                                                startPoint: .leading,
+                                                                endPoint: .trailing
+                                                            )
+                                                        )
+                                                )
+                                        }
+                                        .buttonStyle(.plain)
+                                    }
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                            .fill(.ultraThinMaterial.opacity(0.8))
+                                    )
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityLabel("Locked challenge. Upgrade to Pro for unlimited challenges.")
+                                    .accessibilityAddTraits(.isButton)
+                                }
+                                .staggeredAppear(index: index)
+                            } else {
+                                ChallengeCard(
+                                    challenge: challenge,
+                                    progress: challengeManager.currentProgress(challenge),
+                                    isCompleted: false,
+                                    fraction: challengeManager.progressFraction(challenge),
+                                    accentColor: themeManager.selectedTheme.accent
+                                )
+                                .staggeredAppear(index: index)
+                            }
                         }
                     }
                     .padding(.horizontal, 16)
@@ -79,6 +137,9 @@ struct ChallengesView: View {
         }
         .navigationTitle("Challenges")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .onAppear {
             HapticManager.shared.lightTap()
             let newlyCompleted = challengeManager.evaluate(sessions: sessions)
@@ -356,5 +417,6 @@ struct CompletedBadge: View {
         ChallengesView(challengeManager: ChallengeManager())
             .modelContainer(for: FastingSession.self, inMemory: true)
             .environment(ThemeManager())
+            .environment(SubscriptionManager())
     }
 }
