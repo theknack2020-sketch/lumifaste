@@ -768,57 +768,68 @@ struct TimerView: View {
     // MARK: - Current Stage Display (#3) — prominent below timer
     
     private var currentStageDisplay: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
-                Image(systemName: manager.currentStage.icon)
-                    .font(.system(size: 18, weight: .semibold, design: .rounded))
-                    .contentTransition(.symbolEffect(.replace))
-                Text(manager.currentStage.rawValue)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .contentTransition(.numericText())
-            }
-            .foregroundStyle(manager.currentStage.color)
-            .transition(.asymmetric(
-                insertion: .scale(scale: 0.8).combined(with: .opacity),
-                removal: .scale(scale: 1.1).combined(with: .opacity)
-            ))
+        HStack(spacing: 0) {
+            // Left accent bar in stage color
+            RoundedRectangle(cornerRadius: 2)
+                .fill(manager.currentStage.color)
+                .frame(width: 3)
+                .padding(.vertical, 8)
             
-            Text(manager.currentStage.subtitle)
-                .font(.system(size: 13, design: .rounded))
-                .foregroundStyle(.secondary)
-                .contentTransition(.opacity)
-                .transition(.opacity.combined(with: .offset(y: 6)))
-            
-            // Premium: metabolic info teaser
-            if subscriptionManager.isSubscribed, let detail = FastingEducation.detail(for: manager.currentStage) {
-                Text(detail.metabolicInfo.prefix(90) + "…")
-                    .font(.system(size: 11, design: .rounded))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 8)
-                    .contentTransition(.opacity)
-                    .transition(.opacity)
-            } else if !subscriptionManager.isSubscribed {
-                HStack(spacing: 4) {
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 9))
-                    Text("Unlock stage science with Pro")
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
+            VStack(spacing: 6) {
+                HStack(spacing: 8) {
+                    Image(systemName: manager.currentStage.icon)
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .contentTransition(.symbolEffect(.replace))
+                        .shadow(color: manager.currentStage.color.opacity(0.4), radius: 8)
+                    Text(manager.currentStage.rawValue)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .contentTransition(.numericText())
                 }
-                .foregroundStyle(.purple.opacity(0.7))
-                .padding(.top, 2)
+                .foregroundStyle(manager.currentStage.color)
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.8).combined(with: .opacity),
+                    removal: .scale(scale: 1.1).combined(with: .opacity)
+                ))
+                
+                Text(manager.currentStage.subtitle)
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+                    .transition(.opacity.combined(with: .offset(y: 6)))
+                
+                // Premium: metabolic info teaser
+                if subscriptionManager.isSubscribed, let detail = FastingEducation.detail(for: manager.currentStage) {
+                    Text(detail.metabolicInfo.prefix(90) + "…")
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 8)
+                        .contentTransition(.opacity)
+                        .transition(.opacity)
+                } else if !subscriptionManager.isSubscribed {
+                    HStack(spacing: 4) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                        Text("Unlock stage science with Pro")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(themeManager.selectedTheme.accent)
+                    .padding(.top, 2)
+                }
             }
+            .padding(.vertical, 12)
+            .padding(.leading, 12)
+            .padding(.trailing, 16)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                .shadow(color: manager.currentStage.color.opacity(0.15), radius: 12, x: 0, y: 2)
         )
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: manager.currentStage.color.opacity(0.2), radius: 12, x: 0, y: 4)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         .animation(.smoothSpring, value: manager.currentStage)
     }
     
@@ -833,13 +844,20 @@ struct TimerView: View {
             Image(systemName: "flame.fill")
                 .font(.system(size: 13))
                 .foregroundStyle(.orange)
+                .shadow(color: .orange.opacity(0.4), radius: 6)
             Text("~\(kcal) kcal burned")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .contentTransition(.numericText())
                 .animation(.easeInOut(duration: 0.3), value: kcal)
         }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+        )
         .accessibilityLabel("Approximately \(kcal) kilocalories burned during this fast")
     }
     
@@ -880,44 +898,62 @@ struct TimerView: View {
         let stageEnd = next.startHour * 3600.0
         let stageProgress = min(1.0, max(0, (manager.elapsedTime - stageStart) / (stageEnd - stageStart)))
         
-        return HStack(spacing: 10) {
-            Image(systemName: next.icon)
-                .font(.system(size: 14))
-                .foregroundStyle(next.color)
-            
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text("\(next.rawValue)")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(next.color)
-                    
-                    if hoursUntilNext > 0 {
-                        Text("in \(formatDurationCompact(hoursUntilNext))")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
-                            .foregroundStyle(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Text("\(Int(stageProgress * 100))%")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.tertiary)
-                }
+        return VStack(spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: next.icon)
+                    .font(.system(size: 14))
+                    .foregroundStyle(next.color)
                 
-                // Mini progress bar to next stage
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text("\(next.rawValue)")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundStyle(next.color)
+                        
+                        if hoursUntilNext > 0 {
+                            Text("in \(formatDurationCompact(hoursUntilNext))")
+                                .font(.system(size: 12, weight: .medium, design: .rounded))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("\(Int(stageProgress * 100))%")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(next.color.opacity(0.8))
+                    }
+                }
+            }
+            
+            // Progress bar with stage icons at start/end
+            HStack(spacing: 6) {
+                Image(systemName: manager.currentStage.icon)
+                    .font(.system(size: 10))
+                    .foregroundStyle(manager.currentStage.color.opacity(0.6))
+                
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 2)
+                        RoundedRectangle(cornerRadius: 3)
                             .fill(next.color.opacity(0.12))
-                            .frame(height: 4)
+                            .frame(height: 6)
                         
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(next.color.opacity(0.6))
-                            .frame(width: geo.size.width * stageProgress, height: 4)
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(
+                                LinearGradient(
+                                    colors: [manager.currentStage.color, next.color],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geo.size.width * stageProgress, height: 6)
                             .animation(.progressSpring, value: stageProgress)
                     }
                 }
-                .frame(height: 4)
+                .frame(height: 6)
+                
+                Image(systemName: next.icon)
+                    .font(.system(size: 10))
+                    .foregroundStyle(next.color.opacity(0.6))
             }
         }
         .padding(10)

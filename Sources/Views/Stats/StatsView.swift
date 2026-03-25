@@ -96,71 +96,86 @@ struct StatsView: View {
     // MARK: - Empty State
     
     private var emptyState: some View {
-        let accent = themeManager.selectedTheme.accent
-        
-        return VStack(spacing: 24) {
+        VStack(spacing: 28) {
             Spacer()
             
+            // Hero illustration — layered rings with glow
             ZStack {
+                // Outer ambient glow
                 Circle()
                     .fill(
-                        LinearGradient(
-                            colors: [accent.opacity(0.12), accent.opacity(0.04)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                        RadialGradient(
+                            colors: [themeManager.selectedTheme.accent.opacity(0.15), .clear],
+                            center: .center,
+                            startRadius: 40,
+                            endRadius: 120
                         )
                     )
-                    .frame(width: 130, height: 130)
-                    .shadow(color: accent.opacity(0.15), radius: 16, y: 6)
+                    .frame(width: 240, height: 240)
                 
+                // Decorative ring 1
                 Circle()
-                    .stroke(accent.opacity(0.08), lineWidth: 12)
+                    .stroke(themeManager.selectedTheme.accent.opacity(0.08), lineWidth: 1.5)
+                    .frame(width: 180, height: 180)
+                
+                // Decorative ring 2
+                Circle()
+                    .stroke(themeManager.selectedTheme.accent.opacity(0.15), lineWidth: 2)
                     .frame(width: 120, height: 120)
                 
-                Circle()
-                    .stroke(Color.green.opacity(0.1), lineWidth: 8)
-                    .frame(width: 88, height: 88)
-                
-                Circle()
-                    .stroke(Color.orange.opacity(0.12), lineWidth: 6)
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: "chart.bar.xaxis.ascending")
-                    .font(.system(size: 40, weight: .medium))
-                    .foregroundStyle(accent)
-                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
+                // Center icon with glass background
+                ZStack {
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: themeManager.selectedTheme.accent.opacity(0.3), radius: 16, y: 4)
+                    
+                    Image(systemName: "chart.bar.xaxis.ascending")
+                        .font(.system(size: 32, weight: .medium))
+                        .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                        .symbolEffect(.pulse, options: .repeating.speed(0.4))
+                }
             }
-            .accessibilityHidden(true)
+            .entranceAnimation(delay: 0.1)
             
+            // Text content
             VStack(spacing: 10) {
                 Text("Insights Await")
-                    .font(.system(.title3, design: .rounded, weight: .bold))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                 
                 Text("Complete a few fasts to unlock\ncharts, streaks, and trends.")
-                    .font(.system(size: 15))
+                    .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 
                 Text("Your journey starts with a single fast")
                     .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.tertiary)
-                    .padding(.top, 2)
+                    .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.7))
+                    .padding(.top, 4)
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
-            .accessibilityIdentifier("statsEmptyState")
+            .entranceAnimation(delay: 0.25)
             
-            HStack(spacing: 16) {
-                InsightPreviewPill(icon: "flame.fill", label: "Streaks", color: .orange)
-                InsightPreviewPill(icon: "chart.line.uptrend.xyaxis", label: "Trends", color: .green)
-                InsightPreviewPill(icon: "calendar", label: "Calendar", color: accent)
+            // Feature preview badges — what they'll unlock
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    InsightPreviewBadge(icon: "flame.fill", title: "Streaks", color: .orange)
+                    InsightPreviewBadge(icon: "chart.line.uptrend.xyaxis", title: "Trends", color: .green)
+                    InsightPreviewBadge(icon: "calendar", title: "Calendar", color: .blue)
+                }
+                HStack(spacing: 12) {
+                    InsightPreviewBadge(icon: "drop.fill", title: "Hydration", color: .cyan)
+                    InsightPreviewBadge(icon: "face.smiling", title: "Mood", color: .yellow)
+                    InsightPreviewBadge(icon: "scalemass.fill", title: "Weight", color: .purple)
+                }
             }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Unlock Streaks, Trends, and Calendar views")
+            .entranceAnimation(delay: 0.4)
             
             Spacer()
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 24)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
+        .accessibilityIdentifier("statsEmptyState")
     }
     
     // MARK: - Stats Content
@@ -925,33 +940,33 @@ struct InsightCard<Content: View>: View {
     }
 }
 
-// MARK: - Insight Preview Pill (empty state)
+// MARK: - Insight Preview Badge (empty state)
 
-private struct InsightPreviewPill: View {
+private struct InsightPreviewBadge: View {
     let icon: String
-    let label: String
+    let title: String
     let color: Color
     
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.system(size: 18))
                 .foregroundStyle(color)
-            Text(label)
+            Text(title)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(color.opacity(0.08))
-                )
         )
-        .shadow(color: .black.opacity(0.12), radius: 4, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(color.opacity(0.15), lineWidth: 1)
+        )
+        .shadow(color: color.opacity(0.1), radius: 8, y: 3)
     }
 }
 

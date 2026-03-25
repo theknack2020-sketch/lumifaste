@@ -41,7 +41,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 24) {
                     premiumSection
                         .entranceAnimation(delay: 0.05)
                     activitySection
@@ -318,65 +318,87 @@ struct SettingsView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel("Premium subscription, Active")
             } else {
-                glassCard {
-                    VStack(spacing: 12) {
-                        Button {
-                            HapticManager.shared.lightTap()
-                            showPaywall = true
-                        } label: {
-                            HStack(spacing: 12) {
-                                ZStack {
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [.purple, .pink],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
+                VStack(spacing: 12) {
+                    Button {
+                        HapticManager.shared.lightTap()
+                        showPaywall = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [.purple, .pink],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
                                         )
-                                        .frame(width: 36, height: 36)
-                                    
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 16))
-                                        .foregroundStyle(.white)
-                                        .symbolEffect(.pulse, options: .repeating)
-                                }
+                                    )
+                                    .frame(width: 36, height: 36)
+                                    .shadow(color: .purple.opacity(0.35), radius: 8, y: 2)
                                 
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 16))
+                                    .foregroundStyle(.white)
+                                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text("Upgrade to Premium")
                                     .font(.system(.subheadline, weight: .semibold))
-                                
-                                Spacer()
-                                
-                                Image(systemName: "chevron.right")
-                                    .font(.system(.caption2, weight: .semibold))
-                                    .foregroundStyle(.tertiary)
+                                Text("Unlock all features")
+                                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                                    .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.8))
                             }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundStyle(themeManager.selectedTheme.accent)
+                                .symbolEffect(.pulse, options: .repeating.speed(0.6))
                         }
-                        .buttonStyle(.pressable)
-                        .accessibilityHint("Opens premium subscription options")
-                        
-                        Divider()
-                        
-                        Button {
-                            Task {
-                                await subscriptionManager.restorePurchases()
-                                showRestoreAlert = true
-                            }
-                        } label: {
-                            HStack(spacing: 8) {
-                                Label("Restore Purchases", systemImage: "arrow.clockwise")
-                                if subscriptionManager.isRestoring {
-                                    ProgressView()
-                                        .controlSize(.small)
-                                }
-                                Spacer()
-                            }
-                        }
-                        .buttonStyle(.pressable)
-                        .disabled(subscriptionManager.isRestoring)
-                        .accessibilityHint("Restores previously purchased subscriptions")
                     }
+                    .buttonStyle(.pressable)
+                    .accessibilityHint("Opens premium subscription options")
+                    
+                    Divider()
+                    
+                    Button {
+                        Task {
+                            await subscriptionManager.restorePurchases()
+                            showRestoreAlert = true
+                        }
+                    } label: {
+                        HStack(spacing: 8) {
+                            Label("Restore Purchases", systemImage: "arrow.clockwise")
+                            if subscriptionManager.isRestoring {
+                                ProgressView()
+                                    .controlSize(.small)
+                            }
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.pressable)
+                    .disabled(subscriptionManager.isRestoring)
+                    .accessibilityHint("Restores previously purchased subscriptions")
                 }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [themeManager.selectedTheme.accent.opacity(0.08), themeManager.selectedTheme.accent.opacity(0.03)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        )
+                        .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+                        .shadow(color: themeManager.selectedTheme.accent.opacity(0.12), radius: 10, x: 0, y: 2)
+                )
             }
         }
     }
@@ -390,7 +412,13 @@ struct SettingsView: View {
             VStack(spacing: 12) {
                 // Theme preview card
                 ThemePreviewCard(theme: themeManager.selectedTheme)
-                    .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: themeManager.selectedTheme.accent.opacity(0.15), radius: 16, y: 4)
+                    .shadow(color: .black.opacity(0.2), radius: 12, y: 6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(themeManager.selectedTheme.accent.opacity(0.12), lineWidth: 1)
+                    )
                 
                 // Free themes
                 glassCard {
@@ -412,6 +440,7 @@ struct SettingsView: View {
                                             _ = themeManager.selectTheme(theme, isPremium: subscriptionManager.isSubscribed)
                                         }
                                     }
+                                    .shadow(color: theme.accent.opacity(0.3), radius: 6, y: 2)
                                     .scaleEffect(themeManager.selectedTheme == theme ? 1.1 : 1.0)
                                     .animation(.spring(response: 0.35, dampingFraction: 0.6), value: themeManager.selectedTheme == theme)
                                     .staggeredAppear(index: index)
@@ -452,6 +481,7 @@ struct SettingsView: View {
                                             showPaywall = true
                                         }
                                     }
+                                    .shadow(color: theme.accent.opacity(0.3), radius: 6, y: 2)
                                     .scaleEffect(themeManager.selectedTheme == theme ? 1.1 : 1.0)
                                     .animation(.spring(response: 0.35, dampingFraction: 0.6), value: themeManager.selectedTheme == theme)
                                     .staggeredAppear(index: index)
