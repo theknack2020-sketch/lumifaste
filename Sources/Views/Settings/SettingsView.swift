@@ -43,17 +43,29 @@ struct SettingsView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     premiumSection
+                        .entranceAnimation(delay: 0.05)
                     activitySection
+                        .entranceAnimation(delay: 0.1)
                     iCloudSection
+                        .entranceAnimation(delay: 0.15)
                     themeSection
+                        .entranceAnimation(delay: 0.2)
                     appearanceSection
+                        .entranceAnimation(delay: 0.25)
                     soundsSection
+                        .entranceAnimation(delay: 0.3)
                     unitsSection
+                        .entranceAnimation(delay: 0.35)
                     dataSection
+                        .entranceAnimation(delay: 0.4)
                     shareSection
+                        .entranceAnimation(delay: 0.45)
                     supportSection
+                        .entranceAnimation(delay: 0.5)
                     legalSection
+                        .entranceAnimation(delay: 0.55)
                     aboutSection
+                        .entranceAnimation(delay: 0.6)
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -124,7 +136,13 @@ struct SettingsView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(.footnote, design: .rounded, weight: .bold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [themeManager.selectedTheme.accent.opacity(0.8), .secondary],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 4)
     }
@@ -214,6 +232,7 @@ struct SettingsView: View {
                             Image(systemName: "crown.fill")
                                 .font(.system(size: 20))
                                 .foregroundStyle(.white)
+                                .symbolEffect(.bounce, options: .speed(0.6), value: true)
                         }
                         
                         VStack(alignment: .leading, spacing: 2) {
@@ -249,6 +268,35 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("Opens App Store subscription management")
+                    
+                    Divider()
+                    
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(Color.cyan.opacity(0.15))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: "snowflake")
+                                .font(.system(size: 14))
+                                .foregroundStyle(.cyan)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Streak Freeze")
+                                .font(.system(.subheadline, weight: .medium))
+                            Text("Protects your streak if you miss a day")
+                                .font(.system(.caption))
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Text("\(FastingManager.streakFreezeCount) available")
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.cyan)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Streak Freeze, \(FastingManager.streakFreezeCount) available")
                 }
                 .padding(16)
                 .background(
@@ -291,6 +339,7 @@ struct SettingsView: View {
                                     Image(systemName: "sparkles")
                                         .font(.system(size: 16))
                                         .foregroundStyle(.white)
+                                        .symbolEffect(.pulse, options: .repeating)
                                 }
                                 
                                 Text("Upgrade to Premium")
@@ -352,7 +401,7 @@ struct SettingsView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
-                                ForEach(ThemeManager.freeThemes) { theme in
+                                ForEach(Array(ThemeManager.freeThemes.enumerated()), id: \.element.id) { index, theme in
                                     ThemePickerCircle(
                                         theme: theme,
                                         isSelected: themeManager.selectedTheme == theme,
@@ -365,6 +414,7 @@ struct SettingsView: View {
                                     }
                                     .scaleEffect(themeManager.selectedTheme == theme ? 1.1 : 1.0)
                                     .animation(.spring(response: 0.35, dampingFraction: 0.6), value: themeManager.selectedTheme == theme)
+                                    .staggeredAppear(index: index)
                                 }
                             }
                             .padding(.horizontal, 4)
@@ -386,7 +436,7 @@ struct SettingsView: View {
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
-                                ForEach(ThemeManager.premiumThemes) { theme in
+                                ForEach(Array(ThemeManager.premiumThemes.enumerated()), id: \.element.id) { index, theme in
                                     ThemePickerCircle(
                                         theme: theme,
                                         isSelected: themeManager.selectedTheme == theme,
@@ -404,6 +454,7 @@ struct SettingsView: View {
                                     }
                                     .scaleEffect(themeManager.selectedTheme == theme ? 1.1 : 1.0)
                                     .animation(.spring(response: 0.35, dampingFraction: 0.6), value: themeManager.selectedTheme == theme)
+                                    .staggeredAppear(index: index)
                                 }
                             }
                             .padding(.horizontal, 4)
@@ -568,6 +619,26 @@ struct SettingsView: View {
                         : "Export is a Pro feature. Upgrade to download your fasting history as CSV.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
+                    
+                    Divider().padding(.vertical, 4)
+                    
+                    Button(role: .destructive) {
+                        HapticManager.shared.warning()
+                        showResetConfirm = true
+                    } label: {
+                        HStack {
+                            Label("Reset All Data", systemImage: "trash")
+                                .foregroundStyle(.red)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(.caption2, weight: .semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityLabel("Reset all data")
+                    .accessibilityHint("Permanently deletes all fasting sessions and weight data")
+                    .accessibilityIdentifier("resetDataButton")
                 }
             }
         }
@@ -664,6 +735,26 @@ struct SettingsView: View {
                     
                     Divider().padding(.vertical, 10)
                     
+                    Button {
+                        HapticManager.shared.lightTap()
+                        if let url = URL(string: "App-prefs:SIRI") {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        HStack {
+                            Label("Siri Shortcuts", systemImage: "mic.circle")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.system(.caption2))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.pressable)
+                    .accessibilityLabel("Siri Shortcuts")
+                    .accessibilityHint("Open Siri settings to manage voice shortcuts for Lumifaste")
+                    
+                    Divider().padding(.vertical, 10)
+                    
                     NavigationLink {
                         NotificationSettingsView()
                     } label: {
@@ -751,13 +842,37 @@ struct SettingsView: View {
             .accessibilityElement(children: .combine)
             .accessibilityLabel("App version \(appVersion)")
             
-            // Footer
-            VStack(spacing: 4) {
-                Text("Made with ❤️ for your health journey.")
-                    .font(.system(.caption, design: .rounded))
-                    .foregroundStyle(.tertiary)
-                Text("Lumifaste — No ads. No tricks. Just results.")
+            // Footer with brand
+            VStack(spacing: 8) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [themeManager.selectedTheme.accent.opacity(0.15), .clear],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 25
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                    
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 22))
+                        .scaleEffect(x: -1)
+                        .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                        .symbolEffect(.pulse, options: .speed(0.3).repeating)
+                }
+                
+                Text("Lumifaste")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(.secondary)
+                
+                Text("No ads. No tricks. Just results.")
                     .font(.system(.caption2, design: .rounded, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                
+                Text("© 2026 TheKnack")
+                    .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.quaternary)
             }
             .multilineTextAlignment(.center)

@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import UIKit
 
-/// Ana timer ekranı — oruç başlat/bitir, circular progress, stage tracking.
+/// Main timer screen — start/end fast, circular progress, stage tracking.
 /// TimelineView ile her saniye güncellenir (sadece foreground'da).
 /// Soft paywall trigger: shows after 3rd completed fast (non-blocking).
 ///
@@ -14,6 +14,7 @@ struct TimerView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
     @Query private var allSessions: [FastingSession]
+    @Query(sort: \WeightEntry.date, order: .reverse) private var weightEntries: [WeightEntry]
     @State private var manager = FastingManager()
     @State private var showPlanPicker = false
     @State private var showEndConfirm = false
@@ -36,6 +37,9 @@ struct TimerView: View {
     @State private var showStreakShareSheet = false
     @State private var streakShareImage: UIImage?
     
+    /// Tracks last Live Activity update to throttle to ~60s intervals
+    @State private var lastLiveActivityUpdate: Date = .distantPast
+    
     @State private var showError = false
     @State private var errorMessage: String?
     @State private var journeyManager = OnboardingJourneyManager()
@@ -50,11 +54,14 @@ struct TimerView: View {
         allSessions.filter(\.isCompleted).count
     }
     
-    /// Current streak — used for streak reminder notifications
+    /// Current streak — used for streak reminder notifications.
+    /// If there's a gap of exactly 1 day and a streak freeze is available (Pro only),
+    /// auto-uses it to maintain the streak.
     private var currentStreak: Int {
         let calendar = Calendar.current
         var streak = 0
         var checkDate = calendar.startOfDay(for: .now)
+        var usedFreeze = false
         
         let completedDays = Set(
             allSessions
@@ -63,16 +70,33 @@ struct TimerView: View {
         )
         .sorted(by: >)
         
-        for day in completedDays {
-            if day == checkDate {
+        // Build a quick-lookup set
+        let daySet = Set(completedDays)
+        
+        // Walk backward from today
+        while true {
+            if daySet.contains(checkDate) {
                 streak += 1
                 guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
                 checkDate = prev
-            } else if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate), day == prev {
-                streak += 1
-                guard let prevDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
-                checkDate = prevDay
             } else {
+                // Gap day — try streak freeze if Pro and haven't used one in this calculation
+                if !usedFreeze,
+                   subscriptionManager.isSubscribed,
+                   FastingManager.streakFreezeCount > 0,
+                   streak > 0 {
+                    // Check if the previous day has a fast (gap is exactly 1 day)
+                    if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate),
+                       daySet.contains(prev) {
+                        // Use the freeze to bridge this gap
+                        if FastingManager.useStreakFreeze() {
+                            usedFreeze = true
+                            // Skip this gap day, continue counting
+                            checkDate = prev
+                            continue
+                        }
+                    }
+                }
                 break
             }
         }
@@ -140,6 +164,7 @@ struct TimerView: View {
             TimelineView(.periodic(from: .now, by: 1.0)) { timeline in
                 let _ = detectStageChange()
                 let _ = periodicClockCheck()
+                let _ = updateLiveActivityIfNeeded()
                 ScrollView {
                     VStack(spacing: 0) {
                         // Date & streak header
@@ -189,6 +214,16 @@ struct TimerView: View {
                                             .animation(.easeInOut(duration: 0.2))
                                     )
                                 )
+                            
+                            // Estimated calorie burn counter
+                            calorieBurnDisplay
+                                .padding(.horizontal, 20)
+                                .padding(.top, 6)
+                            
+                            // Daily step count from HealthKit
+                            stepCountBadge
+                                .padding(.horizontal, 20)
+                                .padding(.top, 4)
                         }
                         
                         // Next stage progress
@@ -196,6 +231,14 @@ struct TimerView: View {
                             nextStageIndicator(next: next)
                                 .padding(.horizontal, 20)
                                 .padding(.top, 8)
+                        }
+                        
+                        Spacer()
+                            .frame(height: 12)
+                        
+                        // Water tracking card (active fast only)
+                        if manager.isActive {
+                            waterTrackingSection
                         }
                         
                         Spacer()
@@ -243,6 +286,14 @@ struct TimerView: View {
                         
                         // Plan selector (inactive state) — redesigned
                         if !manager.isActive {
+                            // First-time motivational card (no fasts yet)
+                            if completedFastCount == 0 {
+                                firstFastTeaseCard
+                                    .padding(.horizontal, 20)
+                                    .padding(.top, 8)
+                                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                            }
+                            
                             planSelector
                                 .padding(.top, 16)
                                 .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -353,6 +404,12 @@ struct TimerView: View {
                 if !manager.isActive && completedFastCount > 0 {
                     showNudge = FastingManager.shouldShowNudge(sessions: allSessions)
                 }
+                // Auto-refill streak freeze on Mondays for Pro users
+                FastingManager.refillStreakFreezeIfNeeded(isPremium: subscriptionManager.isSubscribed)
+                // Fetch today's step count from HealthKit
+                Task {
+                    await HealthKitManager.shared.fetchTodaySteps()
+                }
                 // Schedule retention notifications (#14-18)
                 Task { @MainActor in
                     let status = await NotificationManager.shared.authorizationStatus()
@@ -362,6 +419,8 @@ struct TimerView: View {
                         currentStreak: currentStreak,
                         isCurrentlyFasting: manager.isActive
                     )
+                    // Schedule Day 1-3 journey push notifications (idempotent)
+                    journeyManager.scheduleJourneyPushNotifications()
                 }
             }
             .onDisappear {
@@ -442,16 +501,17 @@ struct TimerView: View {
             // Today's date and day-of-week
             VStack(alignment: .leading, spacing: 2) {
                 Text(Date.now, format: .dateTime.weekday(.wide))
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(.primary)
                 Text(Date.now, format: .dateTime.month(.wide).day())
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
             }
             
             Spacer()
             
-            // Mini streak counter with motivational copy
+            // Mini streak counter — visible to ALL users (retention hook)
+            // Pro extras: streak freeze, streak protection notification, share card
             if currentStreak > 0 {
                 VStack(alignment: .trailing, spacing: 2) {
                     HStack(spacing: 4) {
@@ -461,8 +521,9 @@ struct TimerView: View {
                         Text("\(currentStreak)")
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(.orange)
+                            .contentTransition(.numericText())
                         Text(currentStreak == 1 ? "day" : "days")
-                            .font(.system(size: 11))
+                            .font(.system(size: 11, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                     .padding(.horizontal, 10)
@@ -474,9 +535,25 @@ struct TimerView: View {
                     
                     if let microCopy = streakMicroCopy {
                         Text(microCopy)
-                            .font(.system(size: 11, weight: .medium))
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
                             .foregroundStyle(.orange.opacity(0.8))
                             .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    }
+                    
+                    // Pro upsell hint for free users with active streak
+                    if !subscriptionManager.isSubscribed && currentStreak >= 3 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "shield.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.purple.opacity(0.6))
+                            Text("Protect streak")
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .foregroundStyle(.purple.opacity(0.6))
+                        }
+                        .onTapGesture {
+                            HapticManager.shared.lightTap()
+                            showPaywall = true
+                        }
                     }
                 }
                 .accessibilityLabel("\(currentStreak) day fasting streak\(streakMicroCopy.map { ", \($0)" } ?? "")")
@@ -492,7 +569,7 @@ struct TimerView: View {
                 .fill(manager.isPaused ? Color.orange : Color.green)
                 .frame(width: 7, height: 7)
             Text(manager.isPaused ? "Paused" : "Fasting")
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
                 .foregroundStyle(manager.isPaused ? .orange : .green)
         }
         .padding(.horizontal, 8)
@@ -515,9 +592,9 @@ struct TimerView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("We miss you!")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
                 Text("It's been a while since your last fast. Ready to get back on track?")
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -530,7 +607,7 @@ struct TimerView: View {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
         }
@@ -551,9 +628,9 @@ struct TimerView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(banner.title)
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
                 Text(banner.message)
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, design: .rounded))
                     .foregroundStyle(.secondary)
                     .lineLimit(3)
             }
@@ -566,7 +643,7 @@ struct TimerView: View {
                 }
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
             }
         }
@@ -603,7 +680,7 @@ struct TimerView: View {
                             .foregroundStyle(.orange)
                         
                         Text("PAUSED")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundStyle(.orange)
                         
                         Text(formatDuration(manager.elapsedTime))
@@ -660,7 +737,7 @@ struct TimerView: View {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 13))
                                 Text("Goal reached!")
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.system(size: 13, weight: .semibold, design: .rounded))
                             }
                             .foregroundStyle(.green)
                             .transition(.scale.combined(with: .opacity))
@@ -673,7 +750,7 @@ struct TimerView: View {
                         .foregroundStyle(accent)
                     
                     Text("Ready to fast")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundStyle(.secondary)
                         .padding(.top, 4)
                     
@@ -694,10 +771,10 @@ struct TimerView: View {
         VStack(spacing: 6) {
             HStack(spacing: 8) {
                 Image(systemName: manager.currentStage.icon)
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .contentTransition(.symbolEffect(.replace))
                 Text(manager.currentStage.rawValue)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .contentTransition(.numericText())
             }
             .foregroundStyle(manager.currentStage.color)
@@ -707,7 +784,7 @@ struct TimerView: View {
             ))
             
             Text(manager.currentStage.subtitle)
-                .font(.system(size: 13))
+                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.secondary)
                 .contentTransition(.opacity)
                 .transition(.opacity.combined(with: .offset(y: 6)))
@@ -715,7 +792,7 @@ struct TimerView: View {
             // Premium: metabolic info teaser
             if subscriptionManager.isSubscribed, let detail = FastingEducation.detail(for: manager.currentStage) {
                 Text(detail.metabolicInfo.prefix(90) + "…")
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.tertiary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -727,7 +804,7 @@ struct TimerView: View {
                     Image(systemName: "lock.fill")
                         .font(.system(size: 9))
                     Text("Unlock stage science with Pro")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
                 }
                 .foregroundStyle(.purple.opacity(0.7))
                 .padding(.top, 2)
@@ -743,6 +820,56 @@ struct TimerView: View {
                 .shadow(color: manager.currentStage.color.opacity(0.15), radius: 12, x: 0, y: 2)
         )
         .animation(.smoothSpring, value: manager.currentStage)
+    }
+    
+    // MARK: - Estimated Calorie Burn Display
+    
+    private var calorieBurnDisplay: some View {
+        let fastingHours = manager.elapsedTime / 3600.0
+        let latestWeight = weightEntries.first?.weightKg
+        let kcal = Int(CalorieBurnEstimator.estimate(fastingHours: fastingHours, bodyWeightKg: latestWeight))
+        
+        return HStack(spacing: 6) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 13))
+                .foregroundStyle(.orange)
+            Text("~\(kcal) kcal burned")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .animation(.easeInOut(duration: 0.3), value: kcal)
+        }
+        .accessibilityLabel("Approximately \(kcal) kilocalories burned during this fast")
+    }
+    
+    // MARK: - Step Count Badge (HealthKit)
+    
+    private var stepCountBadge: some View {
+        let steps = HealthKitManager.shared.todayStepCount
+        return Group {
+            if HealthKitManager.shared.isAvailable && steps > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "figure.walk")
+                        .font(.system(size: 13))
+                        .foregroundStyle(.green)
+                    Text(steps.formatted(.number.grouping(.automatic)))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                    Text("steps today")
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(
+                    Capsule()
+                        .fill(Color.green.opacity(0.1))
+                )
+                .accessibilityLabel("\(steps) steps walked today")
+            }
+        }
     }
     
     // MARK: - Next Stage Indicator (#5)
@@ -761,12 +888,12 @@ struct TimerView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
                     Text("\(next.rawValue)")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundStyle(next.color)
                     
                     if hoursUntilNext > 0 {
                         Text("in \(formatDurationCompact(hoursUntilNext))")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                     
@@ -822,7 +949,7 @@ struct TimerView: View {
                 }
                 
                 Text(quote.text)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
                     .foregroundStyle(.primary.opacity(0.8))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
@@ -830,7 +957,7 @@ struct TimerView: View {
                 
                 if !quote.author.isEmpty {
                     Text("— \(quote.author)")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -869,7 +996,7 @@ struct TimerView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(.yellow)
                 Text(tip.text)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
             }
@@ -883,6 +1010,25 @@ struct TimerView: View {
                 .fill(.ultraThinMaterial)
                 .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
         )
+    }
+    
+    // MARK: - Water Tracking Section
+    
+    @ViewBuilder
+    private var waterTrackingSection: some View {
+        WaterTrackingCard(
+            waterCount: Binding(
+                get: { manager.waterCount },
+                set: { _ in }
+            ),
+            onAddWater: { count in
+                for _ in 0..<count {
+                    manager.logWater()
+                }
+            }
+        )
+        .padding(.horizontal, 20)
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
     
     // MARK: - Quick Action Bar (#7) — water, mood, end fast
@@ -907,7 +1053,7 @@ struct TimerView: View {
                         Text("\(manager.waterCount)")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                         Text("Water")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -938,7 +1084,7 @@ struct TimerView: View {
                             .contentTransition(.symbolEffect(.replace))
                     }
                     Text(manager.isPaused ? "Resume" : "Pause")
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -961,7 +1107,7 @@ struct TimerView: View {
                             .foregroundStyle(.blue)
                     }
                     Text("Adjust")
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -985,7 +1131,7 @@ struct TimerView: View {
                                 .foregroundStyle(.green)
                         }
                         Text("Extend")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -1007,7 +1153,7 @@ struct TimerView: View {
                                 .foregroundStyle(.red)
                         }
                         Text("End")
-                            .font(.system(size: 10))
+                            .font(.system(size: 10, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -1037,12 +1183,12 @@ struct TimerView: View {
             
             VStack(alignment: .leading, spacing: 2) {
                 Text("Community Avg: \(String(format: "%.1f", avg.averageDurationHours))h")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
                     .foregroundStyle(.secondary)
                 
                 if manager.elapsedTime > 3600 {
                     Text(ahead ? "You're ahead of average! 💪" : "Keep going — you're getting there!")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, design: .rounded))
                         .foregroundStyle(ahead ? .green : .secondary)
                 }
             }
@@ -1050,7 +1196,7 @@ struct TimerView: View {
             Spacer()
             
             Text("\(CommunityStats.formatCount(avg.participantCount)) fasters")
-                .font(.system(size: 10))
+                .font(.system(size: 10, design: .rounded))
                 .foregroundStyle(.tertiary)
         }
         .padding(10)
@@ -1080,10 +1226,10 @@ struct TimerView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: manager.isActive ? "stop.fill" : "play.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .contentTransition(.symbolEffect(.replace))
                     Text(manager.isActive ? "End Fast" : "Start Fast")
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -1112,9 +1258,9 @@ struct TimerView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14, weight: .semibold))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
                         Text("Keep Going — Extend Fast")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
                     }
                     .foregroundStyle(.green)
                     .frame(maxWidth: .infinity)
@@ -1131,12 +1277,90 @@ struct TimerView: View {
         }
     }
     
+    // MARK: - First Fast Tease Card
+    
+    private var firstFastTeaseCard: some View {
+        let accent = themeManager.selectedTheme.accent
+        return VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [accent.opacity(0.2), accent.opacity(0.05)],
+                                center: .center,
+                                startRadius: 2,
+                                endRadius: 20
+                            )
+                        )
+                        .frame(width: 40, height: 40)
+                    
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18))
+                        .foregroundStyle(accent)
+                }
+                
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Ready for your first fast?")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    Text("Pick a plan below and tap Start Fast")
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                
+                Spacer()
+            }
+            
+            // Quick benefit pills
+            HStack(spacing: 8) {
+                benefitPill(icon: "flame.fill", text: "Burn fat", color: .orange)
+                benefitPill(icon: "brain.head.profile", text: "Mental clarity", color: .purple)
+                benefitPill(icon: "bolt.fill", text: "More energy", color: .yellow)
+            }
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [accent.opacity(0.08), accent.opacity(0.02)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+        )
+        .shadow(color: accent.opacity(0.1), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Ready for your first fast? Pick a plan below and tap Start Fast")
+    }
+    
+    private func benefitPill(icon: String, text: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundStyle(color)
+            Text(text)
+                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(color.opacity(0.08))
+        )
+    }
+    
     // MARK: - Plan Selector (redesigned — shows plan details #12)
     
     private var planSelector: some View {
         VStack(spacing: 10) {
             Text("Choose Your Plan")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .foregroundStyle(.secondary)
             
             ScrollView(.horizontal, showsIndicators: false) {
@@ -1223,6 +1447,32 @@ struct TimerView: View {
         }
         return false
     }
+    
+    /// Update Live Activity every ~60 seconds (battery-friendly) or on stage change
+    @discardableResult
+    private func updateLiveActivityIfNeeded() -> Bool {
+        guard manager.isActive, !manager.isPaused else { return false }
+        let now = Date.now
+        let elapsed = now.timeIntervalSince(lastLiveActivityUpdate)
+        let stageChanged = manager.currentStage != lastStage
+        guard elapsed >= 60 || stageChanged || lastLiveActivityUpdate == .distantPast else { return false }
+        
+        let stage = manager.currentStage
+        let totalSeconds: Int = {
+            guard let s = manager.startDate, let e = manager.targetEndDate else { return 0 }
+            return Int(e.timeIntervalSince(s))
+        }()
+        
+        LiveActivityManager.updateLiveActivity(
+            elapsedSeconds: Int(manager.elapsedTime),
+            targetSeconds: totalSeconds,
+            stage: stage.rawValue,
+            stageEmoji: stage.emoji,
+            planName: manager.currentPlan.rawValue
+        )
+        lastLiveActivityUpdate = now
+        return true
+    }
 }
 
 // MARK: - Plan Card (redesigned — shows details, difficulty, subtitle)
@@ -1267,7 +1517,7 @@ private struct PlanCard: View {
                 
                 // Subtitle: "16h fast · 8h eat"
                 Text(plan.subtitle)
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
                 
@@ -1313,7 +1563,7 @@ struct EditStartTimeSheet: View {
         NavigationStack {
             VStack(spacing: 20) {
                 Text("When did you actually start fasting?")
-                    .font(.system(size: 15))
+                    .font(.system(size: 15, design: .rounded))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 
@@ -1332,7 +1582,7 @@ struct EditStartTimeSheet: View {
                     dismiss()
                 } label: {
                     Text("Update Start Time")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
@@ -1372,13 +1622,13 @@ struct ExtendFastSheet: View {
         NavigationStack {
             VStack(spacing: 24) {
                 Text("🔥")
-                    .font(.system(size: 44))
+                    .font(.system(size: 44, design: .rounded))
                 
                 Text("Keep Going!")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                 
                 Text("You've reached your goal. Extend your fast to push further.")
-                    .font(.system(size: 14))
+                    .font(.system(size: 14, design: .rounded))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 
@@ -1389,7 +1639,7 @@ struct ExtendFastSheet: View {
                             extendHours = hours
                         } label: {
                             Text("+\(Int(hours))h")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 10)
                                 .background(
@@ -1411,7 +1661,7 @@ struct ExtendFastSheet: View {
                     dismiss()
                 } label: {
                     Text("Extend by \(Int(extendHours)) hours")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
@@ -1446,7 +1696,7 @@ struct CustomPlanSheet: View {
         NavigationStack {
             VStack(spacing: 24) {
                 Text("Custom Fasting Plan")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                 
                 VStack(spacing: 8) {
                     Text("\(Int(hours))h")
@@ -1454,7 +1704,7 @@ struct CustomPlanSheet: View {
                         .foregroundStyle(InputValidator.isExtremeFast(hours: hours) ? .orange : Color.accentColor)
                     
                     Text("fasting window")
-                        .font(.system(size: 14))
+                        .font(.system(size: 14, design: .rounded))
                         .foregroundStyle(.secondary)
                     
                     if InputValidator.isExtremeFast(hours: hours) {
@@ -1462,7 +1712,7 @@ struct CustomPlanSheet: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.system(size: 11))
                             Text("Extended fasts require medical supervision")
-                                .font(.system(size: 12))
+                                .font(.system(size: 12, design: .rounded))
                         }
                         .foregroundStyle(.orange)
                         .transition(.opacity)
@@ -1475,11 +1725,11 @@ struct CustomPlanSheet: View {
                 
                 HStack {
                     Text("1h")
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(.tertiary)
                     Spacer()
                     Text("48h")
-                        .font(.system(size: 12))
+                        .font(.system(size: 12, design: .rounded))
                         .foregroundStyle(.tertiary)
                 }
                 .padding(.horizontal, 20)
@@ -1492,7 +1742,7 @@ struct CustomPlanSheet: View {
                     }
                 } label: {
                     Text("Set Plan")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)

@@ -154,14 +154,14 @@ struct WeightTrendChart: View {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
                         .foregroundStyle(Color(.systemGray4))
                     AxisValueLabel()
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
             }
             .chartXAxis {
                 AxisMarks { _ in
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                 }
             }
             .accessibilityElement(children: .combine)
@@ -187,7 +187,7 @@ struct WeightTrendChart: View {
             
             HStack(spacing: 2) {
                 Image(systemName: diff <= 0 ? "arrow.down.right" : "arrow.up.right")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 10, weight: .bold, design: .rounded))
                 Text(String(format: "%+.1f", diff))
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .monospacedDigit()
@@ -236,9 +236,9 @@ struct WeightTrendChart: View {
             
             VStack(alignment: .leading, spacing: 1) {
                 Text(String(format: "%+.1f %@ since start", change, unit))
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
                 Text("\(daysSince) day\(daysSince == 1 ? "" : "s") tracked")
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, design: .rounded))
                     .foregroundStyle(.secondary)
             }
             

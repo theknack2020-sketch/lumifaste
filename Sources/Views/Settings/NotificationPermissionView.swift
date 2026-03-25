@@ -86,8 +86,10 @@ struct NotificationPermissionView: View {
                             let granted = await NotificationManager.shared.requestPermission()
                             if granted {
                                 permissionGranted = true
+                                HapticManager.shared.success()
                                 onComplete()
                             } else {
+                                HapticManager.shared.warning()
                                 permissionDenied = true
                             }
                         }
@@ -113,7 +115,8 @@ struct NotificationPermissionView: View {
                     .accessibilityLabel("Enable notifications")
                     .accessibilityHint("Requests permission to send fasting alerts and reminders")
                     
-                    Button("Skip for Now") {
+                Button("Skip for Now") {
+                        HapticManager.shared.lightTap()
                         onComplete()
                     }
                     .font(.system(size: 15))
@@ -149,6 +152,8 @@ struct NotificationPermissionView: View {
                     .foregroundStyle(.secondary)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(subtitle)")
     }
     
     // MARK: - Denial Guidance
@@ -170,6 +175,7 @@ struct NotificationPermissionView: View {
             
             HStack(spacing: 12) {
                 Button("Open Settings") {
+                    HapticManager.shared.lightTap()
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         UIApplication.shared.open(url)
                     }
@@ -177,13 +183,17 @@ struct NotificationPermissionView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(.blue)
                 .buttonStyle(.pressable)
+                .accessibilityLabel("Open Settings")
+                .accessibilityHint("Opens iOS Settings to enable notification permissions")
                 
                 Button("Continue Without") {
+                    HapticManager.shared.lightTap()
                     onComplete()
                 }
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
                 .buttonStyle(.pressable)
+                .accessibilityLabel("Continue without notifications")
             }
             .padding(.top, 4)
         }
@@ -227,6 +237,7 @@ struct NotificationDeniedBanner: View {
             Spacer()
             
             Button("Settings") {
+                HapticManager.shared.lightTap()
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
@@ -234,6 +245,7 @@ struct NotificationDeniedBanner: View {
             .font(.system(size: 13, weight: .medium))
             .foregroundStyle(.blue)
             .buttonStyle(.pressable)
+            .accessibilityLabel("Open Settings")
         }
         .padding(14)
         .background(
@@ -246,6 +258,8 @@ struct NotificationDeniedBanner: View {
                 .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                 .shadow(color: .red.opacity(0.1), radius: 10, x: 0, y: 2)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Notifications are disabled. Enable in iOS Settings to receive fasting alerts.")
     }
 }
 

@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// Tamamlanmış veya devam eden bir oruç oturumu.
+/// A completed or in-progress fasting session.
 /// Timestamp-based: startDate/endDate persist edilir, elapsed time Date.now'dan hesaplanır.
 @Model
 final class FastingSession {

@@ -52,6 +52,19 @@ struct LearnView: View {
     private var learnContent: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
+                // Brand header
+                HStack(spacing: 8) {
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 14))
+                        .scaleEffect(x: -1)
+                        .foregroundStyle(themeManager.selectedTheme.accent)
+                    Text("Lumifaste Learn")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                
                 // Quick links
                 quickLinks
                     .padding(.horizontal, 16)
@@ -155,6 +168,24 @@ struct LearnView: View {
             Text("Understand what happens to your body at each stage of fasting.")
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
+            
+            // Contextual science disclaimer
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.blue.opacity(0.7))
+                Text("Stages are based on general research. Individual results vary — this is educational content, not medical advice.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(10)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(Color.blue.opacity(0.06))
+            )
+            .accessibilityLabel("Disclaimer: Stages are based on general research. Individual results vary.")
+            .accessibilityIdentifier("stagesScienceDisclaimer")
             
             ForEach(Array(FastingEducation.stageDetails.enumerated()), id: \.element.id) { index, detail in
                 NavigationLink {
@@ -265,6 +296,16 @@ private struct QuickLinkCard: View {
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [color.opacity(0.08), color.opacity(0.02)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                )
         )
         .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
         .shadow(color: color.opacity(0.1), radius: 6, y: 2)

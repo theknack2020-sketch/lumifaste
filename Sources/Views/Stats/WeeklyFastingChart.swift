@@ -102,14 +102,14 @@ struct WeeklyFastingChart: View {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [4]))
                         .foregroundStyle(Color(.systemGray4))
                     AxisValueLabel()
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
             }
             .chartXAxis {
                 AxisMarks { value in
                     AxisValueLabel()
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
                 }
             }
             .chartOverlay { proxy in
@@ -118,7 +118,8 @@ struct WeeklyFastingChart: View {
                         .fill(Color.clear)
                         .contentShape(Rectangle())
                         .onTapGesture { location in
-                            let xPos = location.x - geo[proxy.plotFrame!].origin.x
+                            guard let plotFrame = proxy.plotFrame else { return }
+                            let xPos = location.x - geo[plotFrame].origin.x
                             if let dayValue: String = proxy.value(atX: xPos) {
                                 withAnimation(.easeInOut(duration: 0.2)) {
                                     if selectedDay?.day == dayValue {
@@ -141,22 +142,22 @@ struct WeeklyFastingChart: View {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(day.date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                         
                         HStack(spacing: 8) {
                             if day.completedHours > 0 {
                                 Label(String(format: "%.1fh completed", day.completedHours), systemImage: "checkmark.circle.fill")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(.green)
                             }
                             if day.cancelledHours > 0 {
                                 Label(String(format: "%.1fh cancelled", day.cancelledHours), systemImage: "xmark.circle.fill")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(.orange)
                             }
                             if day.totalHours == 0 {
                                 Text("No fasts")
-                                    .font(.system(size: 11))
+                                    .font(.system(size: 11, design: .rounded))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -190,11 +191,11 @@ struct WeeklyFastingChart: View {
                 HStack(spacing: 12) {
                     HStack(spacing: 4) {
                         Circle().fill(.green).frame(width: 7, height: 7)
-                        Text("Completed").font(.system(size: 10)).foregroundStyle(.secondary)
+                        Text("Completed").font(.system(size: 10, design: .rounded)).foregroundStyle(.secondary)
                     }
                     HStack(spacing: 4) {
                         Circle().fill(.orange).frame(width: 7, height: 7)
-                        Text("Cancelled").font(.system(size: 10)).foregroundStyle(.secondary)
+                        Text("Cancelled").font(.system(size: 10, design: .rounded)).foregroundStyle(.secondary)
                     }
                 }
             }

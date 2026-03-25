@@ -37,6 +37,26 @@ final class NotificationSettings {
         didSet { UserDefaults.standard.set(streakReminderEnabled, forKey: Key.streakReminder) }
     }
     
+    var inactivityNudgeEnabled: Bool {
+        didSet { UserDefaults.standard.set(inactivityNudgeEnabled, forKey: Key.inactivityNudge) }
+    }
+    
+    var weeklySummaryEnabled: Bool {
+        didSet { UserDefaults.standard.set(weeklySummaryEnabled, forKey: Key.weeklySummary) }
+    }
+    
+    var morningMotivationEnabled: Bool {
+        didSet { UserDefaults.standard.set(morningMotivationEnabled, forKey: Key.morningMotivation) }
+    }
+    
+    var waterReminderEnabled: Bool {
+        didSet { UserDefaults.standard.set(waterReminderEnabled, forKey: Key.waterReminder) }
+    }
+    
+    var eatingWindowReminderEnabled: Bool {
+        didSet { UserDefaults.standard.set(eatingWindowReminderEnabled, forKey: Key.eatingWindowReminder) }
+    }
+    
     // MARK: - Daily Reminder Time
     
     /// Hour component (0-23) for the daily reminder
@@ -77,6 +97,11 @@ final class NotificationSettings {
             ud.set(true, forKey: Key.fastComplete)
             ud.set(true, forKey: Key.motivationalQuotes)
             ud.set(true, forKey: Key.streakReminder)
+            ud.set(true, forKey: Key.inactivityNudge)
+            ud.set(true, forKey: Key.weeklySummary)
+            ud.set(false, forKey: Key.morningMotivation)
+            ud.set(true, forKey: Key.waterReminder)
+            ud.set(true, forKey: Key.eatingWindowReminder)
             ud.set(20, forKey: Key.dailyReminderHour)
             ud.set(0, forKey: Key.dailyReminderMinute)
             ud.set(false, forKey: Key.quietHoursEnabled)
@@ -90,6 +115,11 @@ final class NotificationSettings {
         self.fastCompleteEnabled = ud.bool(forKey: Key.fastComplete)
         self.motivationalQuotesEnabled = ud.bool(forKey: Key.motivationalQuotes)
         self.streakReminderEnabled = ud.bool(forKey: Key.streakReminder)
+        self.inactivityNudgeEnabled = ud.bool(forKey: Key.inactivityNudge)
+        self.weeklySummaryEnabled = ud.bool(forKey: Key.weeklySummary)
+        self.morningMotivationEnabled = ud.bool(forKey: Key.morningMotivation)
+        self.waterReminderEnabled = ud.bool(forKey: Key.waterReminder)
+        self.eatingWindowReminderEnabled = ud.bool(forKey: Key.eatingWindowReminder)
         self.dailyReminderHour = ud.integer(forKey: Key.dailyReminderHour)
         self.dailyReminderMinute = ud.integer(forKey: Key.dailyReminderMinute)
         self.quietHoursEnabled = ud.bool(forKey: Key.quietHoursEnabled)
@@ -105,6 +135,11 @@ final class NotificationSettings {
         static let fastComplete = "lf_notif_fast_complete"
         static let motivationalQuotes = "lf_notif_motivational"
         static let streakReminder = "lf_notif_streak"
+        static let inactivityNudge = "lf_notif_inactivity"
+        static let weeklySummary = "lf_notif_weekly_summary"
+        static let morningMotivation = "lf_notif_morning_motivation"
+        static let waterReminder = "lf_notif_water_reminder"
+        static let eatingWindowReminder = "lf_notif_eating_window"
         static let dailyReminderHour = "lf_notif_daily_hour"
         static let dailyReminderMinute = "lf_notif_daily_minute"
         static let quietHoursEnabled = "lf_notif_quiet_enabled"
@@ -122,6 +157,12 @@ enum NotificationCategory: String {
     case dailyReminder = "DAILY_REMINDER"
     case streakReminder = "STREAK_REMINDER"
     case motivationalQuote = "MOTIVATIONAL_QUOTE"
+    case inactivityNudge = "INACTIVITY_NUDGE"
+    case weeklySummary = "WEEKLY_SUMMARY"
+    case morningMotivation = "MORNING_MOTIVATION"
+    case streakProtection = "STREAK_PROTECTION"
+    case waterReminder = "WATER_REMINDER"
+    case eatingWindow = "EATING_WINDOW"
 }
 
 enum NotificationActionID: String {
@@ -210,9 +251,48 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             intentIdentifiers: []
         )
         
+        let inactivityCategory = UNNotificationCategory(
+            identifier: NotificationCategory.inactivityNudge.rawValue,
+            actions: [startAction, dismissAction],
+            intentIdentifiers: []
+        )
+        
+        let weeklySummaryCategory = UNNotificationCategory(
+            identifier: NotificationCategory.weeklySummary.rawValue,
+            actions: [dismissAction],
+            intentIdentifiers: []
+        )
+        
+        let morningCategory = UNNotificationCategory(
+            identifier: NotificationCategory.morningMotivation.rawValue,
+            actions: [startAction, dismissAction],
+            intentIdentifiers: []
+        )
+        
+        let streakProtectionCategory = UNNotificationCategory(
+            identifier: NotificationCategory.streakProtection.rawValue,
+            actions: [startAction, dismissAction],
+            intentIdentifiers: []
+        )
+        
+        let waterReminderCategory = UNNotificationCategory(
+            identifier: NotificationCategory.waterReminder.rawValue,
+            actions: [dismissAction],
+            intentIdentifiers: []
+        )
+        
+        let eatingWindowCategory = UNNotificationCategory(
+            identifier: NotificationCategory.eatingWindow.rawValue,
+            actions: [dismissAction],
+            intentIdentifiers: []
+        )
+        
         UNUserNotificationCenter.current().setNotificationCategories([
             milestoneCategory, stageCategory, completeCategory,
-            dailyCategory, streakCategory, quoteCategory
+            dailyCategory, streakCategory, quoteCategory,
+            inactivityCategory, weeklySummaryCategory,
+            morningCategory, streakProtectionCategory,
+            waterReminderCategory, eatingWindowCategory
         ])
         
         logger.info("Registered notification categories")
@@ -335,6 +415,17 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             if midpoint > Date.now {
                 scheduleMotivationalQuote(at: midpoint)
             }
+        }
+        
+        // 5. Water reminders every 2 hours during fasting
+        if settings.waterReminderEnabled {
+            scheduleWaterReminders(startDate: startDate, targetDuration: targetDuration)
+        }
+        
+        // 6. Eating window reminder — 30 min before eating window opens
+        if settings.eatingWindowReminderEnabled {
+            let eatingWindowOpens = startDate.addingTimeInterval(targetDuration)
+            scheduleEatingWindowReminder(eatingWindowOpens: eatingWindowOpens)
         }
         
         logger.info("Scheduled fasting notifications for \(plan.rawValue) plan")
@@ -633,6 +724,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         components.hour = 8
         components.minute = 0
         
+        // Check quiet hours
+        if let scheduledDate = Calendar.current.date(from: components),
+           isDuringQuietHours(scheduledDate) {
+            return
+        }
+        
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
         
@@ -653,22 +750,23 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let id = "inactivity_nudge"
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
         
+        guard settings.inactivityNudgeEnabled else { return }
         guard let days = daysSinceLastFast, days >= 3 else { return }
         
         let body: String
         switch days {
         case 3...5:
-            body = "We miss you 🌿 Even a 12-hour fast makes a difference. Your body remembers the rhythm."
+            body = "We miss you — even a 12h fast counts! Your body remembers the rhythm."
         case 6...13:
-            body = "It's been \(days) days since your last fast. A gentle 12:12 is all it takes to get back on track 🌱"
+            body = "It's been \(days) days since your last fast. A gentle 12:12 is all it takes to get back on track."
         default:
-            body = "Welcome back whenever you're ready. A simple 12-hour fast is a great restart 🍃"
+            body = "Welcome back whenever you're ready. A simple 12-hour fast is a great restart."
         }
         
         let content = makeContent(
             title: "We Miss You! 🌿",
             body: body,
-            category: .dailyReminder
+            category: .inactivityNudge
         )
         
         // Schedule for tomorrow 10 AM
@@ -678,6 +776,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
         components.hour = 10
         components.minute = 0
+        
+        // Check quiet hours for the scheduled time
+        if let scheduledDate = Calendar.current.date(from: components),
+           isDuringQuietHours(scheduledDate) {
+            return
+        }
         
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
@@ -699,6 +803,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let id = "weekly_summary"
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
         
+        guard settings.weeklySummaryEnabled else { return }
         guard stats.fastCount > 0 else { return }
         
         let streakPart: String
@@ -713,7 +818,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let content = makeContent(
             title: "Your Week in Review 📊",
             body: "This week: \(stats.fastCount) fast\(stats.fastCount == 1 ? "" : "s"), \(hoursString) hours fasted, \(streakPart)",
-            category: .motivationalQuote
+            category: .weeklySummary
         )
         
         // Schedule for Sunday 6 PM
@@ -721,6 +826,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         components.weekday = 1 // Sunday
         components.hour = 18
         components.minute = 0
+        
+        // Check quiet hours for Sunday 6 PM
+        if let nextSunday = Calendar.current.nextDate(after: Date.now, matching: components, matchingPolicy: .nextTime),
+           isDuringQuietHours(nextSunday) {
+            return
+        }
         
         let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
         let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
@@ -732,6 +843,105 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 logger.info("Scheduled weekly summary notification")
             }
         }
+    }
+    
+    // MARK: - Streak Protection
+    
+    /// Schedule a streak protection alert if user hasn't started a fast today but has an active streak.
+    /// "Your X-day streak is at risk! Start a fast to keep it alive 🔥"
+    func scheduleStreakProtection(currentStreak: Int) {
+        let id = "streak_protection"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        guard settings.streakReminderEnabled, currentStreak >= 1 else { return }
+        
+        let content = makeContent(
+            title: "Streak at Risk! 🔥",
+            body: "Your \(currentStreak)-day streak is at risk! Start a fast to keep it alive 🔥",
+            category: .streakProtection,
+            interruptionLevel: .timeSensitive
+        )
+        
+        // Schedule for today 8 PM (evening nudge)
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: Date.now)
+        components.hour = 20
+        components.minute = 0
+        
+        // If 8 PM already passed, schedule for 9 PM; if that passed too, skip
+        if let scheduledDate = Calendar.current.date(from: components), scheduledDate <= Date.now {
+            components.hour = 21
+            if let laterDate = Calendar.current.date(from: components), laterDate <= Date.now {
+                return
+            }
+        }
+        
+        // Check quiet hours
+        if let scheduledDate = Calendar.current.date(from: components),
+           isDuringQuietHours(scheduledDate) {
+            return
+        }
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        let streak = currentStreak
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule streak protection: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled streak protection for \(streak)-day streak")
+            }
+        }
+    }
+    
+    func cancelStreakProtection() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["streak_protection"])
+    }
+    
+    // MARK: - Morning Motivation
+    
+    /// Schedule an optional daily morning motivation with a rotating motivational message.
+    /// Uses MotivationalQuotes.quoteForDate to rotate messages day by day.
+    func scheduleMorningMotivation() {
+        let id = "morning_motivation"
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
+        guard settings.morningMotivationEnabled else { return }
+        
+        // Get tomorrow's date for the quote rotation
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date.now) ?? Date.now
+        let quote = MotivationalQuotes.quoteForDate(tomorrow)
+        
+        let content = makeContent(
+            title: "Morning Motivation ☀️",
+            body: quote,
+            category: .morningMotivation
+        )
+        content.threadIdentifier = "motivational"
+        
+        // Schedule for tomorrow 7:30 AM
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: tomorrow)
+        components.hour = 7
+        components.minute = 30
+        
+        // Check quiet hours
+        if let scheduledDate = Calendar.current.date(from: components),
+           isDuringQuietHours(scheduledDate) {
+            return
+        }
+        
+        let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: trigger)
+        
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error {
+                logger.error("Failed to schedule morning motivation: \(error.localizedDescription)")
+            } else {
+                logger.info("Scheduled morning motivation")
+            }
+        }
+    }
+    
+    func cancelMorningMotivation() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["morning_motivation"])
     }
     
     // MARK: - Schedule All Retention Notifications
@@ -747,7 +957,7 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let avgTime = FastingManager.formattedAverageStartTime(sessions: sessions)
         let stats = FastingManager.weeklyStats(sessions: sessions, currentStreak: currentStreak)
         
-        // Daily streak
+        // Daily streak (only if not currently fasting — don't send "start a fast" if already fasting)
         if currentStreak > 0 && !isCurrentlyFasting {
             scheduleDailyStreakNotification(currentStreak: currentStreak)
         }
@@ -762,8 +972,102 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             scheduleInactivityNudge(daysSinceLastFast: daysSince)
         }
         
+        // Streak protection (only if has a streak, hasn't fasted today, and not currently fasting)
+        if currentStreak > 0 && !isCurrentlyFasting {
+            let hasFastedToday = sessions.contains { session in
+                Calendar.current.isDateInToday(session.startDate)
+            }
+            if !hasFastedToday {
+                scheduleStreakProtection(currentStreak: currentStreak)
+            }
+        }
+        
+        // Morning motivation (optional daily — fires regardless of fasting state)
+        scheduleMorningMotivation()
+        
         // Weekly summary
         scheduleWeeklySummary(stats: stats, currentStreak: currentStreak)
+    }
+    
+    // MARK: - Water Reminders
+    
+    /// Schedule repeating water reminders every 2 hours during fasting.
+    /// Messages rotate randomly between hydration-focused prompts.
+    func scheduleWaterReminders(startDate: Date, targetDuration: TimeInterval) {
+        cancelWaterReminders()
+        guard settings.waterReminderEnabled else { return }
+        
+        let messages = [
+            "💧 Time for a glass of water!",
+            "💧 Stay hydrated — your body needs it during fasting.",
+            "💧 Water break! Hydration helps curb hunger and boosts energy.",
+            "💧 Drink up! Staying hydrated makes fasting easier.",
+            "💧 Your cells need water to detox effectively. Take a sip!"
+        ]
+        
+        let intervalHours = 2.0
+        let maxReminders = Int(targetDuration / (intervalHours * 3600))
+        
+        for i in 1...maxReminders {
+            let triggerDate = startDate.addingTimeInterval(Double(i) * intervalHours * 3600)
+            guard triggerDate > Date.now else { continue }
+            guard !isDuringQuietHours(triggerDate) else { continue }
+            
+            let message = messages[Int.random(in: 0..<messages.count)]
+            let content = makeContent(
+                title: "Hydration Reminder",
+                body: message,
+                category: .waterReminder
+            )
+            content.threadIdentifier = "water_reminders"
+            
+            scheduleNotification(
+                id: "water_reminder_\(i)",
+                content: content,
+                date: triggerDate
+            )
+        }
+        
+        logger.info("Scheduled \(maxReminders) water reminders (every \(Int(intervalHours))h)")
+    }
+    
+    /// Cancel all scheduled water reminders.
+    func cancelWaterReminders() {
+        // Remove up to 24 possible water reminders (48h max fast / 2h interval)
+        let ids = (1...24).map { "water_reminder_\($0)" }
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
+    }
+    
+    // MARK: - Eating Window Reminder
+    
+    /// Schedule a notification 30 minutes before the eating window opens.
+    func scheduleEatingWindowReminder(eatingWindowOpens: Date) {
+        cancelEatingWindowReminder()
+        guard settings.eatingWindowReminderEnabled else { return }
+        
+        let reminderDate = eatingWindowOpens.addingTimeInterval(-30 * 60) // 30 min before
+        guard reminderDate > Date.now else { return }
+        guard !isDuringQuietHours(reminderDate) else { return }
+        
+        let content = makeContent(
+            title: "Eating Window Soon 🍽",
+            body: "Your eating window opens in 30 minutes! Plan your first meal.",
+            category: .eatingWindow,
+            interruptionLevel: .timeSensitive
+        )
+        
+        scheduleNotification(
+            id: "eating_window_reminder",
+            content: content,
+            date: reminderDate
+        )
+        
+        logger.info("Scheduled eating window reminder for \(reminderDate.formatted())")
+    }
+    
+    /// Cancel the eating window reminder.
+    func cancelEatingWindowReminder() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["eating_window_reminder"])
     }
     
     // MARK: - Cancel
@@ -772,8 +1076,11 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let ids = [
             "fast_milestone_25pct", "fast_milestone_50pct", "fast_milestone_75pct",
             "fast_stage_4h", "fast_stage_12h", "fast_stage_18h", "fast_stage_24h",
-            "fast_complete", "fast_motivational"
+            "fast_complete", "fast_motivational", "eating_window_reminder"
         ]
+        // Cancel water reminders (variable count)
+        cancelWaterReminders()
+        cancelEatingWindowReminder()
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
         logger.info("Cancelled all fasting notifications")
     }
@@ -783,9 +1090,12 @@ final class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         logger.info("Cancelled all pending notifications")
     }
     
-    /// Cancel all retention-related notifications (streak, nudge, morning, weekly).
+    /// Cancel all retention-related notifications (streak, nudge, morning, weekly, motivation, protection).
     func cancelRetentionNotifications() {
-        let ids = ["daily_streak", "morning_nudge", "inactivity_nudge", "weekly_summary"]
+        let ids = [
+            "daily_streak", "morning_nudge", "inactivity_nudge",
+            "weekly_summary", "streak_protection", "morning_motivation"
+        ]
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ids)
     }
     

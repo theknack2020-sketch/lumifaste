@@ -6,6 +6,8 @@ struct NotificationSettingsView: View {
     @State private var settings = NotificationManager.shared.settings
     @State private var systemPermissionDenied = false
     @State private var showTimePicker = false
+    @Environment(SubscriptionManager.self) private var subscriptionManager
+    @State private var showPaywall = false
     
     /// Computed Date binding for the daily reminder time picker
     private var reminderTime: Binding<Date> {
@@ -130,6 +132,16 @@ struct NotificationSettingsView: View {
                                 subtitle: "Encouraging messages during fasts",
                                 isOn: $settings.motivationalQuotesEnabled
                             )
+                            
+                            notificationDivider
+                            
+                            notificationToggle(
+                                icon: "drop.fill",
+                                iconColor: .cyan,
+                                title: "Water Reminders",
+                                subtitle: "Every 2 hours during your fast",
+                                isOn: $settings.waterReminderEnabled
+                            )
                         }
                     }
                     
@@ -172,16 +184,34 @@ struct NotificationSettingsView: View {
                                 .padding(.vertical, 4)
                                 .accessibilityLabel("Daily reminder time")
                             }
+                            
+                            notificationDivider
+                            
+                            notificationToggle(
+                                icon: "fork.knife",
+                                iconColor: .green,
+                                title: "Eating Window Alert",
+                                subtitle: "30 minutes before your window opens",
+                                isOn: $settings.eatingWindowReminderEnabled
+                            )
                         }
                     }
                 }
                 
                 // Streak
                 VStack(alignment: .leading, spacing: 8) {
-                    sectionHeader("Streak")
+                    HStack {
+                        sectionHeader("Streak & Engagement")
+                        if !subscriptionManager.isSubscribed {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     
+                    if subscriptionManager.isSubscribed {
                     glassCard {
-                        VStack(alignment: .leading, spacing: 8) {
+                        VStack(alignment: .leading, spacing: 0) {
                             notificationToggle(
                                 icon: "bolt.fill",
                                 iconColor: .orange,
@@ -190,11 +220,89 @@ struct NotificationSettingsView: View {
                                 isOn: $settings.streakReminderEnabled
                             )
                             
-                            Text("Sends a reminder the next evening if you have an active streak of 2+ days.")
+                            notificationDivider
+                            
+                            notificationToggle(
+                                icon: "flame.fill",
+                                iconColor: .red,
+                                title: "Streak Protection",
+                                subtitle: "Alert when your streak is at risk",
+                                isOn: $settings.streakReminderEnabled
+                            )
+                            .accessibilityIdentifier("streakProtectionToggle")
+                            
+                            Text("Streak protection fires at 8 PM if you haven't started a fast today and have an active streak.")
                                 .font(.system(.caption))
                                 .foregroundStyle(.tertiary)
+                                .padding(.top, 4)
                         }
                     }
+                    } else {
+                        proLockedCard(features: ["Streak Reminder", "Streak Protection"])
+                    }
+                }
+                
+                // Smart Notifications
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        sectionHeader("Smart Notifications")
+                        if !subscriptionManager.isSubscribed {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 10))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    
+                    if subscriptionManager.isSubscribed {
+                    glassCard {
+                        VStack(spacing: 0) {
+                            notificationToggle(
+                                icon: "hand.wave.fill",
+                                iconColor: .green,
+                                title: "Inactivity Nudge",
+                                subtitle: "Gentle reminder after 3+ days of no fasting",
+                                isOn: $settings.inactivityNudgeEnabled
+                            )
+                            .accessibilityIdentifier("inactivityNudgeToggle")
+                            
+                            notificationDivider
+                            
+                            notificationToggle(
+                                icon: "chart.bar.doc.horizontal",
+                                iconColor: .cyan,
+                                title: "Weekly Summary",
+                                subtitle: "Your fasting stats every Sunday evening",
+                                isOn: $settings.weeklySummaryEnabled
+                            )
+                            .accessibilityIdentifier("weeklySummaryToggle")
+                            
+                            notificationDivider
+                            
+                            notificationToggle(
+                                icon: "sun.horizon.fill",
+                                iconColor: .yellow,
+                                title: "Morning Motivation",
+                                subtitle: "Daily motivational quote at 7:30 AM",
+                                isOn: $settings.morningMotivationEnabled
+                            )
+                            .onChange(of: settings.morningMotivationEnabled) { _, newValue in
+                                if newValue {
+                                    NotificationManager.shared.scheduleMorningMotivation()
+                                } else {
+                                    NotificationManager.shared.cancelMorningMotivation()
+                                }
+                            }
+                            .accessibilityIdentifier("morningMotivationToggle")
+                        }
+                    }
+                    } else {
+                        proLockedCard(features: ["Inactivity Nudge", "Weekly Summary", "Morning Motivation"])
+                    }
+                    
+                    Text("Smart notifications won't fire while you're actively fasting or during quiet hours.")
+                        .font(.system(.caption))
+                        .foregroundStyle(.tertiary)
+                        .padding(.leading, 4)
                 }
                 
                 // Quiet Hours
@@ -257,6 +365,9 @@ struct NotificationSettingsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Notifications")
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .task {
             let status = await NotificationManager.shared.authorizationStatus()
             systemPermissionDenied = (status == .denied)
@@ -294,15 +405,74 @@ struct NotificationSettingsView: View {
             }
         }
         .padding(.vertical, 2)
+        .onChange(of: isOn.wrappedValue) { _, _ in
+            HapticManager.shared.selectionChanged()
+        }
     }
     
     private var notificationDivider: some View {
         Divider().padding(.vertical, 6)
+    }
+    
+    // MARK: - Pro Locked Card
+    
+    private func proLockedCard(features: [String]) -> some View {
+        Button {
+            HapticManager.shared.lightTap()
+            showPaywall = true
+        } label: {
+            VStack(spacing: 10) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+                
+                Text("Pro Feature")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                
+                ForEach(features, id: \.self) { feature in
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.purple)
+                        Text(feature)
+                            .font(.system(size: 12))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                
+                Text("Upgrade to Pro")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.purple, .pink],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    )
+                    .padding(.top, 4)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .shadow(color: .black.opacity(0.15), radius: 6, y: 3)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Pro feature. Upgrade to unlock \(features.joined(separator: ", "))")
     }
 }
 
 #Preview {
     NavigationStack {
         NotificationSettingsView()
+            .environment(SubscriptionManager())
     }
 }

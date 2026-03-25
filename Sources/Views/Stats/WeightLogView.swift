@@ -58,8 +58,9 @@ struct WeightLogView: View {
     
     /// Goal weight progress (0...1)
     private var goalProgress: Double? {
-        guard goalWeightKg > 0, let current = currentWeightKg, entries.count > 1 else { return nil }
-        let startWeight = entries.last!.weightKg // oldest
+        guard goalWeightKg > 0, let current = currentWeightKg, entries.count > 1,
+              let oldest = entries.last else { return nil }
+        let startWeight = oldest.weightKg
         let totalToLose = startWeight - goalWeightKg
         guard totalToLose != 0 else { return nil }
         let lost = startWeight - current
@@ -102,6 +103,8 @@ struct WeightLogView: View {
                 } footer: {
                     Text("Your weight data stays on your device.")
                 }
+                .listSectionSeparator(.hidden)
+                .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                 
                 // Save button
                 Section {
@@ -123,8 +126,20 @@ struct WeightLogView: View {
                             Spacer()
                             Text("Save")
                                 .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.white)
                             Spacer()
                         }
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [accent, accent.opacity(0.7)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        )
                     }
                     .disabled(parsedWeight == nil)
                     .accessibilityLabel("Save weight entry")
@@ -194,6 +209,7 @@ struct WeightLogView: View {
                                         .foregroundStyle(.tertiary)
                                 }
                             }
+                            .buttonStyle(.pressable)
                             .accessibilityLabel("Set your height to calculate BMI")
                         }
                         
@@ -246,6 +262,7 @@ struct WeightLogView: View {
                             }
                         }
                     }
+                    .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
                 }
             }
             .navigationTitle("Weight")
@@ -423,19 +440,26 @@ struct WeightLogView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(.ultraThinMaterial)
-                    .frame(width: 80, height: 80)
-                    .shadow(color: .pink.opacity(0.15), radius: 8, y: 4)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.pink.opacity(0.12), Color.pink.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 100, height: 100)
+                    .shadow(color: .pink.opacity(0.15), radius: 10, y: 4)
                 
                 Image(systemName: "scalemass.fill")
-                    .font(.system(size: 32, weight: .light))
+                    .font(.system(size: 44, weight: .light))
                     .foregroundStyle(.pink)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
             .accessibilityHidden(true)
             
             VStack(spacing: 6) {
                 Text("No Entries Yet")
-                    .font(.system(.headline, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                 
                 Text("Track your weight to see trends\nand how fasting affects your body.")
                     .font(.system(size: 14))
@@ -446,6 +470,7 @@ struct WeightLogView: View {
             .accessibilityLabel("No entries yet. Track your weight to see trends and how fasting affects your body.")
             
             Button {
+                HapticManager.shared.lightTap()
                 isWeightFocused = true
             } label: {
                 HStack(spacing: 6) {
@@ -464,6 +489,7 @@ struct WeightLogView: View {
             }
             .buttonStyle(.pressable)
             .accessibilityLabel("Add your first weight entry")
+            .accessibilityIdentifier("addFirstWeightEntry")
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
@@ -479,7 +505,15 @@ struct WeightLogView: View {
         let success = DataController.shared.save(modelContext, operation: "save weight entry")
         if success {
             HapticManager.shared.success()
-            AudioServicesPlaySystemSound(1057)
+            
+            // Write to HealthKit if authorized (fire-and-forget)
+            let hkManager = HealthKitManager.shared
+            if hkManager.isAvailable && hkManager.canWriteWeight {
+                Task {
+                    _ = await hkManager.saveWeight(kg, date: logDate)
+                }
+            }
+            
             dismiss()
         } else {
             HapticManager.shared.error()

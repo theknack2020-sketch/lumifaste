@@ -121,8 +121,8 @@ struct TimeAnalysisView: View {
             return (hour, score)
         }
         
-        guard let best = scored.max(by: { $0.1 < $1.1 }) else { return nil }
-        let stat = hourStats[best.0]!
+        guard let best = scored.max(by: { $0.1 < $1.1 }),
+              let stat = hourStats[best.0] else { return nil }
         let avgH = Int(stat.totalDuration / Double(stat.completedCount)) / 3600
         
         return (best.0, "\(stat.completedCount) successful fasts, avg \(avgH)h each")
@@ -140,7 +140,7 @@ struct TimeAnalysisView: View {
             let weekday = calendar.component(.weekday, from: session.startDate)
             let key = "\(weekday)-\(hour)"
             counts[key, default: 0] += 1
-            maxCount = max(maxCount, counts[key]!)
+            maxCount = max(maxCount, counts[key, default: 0])
         }
         
         var cells: [HeatmapCell] = []

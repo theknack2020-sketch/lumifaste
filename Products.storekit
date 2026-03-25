@@ -15,11 +15,6 @@
           "description" : "Advanced fasting insights, detailed stats & unlimited history",
           "displayName" : "Monthly Premium",
           "locale" : "en_US"
-        },
-        {
-          "description" : "Gelişmiş oruç analizleri, detaylı istatistikler ve sınırsız geçmiş",
-          "displayName" : "Aylık Premium",
-          "locale" : "tr"
         }
       ],
       "productID" : "com.theknack.lumifaste.premium.monthly",
@@ -47,11 +42,6 @@
           "description" : "All premium features for a full year — save 37%",
           "displayName" : "Yearly Premium",
           "locale" : "en_US"
-        },
-        {
-          "description" : "Tüm yıl premium özellikler — %37 tasarruf",
-          "displayName" : "Yıllık Premium",
-          "locale" : "tr"
         }
       ],
       "productID" : "com.theknack.lumifaste.premium.yearly",

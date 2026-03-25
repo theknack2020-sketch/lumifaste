@@ -85,6 +85,10 @@ struct StatsView: View {
                         }
                     }
                 }
+                // Fetch today's step count from HealthKit
+                Task {
+                    await HealthKitManager.shared.fetchTodaySteps()
+                }
             }
         }
     }
@@ -295,19 +299,42 @@ struct StatsView: View {
         let avgDuration = completed.isEmpty ? 0 : completed.reduce(0.0) { $0 + $1.actualDuration } / Double(completed.count)
         let completionRate = sessions.isEmpty ? 0 : Double(completed.count) / Double(sessions.count) * 100
         let (currentStreak, bestStreak) = computeStreaks()
+        let todaySteps = HealthKitManager.shared.todayStepCount
         
         return InsightCard(title: "Summary", icon: "square.grid.2x2.fill", color: accent) {
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 10),
-                GridItem(.flexible(), spacing: 10),
-                GridItem(.flexible(), spacing: 10)
-            ], spacing: 12) {
-                SummaryMetricCell(icon: "flame.fill", value: "\(totalFasts)", label: "Total Fasts", color: .orange)
-                SummaryMetricCell(icon: "clock.fill", value: String(format: "%.0f", totalHours), label: "Total Hours", color: accent)
-                SummaryMetricCell(icon: "chart.line.uptrend.xyaxis", value: formatHoursMinutes(avgDuration), label: "Avg Duration", color: .green)
-                SummaryMetricCell(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", completionRate), label: "Completion", color: completionRate >= 70 ? .green : .orange)
-                SummaryMetricCell(icon: "bolt.fill", value: "\(currentStreak)", label: "Streak", color: .yellow)
-                SummaryMetricCell(icon: "trophy.fill", value: "\(bestStreak)", label: "Best Streak", color: .purple)
+            VStack(spacing: 12) {
+                LazyVGrid(columns: [
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10),
+                    GridItem(.flexible(), spacing: 10)
+                ], spacing: 12) {
+                    SummaryMetricCell(icon: "flame.fill", value: "\(totalFasts)", label: "Total Fasts", color: .orange)
+                    SummaryMetricCell(icon: "clock.fill", value: String(format: "%.0f", totalHours), label: "Total Hours", color: accent)
+                    SummaryMetricCell(icon: "chart.line.uptrend.xyaxis", value: formatHoursMinutes(avgDuration), label: "Avg Duration", color: .green)
+                    SummaryMetricCell(icon: "checkmark.circle.fill", value: String(format: "%.0f%%", completionRate), label: "Completion", color: completionRate >= 70 ? .green : .orange)
+                    SummaryMetricCell(icon: "bolt.fill", value: "\(currentStreak)", label: "Streak", color: .yellow)
+                    SummaryMetricCell(icon: "trophy.fill", value: "\(bestStreak)", label: "Best Streak", color: .purple)
+                }
+                
+                // Today's step count from HealthKit
+                if HealthKitManager.shared.isAvailable && todaySteps > 0 {
+                    Divider()
+                    HStack(spacing: 6) {
+                        Image(systemName: "figure.walk")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.green)
+                        Text(todaySteps.formatted(.number.grouping(.automatic)))
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                        Text("steps today")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 4)
+                    .accessibilityLabel("\(todaySteps) steps walked today")
+                }
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Summary: \(totalFasts) fasts, \(String(format: "%.0f", totalHours)) hours, \(formatHoursMinutes(avgDuration)) average, \(String(format: "%.0f%%", completionRate)) completion, \(currentStreak) day streak, \(bestStreak) best streak")

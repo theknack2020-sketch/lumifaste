@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Circular progress ring — oruç ilerlemesini gösterir.
+/// Circular progress ring — displays fasting progress.
 /// Fully accessible: announces progress percentage and current stage to VoiceOver.
 /// Uses the app theme's accent color as the primary ring color when in fed/idle state.
 /// Redesigned: thicker ring, strong glow shadow on arc, breathing pulse animation,

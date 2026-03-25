@@ -61,11 +61,13 @@ struct FaqView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 FilterChip(title: "All", isSelected: selectedCategory == nil) {
+                    HapticManager.shared.selectionChanged()
                     withAnimation(.tapSpring) { selectedCategory = nil }
                 }
                 
                 ForEach(categories, id: \.self) { cat in
                     FilterChip(title: cat, isSelected: selectedCategory == cat) {
+                        HapticManager.shared.selectionChanged()
                         withAnimation(.tapSpring) { selectedCategory = cat }
                     }
                 }
@@ -108,6 +110,8 @@ private struct FilterChip: View {
                     Capsule()
                         .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 1.5)
                 )
+                .scaleEffect(isSelected ? 1.05 : 1.0)
+                .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(.bounce)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -174,6 +178,7 @@ private struct FaqCard: View {
                 .fill(Color(.secondarySystemBackground))
         )
         .accessibilityElement(children: .contain)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isExpanded)
     }
 }
 

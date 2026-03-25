@@ -54,6 +54,7 @@ struct FastDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    HapticManager.shared.lightTap()
                     showShareSheet = true
                 } label: {
                     Image(systemName: "square.and.arrow.up")
@@ -96,6 +97,7 @@ struct FastDetailView: View {
             Text(formatDuration(session.actualDuration))
                 .font(.system(.largeTitle, design: .rounded, weight: .light))
                 .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -105,6 +107,8 @@ struct FastDetailView: View {
                 .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                 .shadow(color: statusColor.opacity(0.1), radius: 12, x: 0, y: 2)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(session.isCompleted ? "Completed" : "Ended early") \(session.plan.rawValue) fast, duration \(formatDuration(session.actualDuration))")
     }
     
     // MARK: - Duration Card

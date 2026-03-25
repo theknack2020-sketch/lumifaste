@@ -83,28 +83,33 @@ Premium unlocks detailed stage science — what's metabolically happening, scien
 
 STAY MOTIVATED
 
-• Water tracking — log glasses during your fast
+• Live Activity — see your fasting timer on the Lock Screen and Dynamic Island without opening the app
+• Estimated calorie burn — watch calories burned in real time based on your fasting stage
+• Enhanced water tracker — set a daily goal, watch the progress ring fill, celebrate when you hit it
 • Pause & resume — life happens, your timer adapts
 • Extend your fast — hit your goal and want to keep going? Add 1–6 hours
 • Motivational tips rotate throughout your fast
 • Community comparison — see how you compare to average fasting times
-• Smart notifications — milestone alerts at 25%, 50%, 75%, stage transitions, and completion
+• Smart notifications — milestone alerts, stage transitions, streak protection, weekly summary, and inactivity nudge
 • Quiet hours — notifications respect your sleep schedule
+• Siri Shortcuts — "Hey Siri, start my fast" — hands-free fasting control
 
 TRACK YOUR PROGRESS
 
+• Dedicated Insights tab with full stats dashboard
+• Streak heatmap — GitHub-style 90-day fasting calendar
 • Fasting history with duration, plan, and stage reached
 • Weekly fasting chart and month-at-a-glance calendar
 • Streak tracking — build consistency day by day
 • Week-over-week comparison with percentage change
 • Time pattern analysis — discover your best fasting days and hours
-• Weight logging with trend chart
+• Weight logging with trend chart and Apple Health sync
 • Consistency score — see your completion rate
 • Export your data as CSV anytime
 
-EARN ACHIEVEMENTS
+CHALLENGE YOURSELF
 
-Complete milestones to unlock 13 achievements — from your first fast to 30-day streaks, 100 total hours, reaching autophagy, and staying hydrated. Share your streak milestones with a beautifully designed share card.
+Daily, weekly, and monthly fasting challenges keep you engaged. Earn XP points, track progress bars, and unlock all 13 achievements — from your first fast to 30-day streaks, 100 total hours, and reaching autophagy.
 
 LEARN THE SCIENCE
 
@@ -116,16 +121,16 @@ LEARN THE SCIENCE
 
 MAKE IT YOURS
 
-• 8 color themes (5 free, 3 premium) — Forest, Ocean, Sunset, Nebula, Mono, Aurora, Rose Gold, Midnight
+• 8 color themes (3 free, 5 premium) — Forest, Ocean, Mono, Sunset, Nebula, Aurora, Rose Gold, Midnight
 • Light, dark, and system appearance modes
 • Mood tracking after each fast
 • Add personal notes to your completed fasts
 
 HONEST PRICING
 
-Lumifaste is generous with its free tier. All preset fasting plans, the timer, fasting stages, notifications, and your last 7 fasts are always free. No account required. No data collected.
+Lumifaste is generous with its free tier. All preset fasting plans, the timer, fasting stages, basic notifications, and your last 7 fasts are always free. No account required. No data collected.
 
-Premium unlocks deeper insights: unlimited history, streak tracking, detailed stage science, custom plans, fast reports, and premium themes.
+Premium unlocks the full experience: unlimited history, streak tracking, full charts and heatmap, detailed stage science, custom plans, smart notifications, weight tracking, all 13 achievements, all 8 themes, CSV export, and more.
 
 • Monthly: $3.99/month
 • Yearly: $29.99/year (save 37%)
@@ -136,171 +141,47 @@ YOUR DATA STAYS ON YOUR DEVICE
 All your fasting and health data is stored locally. We never collect, store, or transmit your personal information. No analytics on your health data. No third-party trackers. Privacy isn't a feature — it's a principle.
 
 Lumifaste is not medical advice. Always consult a healthcare professional before starting any fasting program.
+
+Privacy Policy: https://theknack2020-sketch.github.io/lumifaste/privacy
+Terms of Use: https://theknack2020-sketch.github.io/lumifaste/terms
 ```
 **Character count:** ~3,420
 
-### What's New (Version 1.0.0)
+### What's New (Version 1.1.0)
 
 ```
-Welcome to Lumifaste! 🍃
+Lumifaste 1.1 — Bigger, Smarter, Deeper 🍃
 
-Your honest fasting companion — built from scratch with zero ads and real privacy.
+NEW
+• Live Activity — fasting timer on Lock Screen and Dynamic Island
+• Estimated calorie burn — real-time kcal counter based on fasting stage
+• Siri Shortcuts — "Hey Siri, start my fast" hands-free control
+• Insights tab — dedicated stats dashboard with charts and trends
+• Streak heatmap — GitHub-style 90-day fasting calendar
+• Apple Health integration — sync weight with Health app
+• Enhanced water tracker — daily goal, progress ring, celebration
+• Daily, weekly & monthly challenges with XP points
+• Smart notifications — streak protection, weekly summary, inactivity nudge
+• Mood & hydration trend charts
+• Streak freeze — protect your streak (Pro)
+• Eating window reminder — 30 min heads-up before your window opens
+• Water reminders — stay hydrated every 2 hours during fasts
 
-• Beautiful circular fasting timer with real-time stage tracking
-• 7 preset plans + custom fasting (1–48 hours)
-• 5 scientifically-backed fasting stages with detailed science
-• Water tracking, pause/resume, and start time adjustment
-• Smart notifications with milestone alerts and quiet hours
-• Weekly charts, monthly calendar, streak tracking
-• Weight logging with trend visualization
-• 13 achievements to unlock
-• Mood tracking and fast notes
-• Shareable fast cards and streak milestones
-• Beginner's guide, FAQ, glossary, and 5 science articles
-• 8 color themes with dark mode support
-• CSV data export
-• 7-day free trial for Premium
+IMPROVED
+• Redesigned paywall with 10-feature comparison table
+• Better empty states with animations and motivational copy
+• Loading states across all screens
+• Health disclaimers in onboarding and learn sections
+• More haptic feedback and accessibility labels throughout
+• Rounded typography throughout for premium feel
+• Background task scheduling for reliable notifications
 
 No ads. No tricks. Just results.
 ```
 
 ---
 
-## 2. App Store Listing — Turkish (Türkiye)
-
-### Title
-
-```
-Lumifaste: Oruç Zamanlayıcı
-```
-**Character count:** 28
-
-### Subtitle
-
-```
-Aralıklı Oruç Takip
-```
-**Character count:** 20
-
-### Keywords
-
-```
-oruç,aralıklı oruç,diyet,kilo verme,sağlık,zayıflama,açlık,ketoz,otofaji,reklamsız,IF
-```
-**Character count:** 95
-
-### Promotional Text
-
-```
-Reklamsız. Hilesi yok. Sadece dürüst bir oruç zamanlayıcı. Yağ yakımından otofajiye kadar tüm aşamaları takip edin. 7 günlük ücretsiz denemeyi başlatın.
-```
-**Character count:** 152
-
-### Description
-
-```
-Lumifaste, reklamlarla dolu uygulamalardan bıkmış insanlar için tasarlanmış bir oruç takip uygulamasıdır. Banner reklam yok. Geçiş reklamı yok. Video reklam yok. Asla.
-
-Tek dokunuşla oruca başlayın. Güzel bir dairesel zamanlayıcıda ilerlemenizi izleyin. Beş bilimsel olarak desteklenen oruç aşamasında vücudunuzda neler olduğunu anlayın — sindirimden yağ yakımına, ketoza ve otofajiye kadar.
-
-İSTER YENİ BAŞLAYIN İSTER DENEYİMLİ OLUN
-
-• 7 hazır oruç planı: 12:12, 14:10, 16:8, 18:6, 20:4, OMAD (23:1), 5:2
-• 1-48 saat arası özel planlar
-• Başlangıç dostu rehberlik — hedefinizi seçin, plan belirleyin, oruca başlayın
-• Başlangıç saatinizi geriye dönük düzeltin
-
-VÜCUDUNUZU ANLAYIN — ORUÇ AŞAMALARI
-
-Vücudunuz oruç sırasında farklı metabolik evrelerden geçer. Lumifaste bunları gerçek zamanlı takip eder:
-
-🍽 Beslenme (0-4 saat) — Sindirimin devam ettiği dönem
-⏳ Erken Oruç (4-12 saat) — Kan şekeri düşüyor, glikojen tükeniyor
-🔥 Yağ Yakımı (12-18 saat) — Depo yağlar enerji olarak kullanılıyor
-⚡ Ketoz (18-24 saat) — Keton üretimi, zihinsel berraklık
-✨ Otofaji (24+ saat) — Hücresel temizlik ve yenilenme
-
-MOTİVE KALIN
-
-• Su takibi — oruç sırasında su tüketiminizi kaydedin
-• Duraklat ve devam et — hayat devam eder, zamanlayıcınız da
-• Orucu uzat — hedefinize ulaştınız, devam etmek ister misiniz?
-• Akıllı bildirimler — %25, %50, %75 kilometre taşları, aşama geçişleri
-• Sessiz saatler — bildirimler uyku saatlerinize saygı gösterir
-
-İLERLEMENİZİ TAKİP EDİN
-
-• Süre, plan ve ulaşılan aşamayla oruç geçmişi
-• Haftalık grafik ve aylık takvim görünümü
-• Seri takibi — günden güne tutarlılık oluşturun
-• Hafta bazında karşılaştırma
-• Kilo kaydı ve trend grafiği
-• Tutarlılık skoru ve CSV veri dışa aktarma
-
-BAŞARILAR KAZANIN
-
-13 farklı başarıyı açın — ilk orucunuzdan 30 günlük serilere, 100 saatlik toplam oruça ve otofajiye ulaşmaya kadar. Güzel tasarlanmış paylaşım kartlarıyla başarılarınızı paylaşın.
-
-BİLİMİ ÖĞRENİN
-
-• Başlangıç rehberi — IF nedir, nasıl başlanır, neler beklenir
-• Bilimsel referanslı 5 derinlemesine makale
-• Güvenlik, egzersiz, beslenme konularında 17 SSS yanıtı
-• Oruç terimleri sözlüğü
-• Aşamaya göre pratik ipuçları
-
-KENDİNİZE GÖRE ÖZELLEŞTİRİN
-
-• 8 renk teması (5 ücretsiz, 3 premium)
-• Açık, koyu ve sistem görünüm modları
-• Her oruç sonrası ruh hali takibi
-• Tamamlanan oruçlara kişisel notlar ekleyin
-
-DÜRÜST FİYATLANDIRMA
-
-Lumifaste ücretsiz katmanıyla cömerttir. Tüm hazır oruç planları, zamanlayıcı, oruç aşamaları, bildirimler ve son 7 orucunuz her zaman ücretsizdir. Hesap gerekmez. Veri toplanmaz.
-
-Premium daha derin içgörüler sunar: sınırsız geçmiş, seri takibi, detaylı aşama bilimi, özel planlar, oruç raporları ve premium temalar.
-
-• Aylık: ₺149,99/ay
-• Yıllık: ₺999,99/yıl (%44 tasarruf)
-• 7 günlük ücretsiz deneme dahil
-
-VERİLERİNİZ CİHAZINIZDA KALIR
-
-Tüm oruç ve sağlık verileriniz yerel olarak saklanır. Kişisel bilgilerinizi asla toplamaz, saklamaz veya iletmeyiz. Sağlık verilerinizde analitik yok. Üçüncü taraf izleyici yok.
-
-Lumifaste tıbbi tavsiye değildir. Herhangi bir oruç programına başlamadan önce bir sağlık uzmanına danışın.
-```
-
-### What's New (Turkish)
-
-```
-Lumifaste'ye hoş geldiniz! 🍃
-
-Dürüst oruç arkadaşınız — sıfırdan, reklamsız ve gerçek gizlilikle inşa edildi.
-
-• Gerçek zamanlı aşama takipli dairesel oruç zamanlayıcı
-• 7 hazır plan + özel oruç (1-48 saat)
-• 5 bilimsel oruç aşaması ve detaylı bilim
-• Su takibi, duraklat/devam et, başlangıç saati düzeltme
-• Kilometre taşı bildirimleri ve sessiz saatler
-• Haftalık grafikler, aylık takvim, seri takibi
-• Trend görselleştirmeli kilo kaydı
-• 13 açılabilir başarı
-• Ruh hali takibi ve oruç notları
-• Paylaşılabilir oruç kartları
-• Başlangıç rehberi, SSS, sözlük, 5 bilim makalesi
-• Koyu mod destekli 8 renk teması
-• CSV veri dışa aktarma
-• Premium için 7 günlük ücretsiz deneme
-
-Reklamsız. Hilesi yok. Sadece sonuçlar.
-```
-
----
-
-## 3. Competitor Keyword Analysis
+## 2. Competitor Keyword Analysis
 
 ### Zero (Fasting & Food Tracker)
 
@@ -350,11 +231,11 @@ Reklamsız. Hilesi yok. Sadece sonuçlar.
 | "autophagy tracker" | Educational depth on cellular biology |
 | "simple fasting timer" | Frustration with Zero/Simple complexity |
 | "ad free fasting app" | Explicit search query from frustrated users |
-| "oruç takip" (Turkish) | Turkish localization — competitors are English-only |
+| "simple fasting timer no account" | Explicit search query from frustrated users |
 
 ---
 
-## 4. Promotional Text Variants (A/B Testing)
+## 3. Promotional Text Variants (A/B Testing)
 
 ### Variant A — Ad-Free Focus
 ```
@@ -383,7 +264,7 @@ Tired of fasting apps that bombard you with ads? Lumifaste is different — priv
 
 ---
 
-## 5. Feature Bullet List (App Store Formatted)
+## 4. Feature Bullet List (App Store Formatted)
 
 ```
 ◆ FASTING TIMER — One-tap start, beautiful circular progress, real-time countdown
@@ -402,7 +283,7 @@ Tired of fasting apps that bombard you with ads? Lumifaste is different — priv
 
 ---
 
-## 6. Screenshot Text Overlays
+## 5. Screenshot Text Overlays
 
 ### Screenshot 1 — Timer (Hero Shot)
 **Headline:** "Start Fasting in One Tap"
@@ -436,7 +317,7 @@ Tired of fasting apps that bombard you with ads? Lumifaste is different — priv
 
 ---
 
-## 7. Category & Age Rating
+## 6. Category & Age Rating
 
 ### Categories
 - **Primary:** Health & Fitness
@@ -461,7 +342,7 @@ Tired of fasting apps that bombard you with ads? Lumifaste is different — priv
 
 ---
 
-## 8. Press Kit / Website Description
+## 7. Press Kit / Website Description
 
 ### Short Description (150 words)
 
@@ -493,7 +374,7 @@ Lumifaste — the ad-free intermittent fasting timer with real-time fasting stag
 
 ---
 
-## 9. Privacy Nutrition Label
+## 8. Privacy Nutrition Label
 
 ### Data Linked to You
 **None.**
@@ -537,7 +418,7 @@ Select: **"Data Not Collected"** for all categories.
 
 ---
 
-## 10. ASO Keyword Research — Top 30 Target Keywords
+## 9. ASO Keyword Research — Top 27 Target Keywords
 
 | # | Keyword | Est. Volume | Difficulty | Competitors Ranking | Our Strategy |
 |---|---------|-------------|------------|---------------------|--------------|
@@ -559,18 +440,15 @@ Select: **"Data Not Collected"** for all categories.
 | 16 | health | Very High | Very High | Massive competition | Keywords field |
 | 17 | IF | Medium | Low | Abbreviation searchers | Keywords field |
 | 18 | wellness | High | High | Broad | Keywords field |
-| 19 | oruç (Turkish) | Medium | Very Low | Almost none on iOS | Turkish keywords |
-| 20 | aralıklı oruç | Medium | Very Low | None significant | Turkish keywords |
-| 21 | kilo verme | High (TR) | Low | Few Turkish apps | Turkish keywords |
-| 22 | fasting for beginners | Medium | Medium | Simple, Zero | Description |
-| 23 | fast weight loss | High | Very High | Broad | Organic from description |
-| 24 | body fasting | Low | Very Low | BodyFast | Organic |
-| 25 | fasting schedule | Medium | Medium | Zero, Simple | Description |
-| 26 | time restricted eating | Low-Med | Low | Research community | Description |
-| 27 | fasting plan | Medium | Medium | All competitors | Description |
-| 28 | water tracker | Medium | High | Many health apps | Description |
-| 29 | calorie free | Low | Very Low | Niche | Description (we don't count calories) |
-| 30 | clean fasting | Low-Med | Low | Niche community | Description |
+| 19 | fasting for beginners | Medium | Medium | Simple, Zero | Description |
+| 20 | fast weight loss | High | Very High | Broad | Organic from description |
+| 21 | body fasting | Low | Very Low | BodyFast | Organic |
+| 22 | fasting schedule | Medium | Medium | Zero, Simple | Description |
+| 23 | time restricted eating | Low-Med | Low | Research community | Description |
+| 24 | fasting plan | Medium | Medium | All competitors | Description |
+| 25 | water tracker | Medium | High | Many health apps | Description |
+| 26 | calorie free | Low | Very Low | Niche | Description (we don't count calories) |
+| 27 | clean fasting | Low-Med | Low | Niche community | Description |
 
 ### Long-Tail Keyword Opportunities
 
@@ -582,12 +460,10 @@ These are lower-volume but nearly uncontested queries where Lumifaste can rank q
 - "autophagy timer"
 - "simple fasting timer no account"
 - "ad free intermittent fasting"
-- "oruç takip uygulaması" (Turkish)
-- "reklamsız oruç" (Turkish)
 
 ---
 
-## 11. Review Prompt Strategy
+## 10. Review Prompt Strategy
 
 The app uses `ReviewRequestManager` to prompt reviews at natural positive moments:
 - After completing a fast (positive accomplishment moment)
@@ -601,7 +477,7 @@ The app uses `ReviewRequestManager` to prompt reviews at natural positive moment
 
 ---
 
-## 12. App Store Connect Configuration Checklist
+## 11. App Store Connect Configuration Checklist
 
 - [ ] Primary category: Health & Fitness
 - [ ] Secondary category: Lifestyle
@@ -616,11 +492,11 @@ The app uses `ReviewRequestManager` to prompt reviews at natural positive moment
 - [ ] App Privacy: Data Not Collected (or minimal if TelemetryDeck active)
 - [ ] Screenshots: 6 per device size (6.7", 6.5", 5.5" — plus iPad if universal)
 - [ ] App Preview video: Optional (recommended for launch week)
-- [ ] Localization: English (U.S.), Turkish
+- [ ] Localization: English (U.S.)
 
 ---
 
-## 13. Content Rights & Legal Notes
+## 12. Content Rights & Legal Notes
 
 - All fasting stage science references published peer-reviewed papers (listed in FastingEducation.swift)
 - No third-party copyrighted content in the app

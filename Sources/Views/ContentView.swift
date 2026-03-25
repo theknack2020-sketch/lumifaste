@@ -27,11 +27,20 @@ struct ContentView: View {
                     .accessibilityLabel("History tab")
                     .accessibilityHint("View past fasting sessions")
                 
+                StatsView()
+                    .tabItem {
+                        Label("Insights", systemImage: "chart.bar.fill")
+                    }
+                    .tag(2)
+                    .accessibilityIdentifier("tab_insights")
+                    .accessibilityLabel("Insights tab")
+                    .accessibilityHint("Charts, streaks, and fasting trends")
+                
                 LearnView()
                     .tabItem {
                         Label("Learn", systemImage: "book.fill")
                     }
-                    .tag(2)
+                    .tag(3)
                     .accessibilityIdentifier("tab_learn")
                     .accessibilityLabel("Learn tab")
                     .accessibilityHint("Educational content about fasting")
@@ -40,7 +49,7 @@ struct ContentView: View {
                     .tabItem {
                         Label("Settings", systemImage: "gearshape")
                     }
-                    .tag(3)
+                    .tag(4)
                     .accessibilityIdentifier("tab_settings")
                     .accessibilityLabel("Settings tab")
                     .accessibilityHint("App settings and preferences")

@@ -35,8 +35,8 @@ enum AppTheme: String, CaseIterable, Identifiable, Codable {
     
     var isPremium: Bool {
         switch self {
-        case .aurora, .roseGold, .midnight: true
-        default: false
+        case .defaultGreen, .oceanBlue, .monochrome: false
+        default: true
         }
     }
     

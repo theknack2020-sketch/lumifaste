@@ -71,6 +71,7 @@ struct TipsView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Tip of the day: \(tip.text)")
     }
@@ -85,6 +86,7 @@ struct TipsView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     CategoryChip(title: "All", icon: "square.grid.2x2", isSelected: selectedCategory == nil) {
+                        HapticManager.shared.selectionChanged()
                         withAnimation(.tapSpring) { selectedCategory = nil }
                     }
                     
@@ -94,7 +96,10 @@ struct TipsView: View {
                             icon: category.icon,
                             isSelected: selectedCategory == category
                         ) {
-                            withAnimation(.tapSpring) { selectedCategory = category }
+                            withAnimation(.tapSpring) {
+                                HapticManager.shared.selectionChanged()
+                                selectedCategory = category
+                            }
                         }
                     }
                 }
@@ -190,6 +195,7 @@ private struct TipCard: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(tip.category.rawValue) tip: \(tip.text)")
     }

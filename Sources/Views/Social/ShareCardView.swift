@@ -105,6 +105,8 @@ struct FastShareCard: View {
                 .stroke(Color(.separator).opacity(0.3), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 10, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Share card showing \(formatDuration(duration)) fast, \(plan.rawValue) plan, \(stage.rawValue) stage\(streak > 0 ? ", \(streak) day streak" : "")")
     }
     
     private func cardStat(title: String, value: String, icon: String, color: Color) -> some View {
@@ -216,6 +218,8 @@ struct StreakShareCard: View {
                 .stroke(Color(.separator).opacity(0.3), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.1), radius: 10, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Share card showing \(streakDays) day streak, \(achievement.title) achievement")
     }
 }
 

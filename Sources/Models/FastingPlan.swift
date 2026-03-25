@@ -1,7 +1,7 @@
 import Foundation
 
-/// Desteklenen oruç planları.
-/// Fasting window süreleri saat cinsinden.
+/// Supported fasting plans.
+/// Fasting window durations in hours.
 enum FastingPlan: String, CaseIterable, Identifiable, Codable {
     case twelveTwelve = "12:12"
     case fourteenTen = "14:10"
@@ -10,6 +10,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
     case twentyFour = "20:4"
     case omad = "OMAD"
     case fiveTwo = "5:2"
+    case circadian = "Circadian"
     case custom = "Custom"
     
     var id: String { rawValue }
@@ -39,6 +40,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .twentyFour: 20
         case .omad: 23
         case .fiveTwo: 24
+        case .circadian: 13
         case .custom: Self.customHours
         }
     }
@@ -63,6 +65,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .twentyFour: "20:4 Advanced"
         case .omad: "OMAD (23:1)"
         case .fiveTwo: "5:2 Weekly"
+        case .circadian: "Circadian Rhythm"
         case .custom: "Custom (\(Int(Self.customHours))h)"
         }
     }
@@ -77,6 +80,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .twentyFour: "20h fast · 4h eat"
         case .omad: "23h fast · 1h eat"
         case .fiveTwo: "5 normal · 2 fast days"
+        case .circadian: "13h fast · 11h eat"
         case .custom: "\(Int(Self.customHours))h fast · \(Int(max(0, 24 - Self.customHours)))h eat"
         }
     }
@@ -91,6 +95,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .twentyFour: 4
         case .omad: 5
         case .fiveTwo: 3
+        case .circadian: 2
         case .custom: min(5, max(1, Int(Self.customHours / 5)))
         }
     }

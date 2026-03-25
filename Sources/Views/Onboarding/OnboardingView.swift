@@ -464,6 +464,26 @@ struct OnboardingView: View {
 
             Spacer()
 
+            // Health disclaimer
+            HStack(spacing: 8) {
+                Image(systemName: "heart.text.square.fill")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.red.opacity(0.7))
+                Text("Consult your doctor before starting any fasting program.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(.white.opacity(0.04))
+            )
+            .opacity(readyContentOpacity)
+            .accessibilityLabel("Health disclaimer: Consult your doctor before starting any fasting program.")
+            .accessibilityIdentifier("onboardingHealthDisclaimer")
+
             onboardingPrimaryButton("Start Your First Fast") {
                 completeOnboarding()
             }
@@ -700,8 +720,7 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
-        HapticManager.shared.success()
-        AudioServicesPlaySystemSound(1025)
+        HapticManager.shared.fastCompleted()
         saveAllSelections()
         UserDefaults.standard.set(true, forKey: "lf_onboarding_complete")
         withAnimation(.smoothSpring) {
@@ -828,6 +847,9 @@ private struct OnboardingGoalCard: View {
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.pressable)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(goal.rawValue). \(goal.subtitle)\(isSelected ? ". Selected" : "")")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -892,6 +914,9 @@ private struct OnboardingExperienceCard: View {
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.pressable)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(level.rawValue). \(level.subtitle). Recommended plan: \(recommendedPlan.rawValue)\(isSelected ? ". Selected" : "")")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -913,11 +938,14 @@ private struct OnboardingBenefitRow: View {
                 Image(systemName: icon)
                     .font(.system(size: 15))
                     .foregroundStyle(color)
+                    .accessibilityHidden(true)
             }
             Text(text)
                 .font(.system(size: 15))
                 .foregroundStyle(.white.opacity(0.85))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 

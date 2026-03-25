@@ -42,6 +42,7 @@ struct BeginnersGuideView: View {
                         endPoint: .bottomTrailing
                     )
                 )
+                .accessibilityHidden(true)
             
             Text("Your Fasting Journey Starts Here")
                 .font(.system(size: 20, weight: .bold))
@@ -58,6 +59,9 @@ struct BeginnersGuideView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Your fasting journey starts here. Everything you need to know to start intermittent fasting safely and effectively.")
     }
     
     // MARK: - Disclaimer
@@ -91,6 +95,7 @@ private struct GuideSectionCard: View {
         VStack(alignment: .leading, spacing: 0) {
             // Header — tappable
             Button {
+                HapticManager.shared.lightTap()
                 withAnimation(.smoothSpring) {
                     isExpanded.toggle()
                 }
@@ -100,6 +105,7 @@ private struct GuideSectionCard: View {
                         .font(.system(size: 20))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
+                        .accessibilityHidden(true)
                     
                     Text(section.title)
                         .font(.system(size: 16, weight: .bold))
@@ -114,7 +120,7 @@ private struct GuideSectionCard: View {
                 }
                 .padding(16)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
@@ -148,6 +154,10 @@ private struct GuideSectionCard: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(section.title) section")
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isExpanded)
     }
 }
 

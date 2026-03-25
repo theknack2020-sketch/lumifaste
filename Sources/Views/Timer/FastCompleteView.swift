@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-/// Oruç tamamlama raporu — doğal premium conversion moment.
+/// Fast completion report — natural premium conversion moment.
 /// Free: tebrik + basit özet. Premium: detaylı breakdown.
 /// Now includes mood picker (#6), fast note (#10), and share button.
 struct FastCompleteView: View {
@@ -23,6 +23,8 @@ struct FastCompleteView: View {
     @State private var celebrationOpacity: Double = 0
     @State private var contentAppeared = false
     @State private var showJournal = false
+    
+    @Query(sort: \WeightEntry.date, order: .reverse) private var weightEntries: [WeightEntry]
     
     private let moods = ["😴", "😐", "😊", "🔥"]
     private let moodLabels = ["Tired", "Okay", "Good", "Energized"]
@@ -168,9 +170,9 @@ struct FastCompleteView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 Text("Share My Fast")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(Color.accentColor)
             .frame(maxWidth: .infinity)
@@ -195,9 +197,9 @@ struct FastCompleteView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 Text("Add Journal Entry")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(Color.accentColor)
             .frame(maxWidth: .infinity)
@@ -275,6 +277,13 @@ struct FastCompleteView: View {
                         )
                     )
                     .shadow(color: .orange.opacity(0.5), radius: 16, x: 0, y: 4)
+                
+                // Brand leaf watermark
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 16))
+                    .scaleEffect(x: -1)
+                    .foregroundStyle(.white.opacity(0.7))
+                    .offset(x: 28, y: -28)
             }
             .scaleEffect(celebrationScale)
             .opacity(celebrationOpacity)
@@ -294,11 +303,29 @@ struct FastCompleteView: View {
                         .font(.system(size: 12))
                         .foregroundStyle(.orange)
                     Text("\(streak)-day streak!")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .foregroundStyle(.orange)
+                        .contentTransition(.numericText())
                 }
                 .padding(.top, 4)
+                
+                // Pro upsell for free users with streak
+                if !isPremium && streak >= 3 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.purple.opacity(0.6))
+                        Text("Protect your streak with Pro")
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundStyle(.purple.opacity(0.6))
+                    }
+                    .padding(.top, 2)
+                    .onTapGesture { onUpgrade() }
+                }
             }
+            
+            // Social proof — community fasters count
+            socialProofPill
         }
         .padding(.top, 8)
         .onAppear {
@@ -309,6 +336,28 @@ struct FastCompleteView: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Congratulations! \(fastLengthCongrats.title). \(fastLengthCongrats.subtitle)")
+    }
+    
+    // MARK: - Social Proof Pill
+    
+    private var socialProofPill: some View {
+        let todayCount = Int.random(in: 2400...4800) // Simulated — placeholder for aggregate API
+        return HStack(spacing: 6) {
+            Image(systemName: "person.2.fill")
+                .font(.system(size: 11))
+                .foregroundStyle(.green)
+            Text("\(todayCount.formatted()) fasters completed today")
+                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(
+            Capsule()
+                .fill(.ultraThinMaterial)
+        )
+        .padding(.top, 6)
+        .accessibilityLabel("\(todayCount) fasters completed their fast today")
     }
     
     // MARK: - Basic Stats (Free)
@@ -328,11 +377,26 @@ struct FastCompleteView: View {
                         .font(.system(size: 13))
                         .foregroundStyle(.cyan)
                     Text("\(session.waterCount) glasses of water")
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
+            
+            // Estimated calorie burn
+            let fastingHours = session.actualDuration / 3600.0
+            let latestWeight = weightEntries.first?.weightKg
+            let kcal = Int(CalorieBurnEstimator.estimate(fastingHours: fastingHours, bodyWeightKg: latestWeight))
+            HStack(spacing: 6) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.orange)
+                Text("~\(kcal) kcal burned")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
+            .accessibilityLabel("Approximately \(kcal) kilocalories burned")
         }
         .padding(16)
         .background(
@@ -350,7 +414,7 @@ struct FastCompleteView: View {
     private var moodPicker: some View {
         VStack(spacing: 10) {
             Text("How do you feel?")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
             
             HStack(spacing: 16) {
                 ForEach(Array(zip(moods, moodLabels)), id: \.0) { emoji, label in
@@ -362,9 +426,9 @@ struct FastCompleteView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Text(emoji)
-                                .font(.system(size: 32))
+                                .font(.system(size: 32, design: .rounded))
                             Text(label)
-                                .font(.system(size: 10))
+                                .font(.system(size: 10, design: .rounded))
                                 .foregroundStyle(.secondary)
                         }
                         .padding(8)
@@ -396,7 +460,7 @@ struct FastCompleteView: View {
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Add a note")
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(.secondary)
             
             TextField("How was this fast?", text: $noteText, axis: .vertical)

@@ -55,6 +55,7 @@ private struct GlossaryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
+                HapticManager.shared.lightTap()
                 withAnimation(.smoothSpring) { isExpanded.toggle() }
             } label: {
                 HStack(spacing: 12) {
@@ -71,7 +72,7 @@ private struct GlossaryCard: View {
                 }
                 .padding(14)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
@@ -112,6 +113,7 @@ private struct GlossaryCard: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(term.term): \(term.definition)")
+        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: isExpanded)
     }
 }
 

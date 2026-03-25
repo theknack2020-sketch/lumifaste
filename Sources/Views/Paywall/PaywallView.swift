@@ -29,6 +29,7 @@ struct PaywallView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
+                        HapticManager.shared.lightTap()
                         dismiss()
                     } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -36,6 +37,7 @@ struct PaywallView: View {
                             .foregroundStyle(.secondary)
                     }
                     .accessibilityIdentifier("closeButton")
+                    .accessibilityLabel("Close paywall")
                 }
             }
             .task {
@@ -168,7 +170,7 @@ struct PaywallView: View {
                 urgencyBanner
                     .entranceAnimation(delay: 0.15)
                 
-                // What you'll miss — comparison table
+                // What you get with Pro — comparison table
                 comparisonTable
                     .entranceAnimation(delay: 0.2)
                 
@@ -189,6 +191,21 @@ struct PaywallView: View {
             }
             .padding()
         }
+        .background(
+            // Glassmorphism gradient background
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        themeManager.selectedTheme.accent.opacity(0.08),
+                        Color(.systemBackground),
+                        themeManager.selectedTheme.accent.opacity(0.04)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
+        )
     }
     
     // MARK: - Header
@@ -206,10 +223,19 @@ struct PaywallView: View {
                 )
                 .frame(width: 120, height: 120)
                 
-                Image(systemName: "sparkles")
-                    .font(.system(size: 44))
-                    .foregroundStyle(themeManager.selectedTheme.accentGradient)
-                    .shadow(color: accent.opacity(0.4), radius: 12, y: 4)
+                // Brand leaf with sparkle overlay — matches app icon
+                ZStack {
+                    Image(systemName: "leaf.fill")
+                        .font(.system(size: 40))
+                        .scaleEffect(x: -1)
+                        .foregroundStyle(themeManager.selectedTheme.accentGradient)
+                    
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.white.opacity(0.9))
+                        .offset(x: 16, y: -16)
+                }
+                .shadow(color: accent.opacity(0.4), radius: 12, y: 4)
             }
             
             Text("Lumifaste Premium")
@@ -220,6 +246,8 @@ struct PaywallView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.top, 8)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Lumifaste Premium. Unlock your full fasting potential.")
     }
     
     // MARK: - Urgency Banner
@@ -245,16 +273,18 @@ struct PaywallView: View {
                         .stroke(Color.orange.opacity(0.25), lineWidth: 1)
                 )
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Try everything free for 7 days")
     }
     
-    // MARK: - Comparison Table (What You'll Miss)
+    // MARK: - Comparison Table (What You Get with Pro)
     
     private var comparisonTable: some View {
         let accent = themeManager.selectedTheme.accent
         
         return VStack(spacing: 0) {
             // Section header
-            Text("WHAT YOU'LL MISS")
+            Text("WHAT YOU GET WITH PRO")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -281,22 +311,38 @@ struct PaywallView: View {
             
             Divider().opacity(0.3)
             
-            // Comparison rows
+            // Comparison rows — spec: History, Charts, Themes, Export, Custom Plans, Challenges, Journal, Streak, Notifications, Achievements
             ComparisonRow(feature: "Fasting history", freeValue: .limited("7 days"), proValue: .check("Unlimited"))
-            ComparisonRow(feature: "Stats & charts", freeValue: .limited("Basic"), proValue: .check("All charts"))
-            ComparisonRow(feature: "Themes", freeValue: .limited("5 themes"), proValue: .check("8 themes"))
+            ComparisonRow(feature: "Charts & stats", freeValue: .limited("Basic"), proValue: .check("Full"))
+            ComparisonRow(feature: "Themes", freeValue: .limited("3"), proValue: .check("8"))
             ComparisonRow(feature: "CSV export", freeValue: .missing, proValue: .check("Export"))
-            ComparisonRow(feature: "Weight tracking", freeValue: .missing, proValue: .check("Track"))
-            ComparisonRow(feature: "Streak counter", freeValue: .missing, proValue: .check("Streak"))
-            ComparisonRow(feature: "Stage science", freeValue: .missing, proValue: .check("Insights"))
             ComparisonRow(feature: "Custom plans", freeValue: .missing, proValue: .check("Create"))
+            ComparisonRow(feature: "Challenges", freeValue: .limited("1"), proValue: .check("All"))
+            ComparisonRow(feature: "Journal", freeValue: .limited("Mood only"), proValue: .check("Full"))
+            ComparisonRow(feature: "Streak protection", freeValue: .missing, proValue: .check("Freeze"))
+            ComparisonRow(feature: "Smart alerts", freeValue: .limited("Basic"), proValue: .check("All"))
+            ComparisonRow(feature: "Achievements", freeValue: .limited("5"), proValue: .check("13"))
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(.ultraThinMaterial)
+            ZStack {
+                // Glassmorphism background
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [.white.opacity(0.2), .white.opacity(0.05)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
         )
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Pro comparison table. Unlimited history, full charts, 8 themes, CSV export, custom plans, all challenges, and full journal with Pro.")
     }
     
     // MARK: - Social Proof
@@ -343,6 +389,8 @@ struct PaywallView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(.ultraThinMaterial)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Join 10,000 plus fasters who chose Pro")
     }
     
     // MARK: - Products (Price Anchoring: Monthly first, Yearly with badge)
@@ -489,6 +537,7 @@ struct PaywallView: View {
             
             // Restore
             Button("Restore Purchases") {
+                HapticManager.shared.lightTap()
                 Task {
                     await subscriptionManager.restorePurchases()
                     if case .failed(let msg) = subscriptionManager.restoreResult {
@@ -504,6 +553,8 @@ struct PaywallView: View {
             }
             .font(.system(size: 14))
             .foregroundStyle(.secondary)
+            .accessibilityLabel("Restore purchases")
+            .accessibilityHint("Restores previously purchased subscriptions")
         }
     }
     
@@ -511,7 +562,7 @@ struct PaywallView: View {
     
     private var legalSection: some View {
         VStack(spacing: 6) {
-            Text("Try all Premium features free for 7 days. After trial, auto-renews. Cancel anytime in Settings.")
+            Text("Payment charged after trial. Auto-renews. Cancel anytime in Settings.")
                 .font(.system(size: 11))
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)
@@ -607,15 +658,19 @@ private struct PremiumActiveFeature: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 16))
                 .foregroundStyle(.green)
+                .accessibilityHidden(true)
             
             Image(systemName: icon)
                 .font(.system(size: 15))
                 .foregroundStyle(.secondary)
                 .frame(width: 22)
+                .accessibilityHidden(true)
             
             Text(text)
                 .font(.system(size: 15))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 
@@ -630,6 +685,7 @@ private struct TrustIndicator: View {
             Image(systemName: icon)
                 .font(.system(size: 13))
                 .foregroundStyle(.green)
+                .accessibilityHidden(true)
             Text(text)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -641,6 +697,8 @@ private struct TrustIndicator: View {
                 .fill(.ultraThinMaterial)
         )
         .shadow(color: .black.opacity(0.08), radius: 3, y: 1)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 
@@ -748,6 +806,9 @@ private struct ProductCard: View {
             .animation(.tapSpring, value: isSelected)
         }
         .buttonStyle(.pressable)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label) plan, \(product.displayPrice)\(perMonthText.map { ", \($0)" } ?? "")\(savings > 0 ? ", save \(savings) percent" : "")\(isSelected ? ", selected" : "")")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 

@@ -66,7 +66,7 @@ struct JournalEntryView: View {
                         dismiss()
                     } label: {
                         Text("Skip for now")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, design: .rounded))
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -117,6 +117,19 @@ struct JournalEntryView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 8)
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [themeManager.selectedTheme.accent.opacity(0.12), themeManager.selectedTheme.accent.opacity(0.03)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
         .accessibilityElement(children: .combine)
     }
     
@@ -125,7 +138,7 @@ struct JournalEntryView: View {
     private var moodSection: some View {
         VStack(spacing: 12) {
             Text("Mood")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .frame(maxWidth: .infinity, alignment: .leading)
             
             HStack(spacing: 12) {
@@ -138,9 +151,9 @@ struct JournalEntryView: View {
                     } label: {
                         VStack(spacing: 6) {
                             Text(mood.emoji)
-                                .font(.system(size: 32))
+                                .font(.system(size: 32, design: .rounded))
                             Text(mood.label)
-                                .font(.system(size: 11, weight: .medium))
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
                                 .foregroundStyle(selectedMood == mood ? .primary : .secondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -159,7 +172,7 @@ struct JournalEntryView: View {
                         )
                         .scaleEffect(selectedMood == mood ? 1.05 : 1.0)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(.pressable)
                     .accessibilityLabel("\(mood.label) mood, \(mood.emoji)")
                     .accessibilityAddTraits(selectedMood == mood ? .isSelected : [])
                 }
@@ -170,6 +183,7 @@ struct JournalEntryView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
     }
     
     // MARK: - Energy Slider
@@ -178,10 +192,10 @@ struct JournalEntryView: View {
         VStack(spacing: 12) {
             HStack {
                 Text("Energy Level")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 Spacer()
                 Text(energyLabel)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(themeManager.selectedTheme.accent)
             }
             
@@ -218,6 +232,7 @@ struct JournalEntryView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Energy level, \(energyLabel)")
         .accessibilityValue("\(Int(energy)) of 5")
@@ -239,10 +254,10 @@ struct JournalEntryView: View {
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Notes")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
             
             Text("Optional — anything you want to remember")
-                .font(.system(size: 12))
+                .font(.system(size: 12, design: .rounded))
                 .foregroundStyle(.tertiary)
             
             TextField("How did the fast go?", text: $noteText, axis: .vertical)
@@ -261,7 +276,7 @@ struct JournalEntryView: View {
             
             if !noteText.isEmpty {
                 Text("\(noteText.count)/500")
-                    .font(.system(size: 11))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -271,6 +286,7 @@ struct JournalEntryView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
     }
     
     // MARK: - Save Button
@@ -282,7 +298,7 @@ struct JournalEntryView: View {
             HStack(spacing: 8) {
                 if saved {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .transition(.scale.combined(with: .opacity))
                 }
                 Text(saved ? "Saved!" : "Save Journal Entry")
@@ -313,7 +329,7 @@ struct JournalEntryView: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.secondary)
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                 Spacer()
                 Image(systemName: "lock.fill")
                     .font(.system(size: 12))
@@ -321,7 +337,7 @@ struct JournalEntryView: View {
             }
             
             Text(subtitle)
-                .font(.system(size: 13))
+                .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -332,7 +348,7 @@ struct JournalEntryView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11))
                     Text("Upgrade to Pro")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
@@ -348,7 +364,7 @@ struct JournalEntryView: View {
                         )
                 )
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.top, 4)
         }

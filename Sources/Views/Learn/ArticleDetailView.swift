@@ -39,6 +39,7 @@ struct ArticleDetailView: View {
             Image(systemName: article.icon)
                 .font(.system(size: 36))
                 .foregroundStyle(article.iconColor)
+                .accessibilityHidden(true)
             
             Text(article.title)
                 .font(.system(size: 22, weight: .bold))
@@ -55,6 +56,9 @@ struct ArticleDetailView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.12), radius: 8, x: 0, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(article.title). \(article.subtitle)")
     }
     
     // MARK: - Section
@@ -76,6 +80,9 @@ struct ArticleDetailView: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(.secondarySystemBackground))
         )
+        .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(section.heading): \(section.body)")
     }
     
     // MARK: - References

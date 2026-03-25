@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Oruç aşamaları — vücutta neler oluyor.
+/// Fasting stages — what happens in the body.
 /// Saat eşikleri araştırmadan (fasting-science.md):
 ///   0-4h: Fed, 4-12h: Early Fasting, 12-18h: Fat Burning, 18-24h: Ketosis, 24h+: Autophagy
 enum FastingStage: String, CaseIterable, Identifiable, Codable {
@@ -43,6 +43,17 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .fatBurning: "flame.fill"
         case .ketosis: "bolt.fill"
         case .autophagy: "sparkles"
+        }
+    }
+    
+    /// Emoji representation for Live Activity display
+    var emoji: String {
+        switch self {
+        case .fed: "🍽️"
+        case .earlyFasting: "⏳"
+        case .fatBurning: "🔥"
+        case .ketosis: "⚡"
+        case .autophagy: "✨"
         }
     }
     

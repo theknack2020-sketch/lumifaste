@@ -5,8 +5,8 @@ import OSLog
 
 private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "FastingManager")
 
-/// Oruç yöneticisi — timer state, persistence, stage tracking.
-/// Timestamp-based: asla tick counter kullanmaz, Date.now'dan hesaplar.
+/// Fasting manager — timer state, persistence, stage tracking.
+/// Timestamp-based: never uses tick counters, calculates from Date.now.
 /// All active fast state is persisted to UserDefaults — survives app kill & restart (#12).
 /// Clock manipulation protection via ClockGuard.
 @Observable
@@ -119,7 +119,7 @@ final class FastingManager {
     
     // MARK: - Actions
     
-    /// Yeni oruç başlat
+    /// Start a new fast
     func startFast(plan: FastingPlan) {
         let now = Date.now
         startDate = now
@@ -130,6 +130,16 @@ final class FastingManager {
         pauseStartDate = nil
         totalPausedDuration = 0
         waterCount = 0
+        
+        // Start Live Activity
+        let stage = FastingStage.stage(for: 0)
+        LiveActivityManager.startLiveActivity(
+            plan: plan.rawValue,
+            startDate: now,
+            targetSeconds: Int(plan.fastingDuration),
+            currentStage: stage.rawValue,
+            stageEmoji: stage.emoji
+        )
         
         // Schedule all notifications
         Task { @MainActor in
@@ -186,6 +196,7 @@ final class FastingManager {
     
     /// Orucu iptal et (kaydetmeden)
     func cancelFast() {
+        LiveActivityManager.endLiveActivity()
         clearState()
         
         Task { @MainActor in
@@ -193,7 +204,7 @@ final class FastingManager {
         }
     }
     
-    /// Plan değiştir (aktif oruç yokken)
+    /// Change plan (when no active fast)
     func setPlan(_ plan: FastingPlan) {
         guard !isActive else { return }
         currentPlan = plan
@@ -447,4 +458,74 @@ final class FastingManager {
             streakActive: currentStreak > 0
         )
     }
+    
+    // MARK: - Streak Freeze (Pro Feature)
+    
+    private static let streakFreezeCountKey = "lf_streak_freeze_count"
+    private static let lastFreezeDateKey = "lf_streak_freeze_last_date"
+    private static let lastFreezeRefillKey = "lf_streak_freeze_last_refill"
+    
+    /// Number of streak freezes currently available.
+    static var streakFreezeCount: Int {
+        get { UserDefaults.standard.integer(forKey: streakFreezeCountKey) }
+        set { UserDefaults.standard.set(max(0, newValue), forKey: streakFreezeCountKey) }
+    }
+    
+    /// Date when a streak freeze was last used.
+    static var lastFreezeDate: Date? {
+        get { UserDefaults.standard.object(forKey: lastFreezeDateKey) as? Date }
+        set { UserDefaults.standard.set(newValue, forKey: lastFreezeDateKey) }
+    }
+    
+    /// Use a streak freeze if available. Max 1 per 7 days.
+    /// Returns true if freeze was successfully used.
+    static func useStreakFreeze() -> Bool {
+        guard streakFreezeCount > 0 else { return false }
+        
+        // Check if one was used within the last 7 days
+        if let lastUsed = lastFreezeDate {
+            let daysSince = Calendar.current.dateComponents([.day], from: lastUsed, to: Date.now).day ?? 0
+            if daysSince < 7 {
+                logger.info("Streak freeze denied — last used \(daysSince) days ago (min 7)")
+                return false
+            }
+        }
+        
+        streakFreezeCount -= 1
+        lastFreezeDate = Date.now
+        logger.info("Streak freeze used. Remaining: \(streakFreezeCount)")
+        return true
+    }
+    
+    /// Add 1 streak freeze (e.g. weekly auto-refill for Pro users).
+    static func addStreakFreeze() {
+        streakFreezeCount += 1
+        logger.info("Streak freeze added. Total: \(streakFreezeCount)")
+    }
+    
+    /// Auto-refill 1 streak freeze on Mondays for Pro users.
+    /// Call on app foreground. Idempotent per week.
+    static func refillStreakFreezeIfNeeded(isPremium: Bool) {
+        guard isPremium else { return }
+        
+        let calendar = Calendar.current
+        let now = Date.now
+        let weekday = calendar.component(.weekday, from: now)
+        
+        // Only on Monday (weekday == 2 in Gregorian)
+        guard weekday == 2 else { return }
+        
+        let todayStart = calendar.startOfDay(for: now)
+        let lastRefill = UserDefaults.standard.object(forKey: lastFreezeRefillKey) as? Date
+        
+        // Already refilled today
+        if let last = lastRefill, calendar.isDate(last, inSameDayAs: todayStart) {
+            return
+        }
+        
+        addStreakFreeze()
+        UserDefaults.standard.set(todayStart, forKey: lastFreezeRefillKey)
+        logger.info("Weekly streak freeze refill applied (Monday)")
+    }
 }
+

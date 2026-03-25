@@ -31,6 +31,14 @@ Build for App Store
 
 Upload build to App Store Connect
 
+### ios metadata
+
+```sh
+[bundle exec] fastlane ios metadata
+```
+
+Upload metadata and screenshots only
+
 ### ios release
 
 ```sh

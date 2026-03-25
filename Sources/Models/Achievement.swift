@@ -94,4 +94,14 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
     
     /// Milestone streaks that trigger a share prompt
     static let streakMilestones: [Achievement] = [.sevenDayStreak, .thirtyDayStreak]
+    
+    /// Whether this achievement is available to free users.
+    /// Free: firstFast, threeDayStreak, tenFasts, fatBurner, hydrationHero (5 basic).
+    /// Pro: sevenDayStreak, thirtyDayStreak, warrior24h, centurion100h, twentyFiveFasts, fiftyFasts, ketosisKing, autophagyMaster (8 advanced).
+    var isFree: Bool {
+        switch self {
+        case .firstFast, .threeDayStreak, .tenFasts, .fatBurner, .hydrationHero: true
+        default: false
+        }
+    }
 }

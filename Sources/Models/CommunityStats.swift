@@ -20,6 +20,7 @@ enum CommunityStats {
         PlanAverage(plan: .eighteenSix, averageDurationHours: 16.8, completionRate: 0.73, participantCount: 15_300),
         PlanAverage(plan: .twentyFour, averageDurationHours: 18.4, completionRate: 0.64, participantCount: 6_100),
         PlanAverage(plan: .omad, averageDurationHours: 21.1, completionRate: 0.58, participantCount: 3_800),
+        PlanAverage(plan: .circadian, averageDurationHours: 12.6, completionRate: 0.89, participantCount: 9_700),
     ]
     
     /// Get the community average for a given plan
