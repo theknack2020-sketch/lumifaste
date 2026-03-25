@@ -3,17 +3,17 @@ import SwiftData
 
 @Model
 final class MealEntry {
-    var date: Date
-    var mealType: String  // breakfast, lunch, dinner, snack
-    var title: String     // "Grilled chicken salad"
-    var emoji: String     // 🥗
-    var note: String?     // optional note
-    var isFastingFriendly: Bool
+    var date: Date = Date.now
+    var mealType: String = "meal"
+    var title: String = ""
+    var emoji: String = "🍽️"
+    var note: String?
+    var isFastingFriendly: Bool = true
 
     init(
         date: Date = .now,
-        mealType: String,
-        title: String,
+        mealType: String = "meal",
+        title: String = "",
         emoji: String = "🍽️",
         note: String? = nil,
         isFastingFriendly: Bool = true
