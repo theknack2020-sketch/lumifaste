@@ -322,6 +322,7 @@ struct PaywallView: View {
             ComparisonRow(feature: "Streak protection", freeValue: .missing, proValue: .check("Freeze"))
             ComparisonRow(feature: "Smart alerts", freeValue: .limited("Basic"), proValue: .check("All"))
             ComparisonRow(feature: "Achievements", freeValue: .limited("5"), proValue: .check("13"))
+            ComparisonRow(feature: "Recipes", freeValue: .limited("10"), proValue: .check("20"))
         }
         .padding(16)
         .background(
