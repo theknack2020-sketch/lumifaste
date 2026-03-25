@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import BackgroundTasks
 
 @main
 struct LumifasteApp: App {
@@ -34,6 +35,18 @@ struct LumifasteApp: App {
         
         // Register notification categories at launch
         NotificationManager.shared.registerCategories()
+        
+        // Register background app refresh task
+        BGTaskScheduler.shared.register(
+            forTaskWithIdentifier: "com.theknack.lumifaste.refresh",
+            using: nil
+        ) { task in
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            Self.handleBackgroundRefresh(refreshTask)
+        }
         
         // Initial clock checkpoint
         _ = ClockGuard.checkClockIntegrity()
@@ -71,6 +84,9 @@ struct LumifasteApp: App {
                                 Task { @MainActor in
                                     await NotificationManager.shared.refreshPermissionStatus()
                                 }
+                            } else if newPhase == .background {
+                                // Schedule background refresh for retention notifications
+                                Self.scheduleBackgroundRefresh()
                             }
                         }
                         .alert("Storage Low",
@@ -89,6 +105,7 @@ struct LumifasteApp: App {
                         }
                 } else {
                     OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                        .environment(subscriptionManager)
                         .environment(themeManager)
                 }
             }
@@ -149,6 +166,64 @@ struct LumifasteApp: App {
         } else {
             // Cancel any pending nudge
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["inactivity_nudge"])
+        }
+    }
+    
+    // MARK: - Background Task Scheduling
+    
+    /// Schedule the background app refresh task. Called when the app enters background.
+    private static func scheduleBackgroundRefresh() {
+        let request = BGAppRefreshTaskRequest(identifier: "com.theknack.lumifaste.refresh")
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 4 * 3600) // 4 hours from now
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+            print("[Lumifaste] Background refresh scheduling failed: \(error.localizedDescription)")
+        }
+    }
+    
+    /// Handle background refresh — reschedule retention notifications (streak protection, inactivity nudge).
+    private static func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
+        // Schedule the next refresh before doing work
+        scheduleBackgroundRefresh()
+        
+        let workTask = Task { @MainActor in
+            let manager = FastingManager()
+            let isActive = manager.isActive
+            
+            // Reschedule streak and inactivity notifications
+            let status = await NotificationManager.shared.authorizationStatus()
+            guard status == .authorized else { return }
+            
+            // Streak reminder — protect streak if user hasn't fasted today
+            let streak = UserDefaults.standard.integer(forKey: "lf_current_streak_cache")
+            if streak > 0 && !isActive {
+                NotificationManager.shared.scheduleStreakReminder(currentStreak: streak)
+            }
+            
+            // Inactivity nudge
+            if !isActive {
+                let content = UNMutableNotificationContent()
+                content.title = "Ready to Fast? 🌿"
+                content.body = "Keep your streak alive — start a fast today!"
+                content.sound = .default
+                
+                var components = DateComponents()
+                components.hour = 10
+                components.minute = 0
+                let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+                let request = UNNotificationRequest(identifier: "bg_inactivity_nudge", content: content, trigger: trigger)
+                try? await UNUserNotificationCenter.current().add(request)
+            }
+        }
+        
+        task.expirationHandler = {
+            workTask.cancel()
+        }
+        
+        Task {
+            await workTask.value
+            task.setTaskCompleted(success: true)
         }
     }
 }
