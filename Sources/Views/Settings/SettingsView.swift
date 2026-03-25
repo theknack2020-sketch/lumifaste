@@ -27,6 +27,10 @@ struct SettingsView: View {
     @State private var showResetConfirm = false
     @State private var challengeManager = ChallengeManager()
     
+    // MARK: - Dynamic Type Support
+    @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 24
+    
     private var selectedAppearance: AppearanceMode {
         get { AppearanceMode(rawValue: appearanceMode) ?? .system }
         nonmutating set { appearanceMode = newValue.rawValue }
@@ -41,7 +45,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 24) {
+                VStack(spacing: sectionSpacing) {
                     premiumSection
                         .entranceAnimation(delay: 0.05)
                     activitySection
@@ -73,6 +77,7 @@ struct SettingsView: View {
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Settings")
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }

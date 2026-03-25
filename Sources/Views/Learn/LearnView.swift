@@ -8,6 +8,10 @@ struct LearnView: View {
     @State private var showPaywall = false
     @State private var isLoading = true
     
+    // MARK: - Dynamic Type Support
+    @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
+    
     var body: some View {
         NavigationStack {
             Group {
@@ -31,6 +35,7 @@ struct LearnView: View {
                 }
             }
             .navigationTitle("Learn")
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
@@ -51,7 +56,7 @@ struct LearnView: View {
     
     private var learnContent: some View {
         ScrollView {
-            LazyVStack(spacing: 20) {
+            LazyVStack(spacing: sectionSpacing) {
                 // Brand header
                 HStack(spacing: 8) {
                     Image(systemName: "leaf.fill")
@@ -144,6 +149,18 @@ struct LearnView: View {
                         title: "Glossary",
                         icon: "text.book.closed.fill",
                         color: .purple,
+                        accentColor: accent
+                    )
+                }
+                .buttonStyle(.pressable)
+                
+                NavigationLink {
+                    RecipesView()
+                } label: {
+                    QuickLinkCard(
+                        title: "Recipes",
+                        icon: "fork.knife",
+                        color: .orange,
                         accentColor: accent
                     )
                 }

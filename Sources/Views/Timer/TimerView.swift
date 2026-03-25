@@ -44,6 +44,11 @@ struct TimerView: View {
     @State private var errorMessage: String?
     @State private var journeyManager = OnboardingJourneyManager()
     
+    // MARK: - Dynamic Type Support
+    @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 24
+    @ScaledMetric(relativeTo: .body) private var horizontalPadding: CGFloat = 20
+    
     /// Tracks whether we've shown the soft paywall this session to avoid repeat
     @AppStorage("lf_soft_paywall_shown") private var softPaywallShown = false
     
@@ -169,7 +174,7 @@ struct TimerView: View {
                     VStack(spacing: 0) {
                         // Date & streak header
                         dateAndStreakHeader
-                            .padding(.horizontal, 20)
+                            .padding(.horizontal, horizontalPadding)
                             .padding(.top, 8)
                         
                         // Onboarding journey banner (#19-22)
@@ -318,6 +323,7 @@ struct TimerView: View {
                     }
                 }
             }
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .confirmationDialog("End Fast?", isPresented: $showEndConfirm) {
                 Button("End & Save", role: .destructive) {
                     endAndSaveFast()

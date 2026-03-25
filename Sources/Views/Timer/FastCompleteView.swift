@@ -23,6 +23,7 @@ struct FastCompleteView: View {
     @State private var celebrationOpacity: Double = 0
     @State private var contentAppeared = false
     @State private var showJournal = false
+    @State private var showMealLog = false
     
     @Query(sort: \WeightEntry.date, order: .reverse) private var weightEntries: [WeightEntry]
     
@@ -70,6 +71,10 @@ struct FastCompleteView: View {
                         // Journal entry button
                         journalButton
                             .entranceAnimation(delay: 0.42)
+                        
+                        // Log first meal CTA
+                        logFirstMealButton
+                            .entranceAnimation(delay: 0.45)
                         
                         // Premium breakdown
                         if isPremium {
@@ -145,6 +150,9 @@ struct FastCompleteView: View {
             .sheet(isPresented: $showJournal) {
                 JournalEntryView(session: session)
             }
+            .sheet(isPresented: $showMealLog) {
+                MealLogView()
+            }
             .alert("Error", isPresented: $showError) {
                 Button("OK") {}
             } message: {
@@ -211,6 +219,32 @@ struct FastCompleteView: View {
         }
         .buttonStyle(.pressable)
         .accessibilityLabel("Add a journal entry about this fast")
+    }
+    
+    // MARK: - Log First Meal Button
+    
+    private var logFirstMealButton: some View {
+        Button {
+            HapticManager.shared.lightTap()
+            showMealLog = true
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                Text("Log Your First Meal")
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(.orange)
+            .frame(maxWidth: .infinity)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.orange.opacity(0.12))
+            )
+        }
+        .buttonStyle(.pressable)
+        .accessibilityLabel("Log your first meal after fasting")
+        .accessibilityHint("Opens the meal logging screen")
     }
     
     // MARK: - Save mood and note to session

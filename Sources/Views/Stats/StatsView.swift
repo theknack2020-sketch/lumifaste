@@ -20,6 +20,10 @@ struct StatsView: View {
     @State private var healthKitImportCount = 0
     @State private var isLoading = true
     
+    // MARK: - Dynamic Type Support
+    @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
+    
     private var completedSessions: [FastingSession] {
         sessions.filter(\.isCompleted)
     }
@@ -74,6 +78,7 @@ struct StatsView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
             }
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .sheet(isPresented: $showWeightLog) {
                 WeightLogView()
             }
@@ -228,7 +233,7 @@ struct StatsView: View {
                     consistencySection
                 }
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, cardPadding)
             .padding(.vertical, 12)
             .onAppear {
                 withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {

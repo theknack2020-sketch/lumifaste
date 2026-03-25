@@ -57,6 +57,7 @@ struct ContentView: View {
             .tint(themeManager.selectedTheme.accent)
             .modifier(iPadTabViewModifier(isRegular: horizontalSizeClass == .regular))
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: selectedTab)
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .onAppear {
                 let tabBarAppearance = UITabBarAppearance()
                 tabBarAppearance.configureWithDefaultBackground()
@@ -175,7 +176,7 @@ private struct FastingStatusBar: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self], inMemory: true)
+        .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
 }

@@ -66,6 +66,10 @@ struct HistoryView: View {
     @State private var isRefreshing = false
     @State private var isLoading = true
     
+    // MARK: - Dynamic Type Support
+    @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
+    @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
+    
     private let freeLimit = 7
     
     // MARK: - Computed Properties
@@ -194,6 +198,7 @@ struct HistoryView: View {
             .navigationTitle("History")
             .toolbar { historyToolbar }
             .searchable(text: $searchText, prompt: "Search fasts...")
+            .dynamicTypeSize(...DynamicTypeSize.accessibility2)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: completionFilter)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: sortOption)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: planFilter)

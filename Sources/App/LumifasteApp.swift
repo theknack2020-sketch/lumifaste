@@ -14,14 +14,14 @@ struct LumifasteApp: App {
     
     init() {
         do {
-            let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
+            let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
             let config = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
             modelContainer = try ModelContainer(for: schema, configurations: [config])
         } catch {
             print("[Lumifaste] CRITICAL: ModelContainer init failed: \(error)")
             print("[Lumifaste] Falling back to local-only store...")
             do {
-                let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self])
+                let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
                 let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
                 let storeURL = config.url
                 try? FileManager.default.removeItem(at: storeURL)
