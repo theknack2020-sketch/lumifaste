@@ -4,7 +4,8 @@ Start a fast with one tap. Watch your progress on a beautiful circular timer. Un
 
 WHETHER YOU'RE JUST STARTING OR DEEP INTO YOUR JOURNEY
 
-- 7 fasting plans: 12:12, 14:10, 16:8, 18:6, 20:4, OMAD, and 5:2
+- 9 fasting plans: 12:12, 14:10, 16:8, 18:6, 20:4, OMAD, 5:2, Circadian, and Custom
+- Circadian Rhythm fast: align eating with daylight for metabolic benefits
 - Custom plans from 1-48 hours for experienced fasters
 - Beginner-friendly onboarding with personalized plan recommendation
 - Adjust your start time retroactively
@@ -13,16 +14,23 @@ FASTING STAGES
 
 Your body goes through distinct metabolic phases during a fast. Lumifaste tracks them in real time:
 
-- Fed State (0-4h) - Digesting food, insulin elevated
-- Early Fasting (4-12h) - Blood sugar dropping, glycogen depleting
-- Fat Burning (12-18h) - Stored fat being used for energy
-- Ketosis (18-24h) - Ketone production, mental clarity
-- Autophagy (24+h) - Cellular cleanup and renewal
+- Fed State (0-4h) — Digesting food, insulin elevated
+- Early Fasting (4-12h) — Blood sugar dropping, glycogen depleting
+- Fat Burning (12-18h) — Stored fat being used for energy
+- Ketosis (18-24h) — Ketone production, mental clarity
+- Autophagy (24+h) — Cellular cleanup and renewal
+
+EAT SMARTER
+
+- 20 fasting-friendly recipes: breaking fast, meals, snacks, and drinks
+- Meal logging with emoji categories and personal notes
+- Nutrition info: calories, protein, and prep time for every recipe
+- Log meals directly from recipes with one tap
 
 STAY MOTIVATED
 
 - Live Activity on Lock Screen and Dynamic Island
-- Estimated calorie burn in real time
+- Estimated calorie burn and daily step counter
 - Enhanced water tracker with daily goal and progress ring
 - Pause, resume, and extend your fast
 - Smart notifications: milestones, stage transitions, streak protection, weekly summary
@@ -55,9 +63,9 @@ MAKE IT YOURS
 
 HONEST PRICING
 
-All preset plans, the timer, fasting stages, basic notifications, and your last 7 fasts are always free. No account required. No data collected.
+All preset plans, the timer, fasting stages, basic notifications, 10 recipes, and your last 7 fasts are always free. No account required. No data collected.
 
-Premium unlocks: unlimited history, streak tracking, full charts, detailed stage science, custom plans, smart notifications, weight tracking, all achievements, all themes, CSV export.
+Premium unlocks: unlimited history, streak tracking, full charts, detailed stage science, custom plans, smart notifications, weight tracking, all achievements, all 20 recipes, all themes, CSV export.
 
 - Monthly: $3.99/month
 - Yearly: $29.99/year (save 37%)
@@ -65,7 +73,7 @@ Premium unlocks: unlimited history, streak tracking, full charts, detailed stage
 
 YOUR DATA STAYS ON YOUR DEVICE
 
-All data is stored locally. We never collect or transmit your personal information. Privacy is a principle, not a feature.
+All data is stored locally and syncs via iCloud across your devices. We never collect or transmit your personal information. Privacy is a principle, not a feature.
 
 Lumifaste is not medical advice. Always consult a healthcare professional before starting any fasting program.
 

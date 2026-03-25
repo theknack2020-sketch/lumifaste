@@ -1,27 +1,19 @@
-Lumifaste 1.1 — Bigger, Smarter, Deeper 🍃
+Lumifaste 1.1 Build 7 — Eat Smarter, Fast Better 🍃
 
 NEW
-• Live Activity — fasting timer on Lock Screen and Dynamic Island
-• Estimated calorie burn — real-time kcal counter based on fasting stage
-• Siri Shortcuts — "Hey Siri, start my fast" hands-free control
-• Insights tab — dedicated stats dashboard with charts and trends
-• Streak heatmap — GitHub-style 90-day fasting calendar
-• Apple Health integration — sync weight with Health app
-• Enhanced water tracker — daily goal, progress ring, celebration
-• Daily, weekly & monthly challenges with XP points
-• Smart notifications — streak protection, weekly summary, inactivity nudge
-• Mood & hydration trend charts
-• Streak freeze — protect your streak (Pro)
-• Eating window reminder — 30 min heads-up before your window opens
-• Water reminders — stay hydrated every 2 hours during fasts
+• 20 Fasting-Friendly Recipes — breaking fast, meals, snacks & drinks with nutrition info
+• Meal Logging — track what you eat with emoji categories
+• Step Counter — daily steps from Apple Health on your timer
+• Circadian Rhythm Fast — new 13:11 plan aligned with daylight
+• Dark & Tinted app icon variants
 
 IMPROVED
-• Redesigned paywall with 10-feature comparison table
-• Better empty states with animations and motivational copy
-• Loading states across all screens
-• Health disclaimers in onboarding and learn sections
-• More haptic feedback and accessibility labels throughout
-• Rounded typography throughout for premium feel
-• Background task scheduling for reliable notifications
+• Richer Insights empty state with feature preview badges
+• Premium stage card design with accent bars and glow
+• Gradient progress bar with stage endpoint icons
+• Settings visual upgrade — Pro section glow, deeper theme shadows
+• Dynamic Type support across all screens
+• Paywall now shows 12 feature comparison rows
+• Better entrance animations on Settings
 
 No ads. No tricks. Just results.
