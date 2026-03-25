@@ -64,6 +64,7 @@ struct HistoryView: View {
     @State private var showError = false
     @State private var errorMessage: String?
     @State private var isRefreshing = false
+    @State private var isLoading = true
     
     private let freeLimit = 7
     
@@ -171,7 +172,20 @@ struct HistoryView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if sessions.isEmpty {
+                if isLoading {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Loading history…")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity)
+                    .accessibilityLabel("Loading fasting history")
+                } else if sessions.isEmpty {
                     historyEmptyState
                 } else {
                     sessionListContent
@@ -211,6 +225,15 @@ struct HistoryView: View {
                 Button("OK") {}
             } message: {
                 Text(errorMessage ?? "Something went wrong. Please try again.")
+            }
+            .onAppear {
+                if isLoading {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            isLoading = false
+                        }
+                    }
+                }
             }
         }
     }
@@ -258,6 +281,7 @@ struct HistoryView: View {
     
     private var filterButton: some View {
         Button {
+            HapticManager.shared.lightTap()
             showFilterSheet = true
         } label: {
             ZStack(alignment: .topTrailing) {
@@ -266,7 +290,7 @@ struct HistoryView: View {
                 
                 if activeFilterCount > 0 {
                     Text("\(activeFilterCount)")
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .frame(width: 14, height: 14)
@@ -285,24 +309,42 @@ struct HistoryView: View {
     private var exportMenuButton: some View {
         Menu {
             Button {
-                exportText = FastDetailExporter.fullHistoryText(accessibleSessions)
-                showExportSheet = true
+                HapticManager.shared.lightTap()
+                if subscriptionManager.isSubscribed {
+                    exportText = FastDetailExporter.fullHistoryText(accessibleSessions)
+                    showExportSheet = true
+                } else {
+                    HapticManager.shared.warning()
+                    showPaywall = true
+                }
             } label: {
                 Label("Share as Text", systemImage: "doc.text")
+                if !subscriptionManager.isSubscribed {
+                    Image(systemName: "lock.fill")
+                }
             }
             
             Button {
-                if let url = FastingDataExporter.exportToFile(sessions: accessibleSessions) {
-                    exportText = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
-                    showExportSheet = true
+                HapticManager.shared.lightTap()
+                if subscriptionManager.isSubscribed {
+                    if let url = FastingDataExporter.exportToFile(sessions: accessibleSessions) {
+                        exportText = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+                        showExportSheet = true
+                    }
+                } else {
+                    HapticManager.shared.warning()
+                    showPaywall = true
                 }
             } label: {
                 Label("Export CSV", systemImage: "tablecells")
+                if !subscriptionManager.isSubscribed {
+                    Image(systemName: "lock.fill")
+                }
             }
         } label: {
             Image(systemName: "square.and.arrow.up")
         }
-        .accessibilityLabel("Export history")
+        .accessibilityLabel(subscriptionManager.isSubscribed ? "Export history" : "Export history — Pro feature")
         .accessibilityIdentifier("exportButton")
     }
     
@@ -360,7 +402,7 @@ struct HistoryView: View {
                     .frame(width: 100, height: 100)
                 
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 48, weight: .thin))
+                    .font(.system(size: 48, weight: .thin, design: .rounded))
                     .foregroundStyle(.orange)
                     .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
@@ -482,6 +524,7 @@ struct HistoryView: View {
         )
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
             Button(role: .destructive) {
+                HapticManager.shared.warning()
                 deleteTarget = session
                 showDeleteConfirmation = true
             } label: {
@@ -490,6 +533,7 @@ struct HistoryView: View {
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
             Button {
+                HapticManager.shared.lightTap()
                 exportText = FastDetailExporter.singleFastText(session)
                 showExportSheet = true
             } label: {
@@ -524,6 +568,7 @@ struct HistoryView: View {
                 
                 if activeFilterCount > 0 {
                     Button("Clear Filters") {
+                        HapticManager.shared.lightTap()
                         withAnimation(.smoothSpring) { resetFilters() }
                     }
                     .font(.system(.caption, design: .rounded, weight: .medium))
@@ -543,25 +588,30 @@ struct HistoryView: View {
                 HStack(spacing: 8) {
                     if completionFilter != .all {
                         HistoryFilterPill(text: completionFilter.rawValue) {
+                            HapticManager.shared.lightTap()
                             withAnimation(.smoothSpring) { completionFilter = .all }
                         }
                     }
                     if let plan = planFilter {
                         HistoryFilterPill(text: plan.rawValue) {
+                            HapticManager.shared.lightTap()
                             withAnimation(.smoothSpring) { planFilter = nil }
                         }
                     }
                     if dateGrouping != .none {
                         HistoryFilterPill(text: "Grouped: \(dateGrouping.rawValue)") {
+                            HapticManager.shared.lightTap()
                             withAnimation(.smoothSpring) { dateGrouping = .none }
                         }
                     }
                     if sortOption != .newestFirst {
                         HistoryFilterPill(text: sortOption.rawValue) {
+                            HapticManager.shared.lightTap()
                             withAnimation(.smoothSpring) { sortOption = .newestFirst }
                         }
                     }
                     Button("Clear All") {
+                        HapticManager.shared.lightTap()
                         withAnimation(.smoothSpring) { resetFilters() }
                     }
                     .font(.system(.caption, design: .rounded, weight: .medium))
@@ -585,22 +635,12 @@ struct HistoryView: View {
                     color: .orange
                 )
                 
-                if subscriptionManager.isSubscribed {
-                    HistoryStatCard(
-                        title: "Current Streak",
-                        value: "\(currentStreak)",
-                        icon: "bolt.fill",
-                        color: .yellow
-                    )
-                } else {
-                    HistoryLockedStatCard(
-                        title: "Streak",
-                        icon: "bolt.fill",
-                        color: .yellow
-                    ) {
-                        showPaywall = true
-                    }
-                }
+                HistoryStatCard(
+                    title: "Current Streak",
+                    value: "\(currentStreak)",
+                    icon: "bolt.fill",
+                    color: .yellow
+                )
                 
                 HistoryStatCard(
                     title: "Avg Duration",
@@ -760,7 +800,13 @@ private struct HistoryStatCard: View {
         VStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .fill(color.opacity(0.12))
+                    .fill(
+                        LinearGradient(
+                            colors: [color.opacity(0.18), color.opacity(0.06)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(width: 32, height: 32)
                 
                 Image(systemName: icon)
@@ -918,7 +964,10 @@ struct HistoryFilterSheet: View {
     }
     
     private func filterRow(title: String, icon: String? = nil, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button(action: {
+            HapticManager.shared.selectionChanged()
+            action()
+        }) {
             HStack {
                 if let icon {
                     Label(title, systemImage: icon)

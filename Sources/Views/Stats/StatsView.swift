@@ -16,6 +16,9 @@ struct StatsView: View {
     @State private var showPaywall = false
     @State private var showWeightLog = false
     @State private var cardsAppeared = false
+    @State private var showHealthKitImport = false
+    @State private var healthKitImportCount = 0
+    @State private var isLoading = true
     
     private var completedSessions: [FastingSession] {
         sessions.filter(\.isCompleted)
@@ -24,7 +27,20 @@ struct StatsView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if sessions.isEmpty {
+                if isLoading {
+                    VStack(spacing: 16) {
+                        Spacer()
+                        ProgressView()
+                            .controlSize(.large)
+                        Text("Crunching your numbers…")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.opacity)
+                    .accessibilityLabel("Loading insights")
+                } else if sessions.isEmpty {
                     emptyState
                 } else {
                     statsContent
@@ -34,13 +50,25 @@ struct StatsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        showWeightLog = true
+                        HapticManager.shared.lightTap()
+                        if subscriptionManager.isSubscribed {
+                            showWeightLog = true
+                        } else {
+                            showPaywall = true
+                        }
                     } label: {
-                        Image(systemName: "scalemass")
-                            .font(.system(size: 15))
+                        HStack(spacing: 4) {
+                            Image(systemName: "scalemass")
+                                .font(.system(size: 15))
+                            if !subscriptionManager.isSubscribed {
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                     }
                     .accessibilityIdentifier("weightLogButton")
-                    .accessibilityLabel("Log weight")
+                    .accessibilityLabel(subscriptionManager.isSubscribed ? "Log weight" : "Log weight — Pro feature")
                 }
             }
             .sheet(isPresented: $showPaywall) {
@@ -48,6 +76,15 @@ struct StatsView: View {
             }
             .sheet(isPresented: $showWeightLog) {
                 WeightLogView()
+            }
+            .onAppear {
+                if isLoading {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            isLoading = false
+                        }
+                    }
+                }
             }
         }
     }
@@ -62,6 +99,17 @@ struct StatsView: View {
             
             ZStack {
                 Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [accent.opacity(0.12), accent.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 130, height: 130)
+                    .shadow(color: accent.opacity(0.15), radius: 16, y: 6)
+                
+                Circle()
                     .stroke(accent.opacity(0.08), lineWidth: 12)
                     .frame(width: 120, height: 120)
                 
@@ -74,22 +122,29 @@ struct StatsView: View {
                     .frame(width: 60, height: 60)
                 
                 Image(systemName: "chart.bar.xaxis.ascending")
-                    .font(.system(size: 28, weight: .medium))
+                    .font(.system(size: 40, weight: .medium))
                     .foregroundStyle(accent)
+                    .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
             .accessibilityHidden(true)
             
             VStack(spacing: 10) {
                 Text("Insights Await")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                 
                 Text("Complete a few fasts to unlock\ncharts, streaks, and trends.")
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                
+                Text("Your journey starts with a single fast")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 2)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
+            .accessibilityIdentifier("statsEmptyState")
             
             HStack(spacing: 16) {
                 InsightPreviewPill(icon: "flame.fill", label: "Streaks", color: .orange)
@@ -131,14 +186,26 @@ struct StatsView: View {
                 }
                 
                 proGatedSection(index: 5) {
-                    timeAnalysisSection
+                    streakHeatmapSection
                 }
                 
                 proGatedSection(index: 6) {
-                    weightSection
+                    moodTrendSection
                 }
                 
                 proGatedSection(index: 7) {
+                    hydrationSection
+                }
+                
+                proGatedSection(index: 8) {
+                    timeAnalysisSection
+                }
+                
+                proGatedSection(index: 9) {
+                    weightSection
+                }
+                
+                proGatedSection(index: 10) {
                     consistencySection
                 }
             }
@@ -182,6 +249,7 @@ struct StatsView: View {
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
             Button {
+                HapticManager.shared.lightTap()
                 showPaywall = true
             } label: {
                 HStack(spacing: 6) {
@@ -203,8 +271,9 @@ struct StatsView: View {
                             )
                         )
                 )
+                .shadow(color: .purple.opacity(0.3), radius: 8, y: 4)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.pressable)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -402,6 +471,29 @@ struct StatsView: View {
         }
     }
     
+    // MARK: - Streak Heatmap
+    
+    private var streakHeatmapSection: some View {
+        InsightCard(title: "Streak Heatmap", icon: "square.grid.3x3.fill", color: .orange) {
+            StreakHeatmapView(
+                sessions: Array(sessions),
+                isPro: subscriptionManager.isSubscribed
+            )
+        }
+    }
+    
+    // MARK: - Mood Trends
+    
+    private var moodTrendSection: some View {
+        MoodTrendChart()
+    }
+    
+    // MARK: - Hydration
+    
+    private var hydrationSection: some View {
+        HydrationChart()
+    }
+    
     // MARK: - Time Analysis
     
     private var timeAnalysisSection: some View {
@@ -414,26 +506,103 @@ struct StatsView: View {
     
     private var weightSection: some View {
         InsightCard(title: "Weight Trend", icon: "scalemass.fill", color: .pink) {
-            if weightEntries.isEmpty {
-                VStack(spacing: 8) {
-                    Text("No weight data yet")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.secondary)
-                    Button {
-                        showWeightLog = true
-                    } label: {
-                        Label("Log Weight", systemImage: "plus.circle.fill")
-                            .font(.system(size: 14, weight: .medium))
+            VStack(spacing: 12) {
+                if weightEntries.isEmpty {
+                    VStack(spacing: 8) {
+                        Text("No weight data yet")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.secondary)
+                        Button {
+                            showWeightLog = true
+                        } label: {
+                            Label("Log Weight", systemImage: "plus.circle.fill")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .buttonStyle(.pressable)
+                        .accessibilityLabel("Log your first weight entry")
+                        .accessibilityHint("Opens weight logging sheet")
                     }
-                    .accessibilityLabel("Log your first weight entry")
-                    .accessibilityHint("Opens weight logging sheet")
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                } else {
+                    WeightTrendChart(entries: Array(weightEntries.reversed()))
+                        .frame(height: 180)
+                }
+                
+                // HealthKit import button
+                if HealthKitManager.shared.isAvailable {
+                    healthKitImportButton
+                }
+            }
+        }
+    }
+    
+    // MARK: - HealthKit Import
+    
+    private var healthKitImportButton: some View {
+        let hkManager = HealthKitManager.shared
+        
+        return VStack(spacing: 8) {
+            Divider()
+            
+            Button {
+                HapticManager.shared.lightTap()
+                Task {
+                    if !hkManager.hasRequestedPermission {
+                        _ = await hkManager.requestAuthorization()
+                    }
+                    let existingDates = Set(weightEntries.map(\.date))
+                    let imports = await hkManager.fetchWeightsForImport(existingDates: existingDates)
+                    
+                    if imports.isEmpty {
+                        healthKitImportCount = 0
+                        showHealthKitImport = true
+                    } else {
+                        for entry in imports {
+                            let weightEntry = WeightEntry(date: entry.date, weightKg: entry.weightKg)
+                            modelContext.insert(weightEntry)
+                        }
+                        let success = DataController.shared.save(modelContext, operation: "import weights from HealthKit")
+                        healthKitImportCount = success ? imports.count : 0
+                        showHealthKitImport = true
+                        if success {
+                            HapticManager.shared.success()
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.red)
+                    Text("Import from Apple Health")
+                        .font(.system(size: 13, weight: .medium))
+                    
+                    if hkManager.isImporting {
+                        ProgressView()
+                            .controlSize(.mini)
+                    }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-            } else {
-                WeightTrendChart(entries: Array(weightEntries.reversed()))
-                    .frame(height: 180)
+                .padding(.vertical, 8)
             }
+            .buttonStyle(.pressable)
+            .disabled(hkManager.isImporting)
+            .accessibilityIdentifier("healthKitImportButton")
+            .accessibilityLabel("Import weight data from Apple Health")
+            .accessibilityHint("Fetches weight entries from HealthKit that are not already in the app")
+        }
+        .alert(
+            healthKitImportCount > 0 ? "Imported" : "No New Data",
+            isPresented: $showHealthKitImport
+        ) {
+            Button("OK") {}
+        } message: {
+            Text(
+                healthKitImportCount > 0
+                    ? "Imported \(healthKitImportCount) weight entries from Apple Health."
+                    : "No new weight data found in Apple Health, or all entries are already imported."
+            )
         }
     }
     
@@ -443,7 +612,6 @@ struct StatsView: View {
         let total = sessions.count
         let completed = completedSessions.count
         let pct = total > 0 ? Double(completed) / Double(total) * 100 : 0
-        let accent = themeManager.selectedTheme.accent
         
         return InsightCard(title: "Consistency", icon: "checkmark.seal.fill", color: .mint) {
             VStack(spacing: 8) {
@@ -623,6 +791,7 @@ private struct SummaryMetricCell: View {
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .monospacedDigit()
+                .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
             
@@ -761,7 +930,7 @@ private struct InsightPreviewPill: View {
 
 #Preview {
     StatsView()
-        .modelContainer(for: [FastingSession.self, WeightEntry.self], inMemory: true)
+        .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
 }
