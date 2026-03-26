@@ -50,8 +50,10 @@ struct SettingsView: View {
                         .entranceAnimation(delay: 0.05)
                     activitySection
                         .entranceAnimation(delay: 0.1)
+                    appleHealthSection
+                        .entranceAnimation(delay: 0.13)
                     iCloudSection
-                        .entranceAnimation(delay: 0.15)
+                        .entranceAnimation(delay: 0.16)
                     themeSection
                         .entranceAnimation(delay: 0.2)
                     appearanceSection
@@ -574,6 +576,145 @@ struct SettingsView: View {
                 .accessibilityHint("Choose between kilograms and pounds for weight display")
             }
         }
+    }
+    
+    // MARK: - Apple Health Section
+    
+    private var appleHealthSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("Apple Health")
+            
+            glassCard {
+                VStack(spacing: 0) {
+                    // Header — Apple Health integration status
+                    HStack(spacing: 12) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.red.opacity(0.15), .pink.opacity(0.1)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 40, height: 40)
+                            
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(.red)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Apple Health Integration")
+                                .font(.system(.body, design: .rounded, weight: .semibold))
+                            Text(HealthKitManager.shared.isAvailable
+                                 ? "Connected"
+                                 : "Not Available")
+                                .font(.system(.caption, design: .rounded, weight: .medium))
+                                .foregroundStyle(HealthKitManager.shared.isAvailable ? .green : .secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if HealthKitManager.shared.isAvailable {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.system(size: 18))
+                        }
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Apple Health Integration, \(HealthKitManager.shared.isAvailable ? "Connected" : "Not Available")")
+                    
+                    Divider().padding(.vertical, 10)
+                    
+                    // Feature list — what HealthKit does in this app
+                    VStack(alignment: .leading, spacing: 10) {
+                        healthFeatureRow(
+                            icon: "figure.walk",
+                            iconColor: .green,
+                            title: "Step Count",
+                            description: "Reads your daily step count from Apple Health and displays it on the timer screen."
+                        )
+                        
+                        healthFeatureRow(
+                            icon: "scalemass",
+                            iconColor: .blue,
+                            title: "Weight Tracking",
+                            description: "Reads weight data from Apple Health and syncs weight entries you log back to Apple Health."
+                        )
+                        
+                        healthFeatureRow(
+                            icon: "arrow.down.circle",
+                            iconColor: .purple,
+                            title: "Weight Import",
+                            description: "Import existing weight entries from Apple Health into Lumifaste from the Stats tab."
+                        )
+                    }
+                    
+                    Divider().padding(.vertical, 10)
+                    
+                    // Privacy note
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                        
+                        Text("Your health data stays on your device. Lumifaste never uploads, shares, or sells your health information.")
+                            .font(.system(.caption))
+                            .foregroundStyle(.tertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    
+                    if HealthKitManager.shared.isAvailable {
+                        Divider().padding(.vertical, 10)
+                        
+                        // Open Health app
+                        Button {
+                            HapticManager.shared.lightTap()
+                            if let url = URL(string: "x-apple-health://") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            HStack {
+                                Label("Open Apple Health", systemImage: "heart.circle")
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(.caption2))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .buttonStyle(.pressable)
+                        .accessibilityHint("Opens the Apple Health app to manage permissions")
+                    }
+                }
+            }
+        }
+    }
+    
+    /// A single row describing a HealthKit feature
+    private func healthFeatureRow(icon: String, iconColor: Color, title: String, description: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 28, height: 28)
+                Image(systemName: icon)
+                    .font(.system(size: 13))
+                    .foregroundStyle(iconColor)
+            }
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(.subheadline, weight: .medium))
+                Text(description)
+                    .font(.system(.caption))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(description)")
     }
     
     // MARK: - Data Section

@@ -101,7 +101,13 @@ struct WeightLogView: View {
                 } header: {
                     Text("Log Weight")
                 } footer: {
-                    Text("Your weight data stays on your device.")
+                    if HealthKitManager.shared.isAvailable && HealthKitManager.shared.canWriteWeight {
+                        Label("Also saved to Apple Health", systemImage: "heart.fill")
+                            .font(.system(.caption))
+                            .foregroundStyle(.red.opacity(0.7))
+                    } else {
+                        Text("Your weight data stays on your device.")
+                    }
                 }
                 .listSectionSeparator(.hidden)
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)

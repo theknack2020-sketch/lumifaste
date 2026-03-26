@@ -412,7 +412,7 @@ struct TimerView: View {
                 }
                 // Auto-refill streak freeze on Mondays for Pro users
                 FastingManager.refillStreakFreezeIfNeeded(isPremium: subscriptionManager.isSubscribed)
-                // Fetch today's step count from HealthKit
+                // Fetch today's step count from Apple Health
                 Task {
                     await HealthKitManager.shared.fetchTodaySteps()
                 }
@@ -867,13 +867,16 @@ struct TimerView: View {
         .accessibilityLabel("Approximately \(kcal) kilocalories burned during this fast")
     }
     
-    // MARK: - Step Count Badge (HealthKit)
+    // MARK: - Step Count Badge (Apple Health)
     
     private var stepCountBadge: some View {
         let steps = HealthKitManager.shared.todayStepCount
         return Group {
             if HealthKitManager.shared.isAvailable && steps > 0 {
                 HStack(spacing: 6) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.red)
                     Image(systemName: "figure.walk")
                         .font(.system(size: 13))
                         .foregroundStyle(.green)
@@ -881,7 +884,7 @@ struct TimerView: View {
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .monospacedDigit()
                         .contentTransition(.numericText())
-                    Text("steps today")
+                    Text("steps")
                         .font(.system(size: 13, weight: .medium, design: .rounded))
                         .foregroundStyle(.secondary)
                 }
@@ -891,7 +894,7 @@ struct TimerView: View {
                     Capsule()
                         .fill(Color.green.opacity(0.1))
                 )
-                .accessibilityLabel("\(steps) steps walked today")
+                .accessibilityLabel("\(steps) steps today from Apple Health")
             }
         }
     }

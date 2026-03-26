@@ -90,7 +90,7 @@ struct StatsView: View {
                         }
                     }
                 }
-                // Fetch today's step count from HealthKit
+                // Fetch today's step count from Apple Health
                 Task {
                     await HealthKitManager.shared.fetchTodaySteps()
                 }
@@ -336,10 +336,13 @@ struct StatsView: View {
                     SummaryMetricCell(icon: "trophy.fill", value: "\(bestStreak)", label: "Best Streak", color: .purple)
                 }
                 
-                // Today's step count from HealthKit
+                // Today's step count from Apple Health
                 if HealthKitManager.shared.isAvailable && todaySteps > 0 {
                     Divider()
                     HStack(spacing: 6) {
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 10))
+                            .foregroundStyle(.red)
                         Image(systemName: "figure.walk")
                             .font(.system(size: 13))
                             .foregroundStyle(.green)
@@ -353,7 +356,7 @@ struct StatsView: View {
                         Spacer()
                     }
                     .padding(.horizontal, 4)
-                    .accessibilityLabel("\(todaySteps) steps walked today")
+                    .accessibilityLabel("\(todaySteps) steps today from Apple Health")
                 }
             }
             .accessibilityElement(children: .combine)
