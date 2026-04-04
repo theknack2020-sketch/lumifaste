@@ -90,10 +90,7 @@ struct RecipesView: View {
     // MARK: - Recipe Grid
 
     private var recipeGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12),
-        ], spacing: 12) {
+        LazyVGrid(columns: .adaptive(compact: 2, regular: 3, spacing: 12, isRegular: isRegular), spacing: 12) {
             ForEach(Array(filteredRecipes.enumerated()), id: \.element.id) { index, recipe in
                 let isLocked = recipe.isPremium && !subscriptionManager.isSubscribed
                 RecipeCard(recipe: recipe, isLocked: isLocked, accent: themeManager.selectedTheme.accent) {

@@ -195,6 +195,8 @@ struct PaywallView: View {
                 legalSection
             }
             .padding()
+            .frame(maxWidth: isRegular ? 600 : .infinity)
+            .frame(maxWidth: .infinity)
         }
         .background(
             // Glassmorphism gradient background

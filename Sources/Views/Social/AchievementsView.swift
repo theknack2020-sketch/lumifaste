@@ -21,11 +21,9 @@ struct AchievementsView: View {
     @State private var showPaywall = false
     @State private var shareableImage: ShareableImage?
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12),
-    ]
+    private var columns: [GridItem] {
+        .adaptive(compact: 3, regular: 4, spacing: 12, isRegular: isRegular)
+    }
 
     var body: some View {
         ScrollView {

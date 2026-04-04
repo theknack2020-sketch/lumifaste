@@ -182,7 +182,7 @@ struct MealLogView: View {
                 .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
+            LazyVGrid(columns: .adaptive(compact: 5, regular: 7, spacing: 8, isRegular: isRegular), spacing: 8) {
                 ForEach(emojiOptions, id: \.self) { emoji in
                     Button {
                         HapticManager.shared.lightTap()

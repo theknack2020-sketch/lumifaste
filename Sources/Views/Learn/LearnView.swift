@@ -108,10 +108,7 @@ struct LearnView: View {
             Text("Explore")
                 .font(.system(.headline, design: .rounded))
 
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 10),
-                GridItem(.flexible(), spacing: 10),
-            ], spacing: 10) {
+            LazyVGrid(columns: .adaptive(compact: 2, regular: 3, spacing: 10, isRegular: isRegular), spacing: 10) {
                 NavigationLink {
                     BeginnersGuideView()
                 } label: {
