@@ -21,6 +21,11 @@ settings:
     ENABLE_PREVIEWS: YES
     SWIFT_EMIT_LOC_STRINGS: YES
 
+packages:
+  TelemetryDeck:
+    url: https://github.com/TelemetryDeck/SwiftSDK
+    from: "2.0.0"
+
 targets:
   Lumifaste:
     type: application
@@ -32,6 +37,7 @@ targets:
     dependencies:
       - target: LiveActivityWidget
         embed: true
+      - package: TelemetryDeck
     settings:
       base:
         INFOPLIST_FILE: Sources/Resources/Info.plist

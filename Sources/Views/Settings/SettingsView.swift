@@ -76,8 +76,10 @@ struct SettingsView: View {
                         .entranceAnimation(delay: 0.5)
                     legalSection
                         .entranceAnimation(delay: 0.55)
-                    aboutSection
+                    moreAppsSection
                         .entranceAnimation(delay: 0.6)
+                    aboutSection
+                        .entranceAnimation(delay: 0.65)
                 }
                 .padding(.horizontal)
                 .padding(.top, 8)
@@ -991,6 +993,93 @@ struct SettingsView: View {
                 }
             }
         }
+    }
+
+    // MARK: - More Apps Section
+
+    private var moreAppsSection: some View {
+        VStack(spacing: 12) {
+            sectionHeader("More by TheKnack")
+
+            VStack(spacing: 0) {
+                moreAppRow(
+                    icon: "💧",
+                    name: "AquaFaste",
+                    subtitle: "Hydration Tracker",
+                    appStoreID: "6760975661"
+                )
+
+                Divider()
+                    .padding(.leading, 52)
+
+                moreAppRow(
+                    icon: "💊",
+                    name: "PillPal",
+                    subtitle: "Medication Reminder",
+                    appStoreID: "6740510337"
+                )
+
+                Divider()
+                    .padding(.leading, 52)
+
+                moreAppRow(
+                    icon: "🐾",
+                    name: "Vettie",
+                    subtitle: "Pet Health Tracker",
+                    appStoreID: "6742715498"
+                )
+
+                Divider()
+                    .padding(.leading, 52)
+
+                moreAppRow(
+                    icon: "🔧",
+                    name: "WrenchLog",
+                    subtitle: "Vehicle Maintenance",
+                    appStoreID: "6744897460"
+                )
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Color(.secondarySystemBackground))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+
+    private func moreAppRow(icon: String, name: String, subtitle: String, appStoreID: String) -> some View {
+        Button {
+            HapticManager.shared.lightTap()
+            if let url = URL(string: "itms-apps://apple.com/app/id\(appStoreID)") {
+                UIApplication.shared.open(url)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                Text(icon)
+                    .font(.adaptiveTitle3(isRegular: isRegular))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name)
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(subtitle)
+                        .font(.adaptiveCaption(isRegular: isRegular))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "arrow.up.right.square")
+                    .font(.adaptiveCaption(isRegular: isRegular))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(name), \(subtitle)")
+        .accessibilityHint("Opens in App Store")
     }
 
     // MARK: - About Section

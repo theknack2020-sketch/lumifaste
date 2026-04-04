@@ -51,6 +51,9 @@ struct LumifasteApp: App {
             Self.handleBackgroundRefresh(refreshTask)
         }
 
+        // Initialize TelemetryDeck analytics
+        TelemetryService.initialize()
+
         // Initial clock checkpoint
         _ = ClockGuard.checkClockIntegrity()
         _ = ClockGuard.checkTimezoneChange()
