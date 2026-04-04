@@ -17,9 +17,11 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
     case ketosisKing = "ketosis_king"
     case autophagyMaster = "autophagy_master"
     case hydrationHero = "hydration_hero"
-    
-    var id: String { rawValue }
-    
+
+    var id: String {
+        rawValue
+    }
+
     var title: String {
         switch self {
         case .firstFast: "First Fast"
@@ -37,7 +39,7 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .hydrationHero: "Hydration Hero"
         }
     }
-    
+
     var subtitle: String {
         switch self {
         case .firstFast: "Complete your first fast"
@@ -55,7 +57,7 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .hydrationHero: "Log 50 glasses of water total"
         }
     }
-    
+
     var icon: String {
         switch self {
         case .firstFast: "star.fill"
@@ -73,7 +75,7 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .hydrationHero: "drop.fill"
         }
     }
-    
+
     var color: Color {
         switch self {
         case .firstFast: .yellow
@@ -91,10 +93,10 @@ enum Achievement: String, CaseIterable, Identifiable, Codable {
         case .hydrationHero: .cyan
         }
     }
-    
+
     /// Milestone streaks that trigger a share prompt
     static let streakMilestones: [Achievement] = [.sevenDayStreak, .thirtyDayStreak]
-    
+
     /// Whether this achievement is available to free users.
     /// Free: firstFast, threeDayStreak, tenFasts, fatBurner, hydrationHero (5 basic).
     /// Pro: sevenDayStreak, thirtyDayStreak, warrior24h, centurion100h, twentyFiveFasts, fiftyFasts, ketosisKing, autophagyMaster (8 advanced).

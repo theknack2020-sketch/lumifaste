@@ -7,8 +7,13 @@ struct NotificationSettingsView: View {
     @State private var systemPermissionDenied = false
     @State private var showTimePicker = false
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var showPaywall = false
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     /// Computed Date binding for the daily reminder time picker
     private var reminderTime: Binding<Date> {
         Binding(
@@ -26,7 +31,7 @@ struct NotificationSettingsView: View {
             }
         )
     }
-    
+
     /// Computed Date binding for quiet hours start
     private var quietStart: Binding<Date> {
         Binding(
@@ -41,7 +46,7 @@ struct NotificationSettingsView: View {
             }
         )
     }
-    
+
     /// Computed Date binding for quiet hours end
     private var quietEnd: Binding<Date> {
         Binding(
@@ -56,9 +61,9 @@ struct NotificationSettingsView: View {
             }
         )
     }
-    
+
     // MARK: - Section Header
-    
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(.footnote, design: .rounded, weight: .bold))
@@ -66,10 +71,10 @@ struct NotificationSettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 4)
     }
-    
+
     // MARK: - Glass Card Modifier
-    
-    private func glassCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+
+    private func glassCard(@ViewBuilder content: () -> some View) -> some View {
         content()
             .padding(16)
             .background(
@@ -79,7 +84,7 @@ struct NotificationSettingsView: View {
                     .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
             )
     }
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -88,11 +93,11 @@ struct NotificationSettingsView: View {
                     NotificationDeniedBanner()
                         .shadow(color: .red.opacity(0.15), radius: 8, x: 0, y: 4)
                 }
-                
+
                 // Fasting Notifications
                 VStack(alignment: .leading, spacing: 8) {
                     sectionHeader("During Fasting")
-                    
+
                     glassCard {
                         VStack(spacing: 0) {
                             notificationToggle(
@@ -102,9 +107,9 @@ struct NotificationSettingsView: View {
                                 subtitle: "25%, 50%, 75% progress",
                                 isOn: $settings.milestoneEnabled
                             )
-                            
+
                             notificationDivider
-                            
+
                             notificationToggle(
                                 icon: "flame.fill",
                                 iconColor: .orange,
@@ -112,9 +117,9 @@ struct NotificationSettingsView: View {
                                 subtitle: "Fat Burning, Ketosis, Autophagy",
                                 isOn: $settings.stageTransitionEnabled
                             )
-                            
+
                             notificationDivider
-                            
+
                             notificationToggle(
                                 icon: "trophy.fill",
                                 iconColor: .yellow,
@@ -122,9 +127,9 @@ struct NotificationSettingsView: View {
                                 subtitle: "Celebration when you reach your goal",
                                 isOn: $settings.fastCompleteEnabled
                             )
-                            
+
                             notificationDivider
-                            
+
                             notificationToggle(
                                 icon: "quote.bubble.fill",
                                 iconColor: .purple,
@@ -132,9 +137,9 @@ struct NotificationSettingsView: View {
                                 subtitle: "Encouraging messages during fasts",
                                 isOn: $settings.motivationalQuotesEnabled
                             )
-                            
+
                             notificationDivider
-                            
+
                             notificationToggle(
                                 icon: "drop.fill",
                                 iconColor: .cyan,
@@ -144,17 +149,17 @@ struct NotificationSettingsView: View {
                             )
                         }
                     }
-                    
+
                     Text("These notifications are sent while you have an active fast running.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
                         .padding(.leading, 4)
                 }
-                
+
                 // Daily Reminder
                 VStack(alignment: .leading, spacing: 8) {
                     sectionHeader("Reminders")
-                    
+
                     glassCard {
                         VStack(spacing: 0) {
                             notificationToggle(
@@ -171,10 +176,10 @@ struct NotificationSettingsView: View {
                                     NotificationManager.shared.cancelDailyReminder()
                                 }
                             }
-                            
+
                             if settings.dailyReminderEnabled {
                                 notificationDivider
-                                
+
                                 DatePicker(
                                     "Reminder Time",
                                     selection: reminderTime,
@@ -184,9 +189,9 @@ struct NotificationSettingsView: View {
                                 .padding(.vertical, 4)
                                 .accessibilityLabel("Daily reminder time")
                             }
-                            
+
                             notificationDivider
-                            
+
                             notificationToggle(
                                 icon: "fork.knife",
                                 iconColor: .green,
@@ -197,118 +202,118 @@ struct NotificationSettingsView: View {
                         }
                     }
                 }
-                
+
                 // Streak
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         sectionHeader("Streak & Engagement")
                         if !subscriptionManager.isSubscribed {
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 10))
+                                .font(.adaptiveCaption(isRegular: isRegular))
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    
+
                     if subscriptionManager.isSubscribed {
-                    glassCard {
-                        VStack(alignment: .leading, spacing: 0) {
-                            notificationToggle(
-                                icon: "bolt.fill",
-                                iconColor: .orange,
-                                title: "Streak Reminder",
-                                subtitle: "Don't break your fasting streak",
-                                isOn: $settings.streakReminderEnabled
-                            )
-                            
-                            notificationDivider
-                            
-                            notificationToggle(
-                                icon: "flame.fill",
-                                iconColor: .red,
-                                title: "Streak Protection",
-                                subtitle: "Alert when your streak is at risk",
-                                isOn: $settings.streakReminderEnabled
-                            )
-                            .accessibilityIdentifier("streakProtectionToggle")
-                            
-                            Text("Streak protection fires at 8 PM if you haven't started a fast today and have an active streak.")
-                                .font(.system(.caption))
-                                .foregroundStyle(.tertiary)
-                                .padding(.top, 4)
+                        glassCard {
+                            VStack(alignment: .leading, spacing: 0) {
+                                notificationToggle(
+                                    icon: "bolt.fill",
+                                    iconColor: .orange,
+                                    title: "Streak Reminder",
+                                    subtitle: "Don't break your fasting streak",
+                                    isOn: $settings.streakReminderEnabled
+                                )
+
+                                notificationDivider
+
+                                notificationToggle(
+                                    icon: "flame.fill",
+                                    iconColor: .red,
+                                    title: "Streak Protection",
+                                    subtitle: "Alert when your streak is at risk",
+                                    isOn: $settings.streakReminderEnabled
+                                )
+                                .accessibilityIdentifier("streakProtectionToggle")
+
+                                Text("Streak protection fires at 8 PM if you haven't started a fast today and have an active streak.")
+                                    .font(.system(.caption))
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.top, 4)
+                            }
                         }
-                    }
                     } else {
                         proLockedCard(features: ["Streak Reminder", "Streak Protection"])
                     }
                 }
-                
+
                 // Smart Notifications
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         sectionHeader("Smart Notifications")
                         if !subscriptionManager.isSubscribed {
                             Image(systemName: "lock.fill")
-                                .font(.system(size: 10))
+                                .font(.adaptiveCaption(isRegular: isRegular))
                                 .foregroundStyle(.secondary)
                         }
                     }
-                    
+
                     if subscriptionManager.isSubscribed {
-                    glassCard {
-                        VStack(spacing: 0) {
-                            notificationToggle(
-                                icon: "hand.wave.fill",
-                                iconColor: .green,
-                                title: "Inactivity Nudge",
-                                subtitle: "Gentle reminder after 3+ days of no fasting",
-                                isOn: $settings.inactivityNudgeEnabled
-                            )
-                            .accessibilityIdentifier("inactivityNudgeToggle")
-                            
-                            notificationDivider
-                            
-                            notificationToggle(
-                                icon: "chart.bar.doc.horizontal",
-                                iconColor: .cyan,
-                                title: "Weekly Summary",
-                                subtitle: "Your fasting stats every Sunday evening",
-                                isOn: $settings.weeklySummaryEnabled
-                            )
-                            .accessibilityIdentifier("weeklySummaryToggle")
-                            
-                            notificationDivider
-                            
-                            notificationToggle(
-                                icon: "sun.horizon.fill",
-                                iconColor: .yellow,
-                                title: "Morning Motivation",
-                                subtitle: "Daily motivational quote at 7:30 AM",
-                                isOn: $settings.morningMotivationEnabled
-                            )
-                            .onChange(of: settings.morningMotivationEnabled) { _, newValue in
-                                if newValue {
-                                    NotificationManager.shared.scheduleMorningMotivation()
-                                } else {
-                                    NotificationManager.shared.cancelMorningMotivation()
+                        glassCard {
+                            VStack(spacing: 0) {
+                                notificationToggle(
+                                    icon: "hand.wave.fill",
+                                    iconColor: .green,
+                                    title: "Inactivity Nudge",
+                                    subtitle: "Gentle reminder after 3+ days of no fasting",
+                                    isOn: $settings.inactivityNudgeEnabled
+                                )
+                                .accessibilityIdentifier("inactivityNudgeToggle")
+
+                                notificationDivider
+
+                                notificationToggle(
+                                    icon: "chart.bar.doc.horizontal",
+                                    iconColor: .cyan,
+                                    title: "Weekly Summary",
+                                    subtitle: "Your fasting stats every Sunday evening",
+                                    isOn: $settings.weeklySummaryEnabled
+                                )
+                                .accessibilityIdentifier("weeklySummaryToggle")
+
+                                notificationDivider
+
+                                notificationToggle(
+                                    icon: "sun.horizon.fill",
+                                    iconColor: .yellow,
+                                    title: "Morning Motivation",
+                                    subtitle: "Daily motivational quote at 7:30 AM",
+                                    isOn: $settings.morningMotivationEnabled
+                                )
+                                .onChange(of: settings.morningMotivationEnabled) { _, newValue in
+                                    if newValue {
+                                        NotificationManager.shared.scheduleMorningMotivation()
+                                    } else {
+                                        NotificationManager.shared.cancelMorningMotivation()
+                                    }
                                 }
+                                .accessibilityIdentifier("morningMotivationToggle")
                             }
-                            .accessibilityIdentifier("morningMotivationToggle")
                         }
-                    }
                     } else {
                         proLockedCard(features: ["Inactivity Nudge", "Weekly Summary", "Morning Motivation"])
                     }
-                    
+
                     Text("Smart notifications won't fire while you're actively fasting or during quiet hours.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
                         .padding(.leading, 4)
                 }
-                
+
                 // Quiet Hours
                 VStack(alignment: .leading, spacing: 8) {
                     sectionHeader("Quiet Hours")
-                    
+
                     glassCard {
                         VStack(spacing: 0) {
                             notificationToggle(
@@ -321,10 +326,10 @@ struct NotificationSettingsView: View {
                             .accessibilityLabel("Quiet hours")
                             .accessibilityValue(settings.quietHoursEnabled ? "On" : "Off")
                             .accessibilityHint("Suppresses notifications during your sleep hours")
-                            
+
                             if settings.quietHoursEnabled {
                                 notificationDivider
-                                
+
                                 DatePicker(
                                     "From",
                                     selection: quietStart,
@@ -333,7 +338,7 @@ struct NotificationSettingsView: View {
                                 .datePickerStyle(.compact)
                                 .padding(.vertical, 4)
                                 .accessibilityLabel("Quiet hours start time")
-                                
+
                                 DatePicker(
                                     "Until",
                                     selection: quietEnd,
@@ -342,12 +347,12 @@ struct NotificationSettingsView: View {
                                 .datePickerStyle(.compact)
                                 .padding(.vertical, 4)
                                 .accessibilityLabel("Quiet hours end time")
-                                
+
                                 notificationDivider
-                                
+
                                 HStack(spacing: 6) {
                                     Image(systemName: "info.circle")
-                                        .font(.system(size: 12))
+                                        .font(.adaptiveCaption(isRegular: isRegular))
                                         .foregroundStyle(.secondary)
                                     Text("Fast completion notifications still come through during quiet hours.")
                                         .font(.system(.caption))
@@ -365,7 +370,7 @@ struct NotificationSettingsView: View {
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Notifications")
-        .sheet(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
         .task {
@@ -373,9 +378,9 @@ struct NotificationSettingsView: View {
             systemPermissionDenied = (status == .denied)
         }
     }
-    
+
     // MARK: - Toggle Row
-    
+
     private func notificationToggle(
         icon: String,
         iconColor: Color,
@@ -397,9 +402,9 @@ struct NotificationSettingsView: View {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(iconColor.opacity(0.15))
                         .frame(width: 30, height: 30)
-                    
+
                     Image(systemName: icon)
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(iconColor)
                 }
             }
@@ -409,13 +414,13 @@ struct NotificationSettingsView: View {
             HapticManager.shared.selectionChanged()
         }
     }
-    
+
     private var notificationDivider: some View {
         Divider().padding(.vertical, 6)
     }
-    
+
     // MARK: - Pro Locked Card
-    
+
     private func proLockedCard(features: [String]) -> some View {
         Button {
             HapticManager.shared.lightTap()
@@ -423,25 +428,25 @@ struct NotificationSettingsView: View {
         } label: {
             VStack(spacing: 10) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 20))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(.secondary)
-                
+
                 Text("Pro Feature")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
+
                 ForEach(features, id: \.self) { feature in
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 10))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.purple)
                         Text(feature)
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                     }
                 }
-                
+
                 Text("Upgrade to Pro")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)

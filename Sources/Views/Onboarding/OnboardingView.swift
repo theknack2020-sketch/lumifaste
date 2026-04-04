@@ -1,5 +1,5 @@
-import SwiftUI
 import AudioToolbox
+import SwiftUI
 
 // MARK: - OnboardingView
 
@@ -8,6 +8,11 @@ import AudioToolbox
 /// haptic feedback on every interaction, and polished entrance animations.
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Binding var hasCompletedOnboarding: Bool
 
     // MARK: - State
@@ -62,7 +67,7 @@ struct OnboardingView: View {
                         withAnimation(.smoothSpring) { currentPage = totalPages - 1 }
                     } label: {
                         Text("Skip")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.white.opacity(0.55))
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
@@ -81,6 +86,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 1: Welcome Hero
+
     // =========================================================================
 
     private var welcomePage: some View {
@@ -95,7 +101,7 @@ struct OnboardingView: View {
                             colors: [
                                 themeManager.selectedTheme.accent.opacity(0.4),
                                 themeManager.selectedTheme.accent.opacity(0.12),
-                                .clear
+                                .clear,
                             ],
                             center: .center,
                             startRadius: 12,
@@ -107,7 +113,7 @@ struct OnboardingView: View {
                     .opacity(heroGlowPulse ? 0.9 : 0.35)
 
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 72))
+                    .font(.adaptiveDisplay(size: 72, weight: .regular, design: .default, isRegular: isRegular))
                     .scaleEffect(x: -1, y: 1)
                     .foregroundStyle(themeManager.selectedTheme.accentGradient)
                     .shadow(color: themeManager.selectedTheme.accent.opacity(0.5), radius: 24)
@@ -122,12 +128,12 @@ struct OnboardingView: View {
             Spacer().frame(height: 28)
 
             Text("Lumifaste")
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 42, weight: .bold, design: .rounded, isRegular: isRegular))
                 .foregroundStyle(.white)
                 .slideIn(from: .bottom, delay: 0.25)
 
             Text("Your honest fasting companion")
-                .font(.system(size: 17))
+                .font(.adaptiveBody(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.6))
                 .padding(.top, 4)
                 .slideIn(from: .bottom, delay: 0.35)
@@ -158,6 +164,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 2: Goal Quiz
+
     // =========================================================================
 
     private var goalPage: some View {
@@ -165,12 +172,12 @@ struct OnboardingView: View {
             Spacer().frame(height: 64)
 
             Text("What's your fasting goal?")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
                 .multilineTextAlignment(.center)
                 .slideIn(from: .trailing, delay: 0.1)
 
             Text("This helps us personalize your experience")
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.5))
                 .padding(.top, 6)
                 .slideIn(from: .trailing, delay: 0.2)
@@ -208,6 +215,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 3: Experience Level
+
     // =========================================================================
 
     private var experiencePage: some View {
@@ -215,12 +223,12 @@ struct OnboardingView: View {
             Spacer().frame(height: 64)
 
             Text("Your fasting experience?")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
                 .multilineTextAlignment(.center)
                 .slideIn(from: .trailing, delay: 0.1)
 
             Text("We'll recommend the right plan for you")
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.5))
                 .padding(.top, 6)
                 .slideIn(from: .trailing, delay: 0.2)
@@ -259,6 +267,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 4: Plan Preview
+
     // =========================================================================
 
     private var planPreviewPage: some View {
@@ -268,11 +277,11 @@ struct OnboardingView: View {
             Spacer().frame(height: 64)
 
             Text("Your recommended plan")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
                 .slideIn(from: .trailing, delay: 0.1)
 
             Text("Based on your goals and experience")
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.5))
                 .padding(.top, 6)
                 .slideIn(from: .trailing, delay: 0.2)
@@ -289,24 +298,24 @@ struct OnboardingView: View {
             VStack(spacing: 14) {
                 HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: 15))
+                        .font(.adaptiveSubheadline(isRegular: isRegular))
                         .foregroundStyle(themeManager.selectedTheme.accent)
                     Text("You'll fast for **\(Int(plan.fastingHours)) hours**")
-                        .font(.system(size: 16))
+                        .font(.adaptiveSubheadline(isRegular: isRegular))
                 }
 
                 HStack(spacing: 8) {
                     Image(systemName: "fork.knife")
-                        .font(.system(size: 15))
+                        .font(.adaptiveSubheadline(isRegular: isRegular))
                         .foregroundStyle(.orange)
                     Text("Eat in an **\(Int(plan.eatingHours))-hour** window")
-                        .font(.system(size: 16))
+                        .font(.adaptiveSubheadline(isRegular: isRegular))
                 }
 
                 Divider().overlay(Color.white.opacity(0.08))
 
                 Text("You can change your plan anytime in Settings")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.white.opacity(0.35))
             }
             .padding(20)
@@ -331,6 +340,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 5: Notifications
+
     // =========================================================================
 
     private var notificationPage: some View {
@@ -351,7 +361,7 @@ struct OnboardingView: View {
                     .frame(width: 130, height: 130)
 
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 56))
+                    .font(.adaptiveDisplay(size: 56, weight: .regular, design: .default, isRegular: isRegular))
                     .foregroundStyle(themeManager.selectedTheme.accentGradient)
                     .symbolEffect(.bounce, value: bellBounce)
             }
@@ -360,11 +370,11 @@ struct OnboardingView: View {
             Spacer().frame(height: 24)
 
             Text("Never miss a milestone")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
                 .slideIn(from: .trailing, delay: 0.25)
 
             Text("Stay motivated with timely updates")
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.5))
                 .padding(.top, 6)
                 .slideIn(from: .trailing, delay: 0.35)
@@ -385,10 +395,10 @@ struct OnboardingView: View {
             if notificationDenied {
                 HStack(spacing: 8) {
                     Image(systemName: "info.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.orange)
                     Text("No worries — enable anytime in Settings.")
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.white.opacity(0.6))
                 }
                 .padding(12)
@@ -431,6 +441,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page 6: Get Started
+
     // =========================================================================
 
     private var getStartedPage: some View {
@@ -439,7 +450,7 @@ struct OnboardingView: View {
 
             // Checkmark with spring scale
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
+                .font(.adaptiveDisplay(size: 80, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(.green)
                 .scaleEffect(checkmarkScale)
                 .shadow(color: .green.opacity(0.45), radius: 24)
@@ -447,7 +458,7 @@ struct OnboardingView: View {
             Spacer().frame(height: 24)
 
             Text("You're Ready!")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(.adaptiveDisplay(size: 34, weight: .bold, design: .rounded, isRegular: isRegular))
                 .opacity(readyContentOpacity)
 
             Spacer().frame(height: 16)
@@ -467,10 +478,10 @@ struct OnboardingView: View {
             // Health disclaimer
             HStack(spacing: 8) {
                 Image(systemName: "heart.text.square.fill")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.red.opacity(0.7))
                 Text("Consult your doctor before starting any fasting program.")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.white.opacity(0.4))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -496,14 +507,14 @@ struct OnboardingView: View {
                 VStack(spacing: 3) {
                     HStack(spacing: 5) {
                         Image(systemName: "sparkles")
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                         Text("Start with 7-day free trial")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                     }
                     .foregroundStyle(themeManager.selectedTheme.accent)
 
                     Text("Full access to all Pro features for 7 days, cancel anytime")
-                        .font(.system(size: 11))
+                        .font(.adaptiveBadge(isRegular: isRegular))
                         .foregroundStyle(.white.opacity(0.4))
                 }
                 .padding(.vertical, 10)
@@ -521,18 +532,19 @@ struct OnboardingView: View {
         }
         .padding(.horizontal, 24)
         .background(pageGradient(for: 5))
-        .sheet(isPresented: $showTrialPaywall) {
+        .fullScreenCover(isPresented: $showTrialPaywall) {
             PaywallView()
         }
     }
 
     // =========================================================================
     // MARK: - Shared Components
+
     // =========================================================================
 
     private var capsulePageIndicator: some View {
         HStack(spacing: 8) {
-            ForEach(0..<totalPages, id: \.self) { index in
+            ForEach(0 ..< totalPages, id: \.self) { index in
                 Capsule()
                     .fill(index == currentPage ? Color.white : Color.white.opacity(0.25))
                     .frame(width: index == currentPage ? 24 : 8, height: 8)
@@ -569,7 +581,7 @@ struct OnboardingView: View {
                         gradient: Gradient(colors: [
                             themeManager.selectedTheme.accent.opacity(0.4),
                             themeManager.selectedTheme.accent.opacity(0.8),
-                            themeManager.selectedTheme.accent
+                            themeManager.selectedTheme.accent,
                         ]),
                         center: .center,
                         startAngle: .degrees(0),
@@ -598,10 +610,10 @@ struct OnboardingView: View {
             // Center label
             VStack(spacing: 6) {
                 Text(plan.rawValue)
-                    .font(.system(size: 38, weight: .bold, design: .rounded))
+                    .font(.adaptiveDisplay(size: 38, weight: .bold, design: .rounded, isRegular: isRegular))
 
                 Text("\(Int(plan.fastingHours))h fasting · \(Int(plan.eatingHours))h eating")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.white.opacity(0.5))
             }
         }
@@ -621,7 +633,7 @@ struct OnboardingView: View {
     private func onboardingPrimaryButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(.adaptiveBody(isRegular: isRegular).weight(.bold))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
@@ -640,7 +652,7 @@ struct OnboardingView: View {
             action()
         } label: {
             Text(title)
-                .font(.system(size: 15, weight: .medium))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.white.opacity(0.45))
                 .padding(.vertical, 10)
         }
@@ -650,17 +662,17 @@ struct OnboardingView: View {
     private func onboardingSummaryRow(icon: String, color: Color, label: String, value: String) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(color)
                 .frame(width: 24)
 
             Text(label)
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.45))
                 .frame(width: 44, alignment: .leading)
 
             Text(value)
-                .font(.system(size: 15, weight: .semibold))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.white)
 
             Spacer()
@@ -669,6 +681,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Page Gradients
+
     // =========================================================================
 
     /// Distinct dark gradient per page — green progression: dark forest → emerald → teal → mint → blue-green → bright
@@ -688,6 +701,7 @@ struct OnboardingView: View {
 
     // =========================================================================
     // MARK: - Logic
+
     // =========================================================================
 
     private var recommendedPlan: FastingPlan {
@@ -731,6 +745,7 @@ struct OnboardingView: View {
 
 // =============================================================================
 // MARK: - Fasting Goal
+
 // =============================================================================
 
 enum FastingGoal: String, CaseIterable, Identifiable {
@@ -739,7 +754,9 @@ enum FastingGoal: String, CaseIterable, Identifiable {
     case mentalClarity = "Mental Clarity"
     case longevity = "Longevity"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var icon: String {
         switch self {
@@ -762,6 +779,7 @@ enum FastingGoal: String, CaseIterable, Identifiable {
 
 // =============================================================================
 // MARK: - Experience Level
+
 // =============================================================================
 
 enum ExperienceLevel: String, CaseIterable, Identifiable {
@@ -769,7 +787,9 @@ enum ExperienceLevel: String, CaseIterable, Identifiable {
     case intermediate = "Intermediate"
     case experienced = "Experienced"
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 
     var icon: String {
         switch self {
@@ -798,9 +818,15 @@ enum ExperienceLevel: String, CaseIterable, Identifiable {
 
 // =============================================================================
 // MARK: - Goal Card
+
 // =============================================================================
 
 private struct OnboardingGoalCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let goal: FastingGoal
     let isSelected: Bool
     let accent: Color
@@ -815,23 +841,23 @@ private struct OnboardingGoalCard: View {
                         .frame(width: 44, height: 44)
 
                     Image(systemName: goal.icon)
-                        .font(.system(size: 20))
+                        .font(.adaptiveTitle3(isRegular: isRegular))
                         .foregroundStyle(isSelected ? accent : .white.opacity(0.5))
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(goal.rawValue)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.white)
                     Text(goal.subtitle)
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.white.opacity(0.45))
                 }
 
                 Spacer()
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(isSelected ? accent : .white.opacity(0.2))
             }
             .padding(14)
@@ -855,9 +881,15 @@ private struct OnboardingGoalCard: View {
 
 // =============================================================================
 // MARK: - Experience Card
+
 // =============================================================================
 
 private struct OnboardingExperienceCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let level: ExperienceLevel
     let isSelected: Bool
     let accent: Color
@@ -873,16 +905,16 @@ private struct OnboardingExperienceCard: View {
                         .frame(width: 44, height: 44)
 
                     Image(systemName: level.icon)
-                        .font(.system(size: 20))
+                        .font(.adaptiveTitle3(isRegular: isRegular))
                         .foregroundStyle(isSelected ? accent : .white.opacity(0.5))
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(level.rawValue)
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.white)
                     Text(level.subtitle)
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.white.opacity(0.45))
                 }
 
@@ -890,15 +922,15 @@ private struct OnboardingExperienceCard: View {
 
                 VStack(alignment: .trailing, spacing: 3) {
                     Text(recommendedPlan.rawValue)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.bold))
                         .foregroundStyle(isSelected ? accent : .white.opacity(0.35))
                     Text("plan")
-                        .font(.system(size: 10))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.white.opacity(0.25))
                 }
 
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(isSelected ? accent : .white.opacity(0.2))
             }
             .padding(14)
@@ -922,9 +954,15 @@ private struct OnboardingExperienceCard: View {
 
 // =============================================================================
 // MARK: - Benefit Row
+
 // =============================================================================
 
 private struct OnboardingBenefitRow: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let icon: String
     let color: Color
     let text: String
@@ -936,12 +974,12 @@ private struct OnboardingBenefitRow: View {
                     .fill(color.opacity(0.12))
                     .frame(width: 36, height: 36)
                 Image(systemName: icon)
-                    .font(.system(size: 15))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(color)
                     .accessibilityHidden(true)
             }
             Text(text)
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.white.opacity(0.85))
         }
         .accessibilityElement(children: .combine)
@@ -951,6 +989,7 @@ private struct OnboardingBenefitRow: View {
 
 // =============================================================================
 // MARK: - Preview
+
 // =============================================================================
 
 #Preview {

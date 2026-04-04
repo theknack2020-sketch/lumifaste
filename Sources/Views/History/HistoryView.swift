@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 // MARK: - Filter & Sort Types
 
@@ -8,9 +8,11 @@ enum HistorySortOption: String, CaseIterable, Identifiable {
     case oldestFirst = "Oldest First"
     case longestFirst = "Longest First"
     case shortestFirst = "Shortest First"
-    
-    var id: String { rawValue }
-    
+
+    var id: String {
+        rawValue
+    }
+
     var icon: String {
         switch self {
         case .newestFirst: "arrow.down.circle"
@@ -25,8 +27,10 @@ enum CompletionFilter: String, CaseIterable, Identifiable {
     case all = "All"
     case completed = "Completed"
     case cancelled = "Ended Early"
-    
-    var id: String { rawValue }
+
+    var id: String {
+        rawValue
+    }
 }
 
 enum DateGrouping: String, CaseIterable, Identifiable {
@@ -34,8 +38,10 @@ enum DateGrouping: String, CaseIterable, Identifiable {
     case daily = "Daily"
     case weekly = "Weekly"
     case monthly = "Monthly"
-    
-    var id: String { rawValue }
+
+    var id: String {
+        rawValue
+    }
 }
 
 // MARK: - HistoryView
@@ -46,9 +52,15 @@ enum DateGrouping: String, CaseIterable, Identifiable {
 struct HistoryView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
-    
+
     @State private var showPaywall = false
     @State private var showSoftPaywall = false
     @State private var searchText = ""
@@ -65,56 +77,57 @@ struct HistoryView: View {
     @State private var errorMessage: String?
     @State private var isRefreshing = false
     @State private var isLoading = true
-    
+
     // MARK: - Dynamic Type Support
+
     @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
-    
+
     private let freeLimit = 7
-    
+
     // MARK: - Computed Properties
-    
+
     private var completedCount: Int {
         sessions.filter(\.isCompleted).count
     }
-    
+
     private var accessibleSessions: [FastingSession] {
         if subscriptionManager.isSubscribed { return sessions }
         return Array(sessions.prefix(freeLimit))
     }
-    
+
     private var hasLockedSessions: Bool {
         !subscriptionManager.isSubscribed && sessions.count > freeLimit
     }
-    
+
     /// Apply search + filters + sort to accessible sessions
     private var filteredSessions: [FastingSession] {
         var result = accessibleSessions
-        
+
         // Search
         if !searchText.isEmpty {
             let query = searchText.lowercased()
             result = result.filter { session in
                 session.plan.rawValue.lowercased().contains(query)
-                || session.stage.rawValue.lowercased().contains(query)
-                || (session.note?.lowercased().contains(query) ?? false)
-                || (session.mood?.contains(query) ?? false)
-                || session.startDate.formatted(.dateTime.month(.wide).day().year()).lowercased().contains(query)
+                    || session.stage.rawValue.lowercased().contains(query)
+                    || (session.note?.lowercased().contains(query) ?? false)
+                    || (session.mood?.contains(query) ?? false)
+                    || session.startDate.formatted(.dateTime.month(.wide).day().year()).lowercased().contains(query)
             }
         }
-        
+
         // Completion filter
         switch completionFilter {
         case .all: break
         case .completed: result = result.filter(\.isCompleted)
         case .cancelled: result = result.filter { !$0.isCompleted }
         }
-        
+
         // Plan filter
         if let planFilter {
             result = result.filter { $0.planType == planFilter.rawValue }
         }
-        
+
         // Sort
         switch sortOption {
         case .newestFirst: result.sort { $0.startDate > $1.startDate }
@@ -122,21 +135,21 @@ struct HistoryView: View {
         case .longestFirst: result.sort { $0.actualDuration > $1.actualDuration }
         case .shortestFirst: result.sort { $0.actualDuration < $1.actualDuration }
         }
-        
+
         return result
     }
-    
+
     /// Group sessions by date period for section headers
     private var groupedSessions: [(key: String, sessions: [FastingSession])] {
         guard dateGrouping != .none else {
             return [("", filteredSessions)]
         }
-        
+
         let calendar = Calendar.current
         let grouped = Dictionary(grouping: filteredSessions) { session -> String in
             groupKey(for: session, calendar: calendar)
         }
-        
+
         return grouped.map { (key: $0.key, sessions: $0.value) }
             .sorted { lhs, rhs in
                 guard let d1 = lhs.sessions.first?.startDate,
@@ -144,7 +157,7 @@ struct HistoryView: View {
                 return d1 > d2
             }
     }
-    
+
     private func groupKey(for session: FastingSession, calendar: Calendar) -> String {
         switch dateGrouping {
         case .daily:
@@ -161,7 +174,7 @@ struct HistoryView: View {
             return ""
         }
     }
-    
+
     private var activeFilterCount: Int {
         var count = 0
         if completionFilter != .all { count += 1 }
@@ -170,9 +183,9 @@ struct HistoryView: View {
         if sortOption != .newestFirst { count += 1 }
         return count
     }
-    
+
     // MARK: - Body
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -182,7 +195,7 @@ struct HistoryView: View {
                         ProgressView()
                             .controlSize(.large)
                         Text("Loading history…")
-                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
@@ -202,10 +215,10 @@ struct HistoryView: View {
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: completionFilter)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: sortOption)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: planFilter)
-            .sheet(isPresented: $showPaywall) {
+            .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView()
             }
-            .sheet(isPresented: $showSoftPaywall) {
+            .fullScreenCover(isPresented: $showSoftPaywall) {
                 SoftPaywallView(reason: .historyLimit)
                     .presentationDetents([.medium])
             }
@@ -234,7 +247,7 @@ struct HistoryView: View {
             .onAppear {
                 if isLoading {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        withAnimation(.easeOut(duration: 0.3)) {
+                        withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
                             isLoading = false
                         }
                     }
@@ -242,9 +255,9 @@ struct HistoryView: View {
             }
         }
     }
-    
+
     // MARK: - Toolbar
-    
+
     @ToolbarContentBuilder
     private var historyToolbar: some ToolbarContent {
         if !sessions.isEmpty {
@@ -259,13 +272,13 @@ struct HistoryView: View {
             }
         }
     }
-    
+
     // MARK: - Completed Badge
-    
+
     private var completedBadge: some View {
         HStack(spacing: 4) {
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.green)
             Text("\(completedCount)")
                 .font(.system(.caption, design: .rounded, weight: .bold))
@@ -281,9 +294,9 @@ struct HistoryView: View {
         )
         .accessibilityLabel("\(completedCount) completed fasts")
     }
-    
+
     // MARK: - Filter Button
-    
+
     private var filterButton: some View {
         Button {
             HapticManager.shared.lightTap()
@@ -292,10 +305,10 @@ struct HistoryView: View {
             ZStack(alignment: .topTrailing) {
                 Image(systemName: "line.3.horizontal.decrease.circle")
                     .symbolVariant(activeFilterCount > 0 ? .fill : .none)
-                
+
                 if activeFilterCount > 0 {
                     Text("\(activeFilterCount)")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                         .monospacedDigit()
                         .foregroundStyle(.white)
                         .frame(width: 14, height: 14)
@@ -308,9 +321,9 @@ struct HistoryView: View {
         .accessibilityLabel("Filters\(activeFilterCount > 0 ? ", \(activeFilterCount) active" : "")")
         .accessibilityIdentifier("filterButton")
     }
-    
+
     // MARK: - Export Menu
-    
+
     private var exportMenuButton: some View {
         Menu {
             Button {
@@ -328,7 +341,7 @@ struct HistoryView: View {
                     Image(systemName: "lock.fill")
                 }
             }
-            
+
             Button {
                 HapticManager.shared.lightTap()
                 if subscriptionManager.isSubscribed {
@@ -352,9 +365,9 @@ struct HistoryView: View {
         .accessibilityLabel(subscriptionManager.isSubscribed ? "Export history" : "Export history — Pro feature")
         .accessibilityIdentifier("exportButton")
     }
-    
+
     // MARK: - Delete Alert
-    
+
     @ViewBuilder
     private var deleteAlertButtons: some View {
         Button("Delete", role: .destructive) {
@@ -375,7 +388,7 @@ struct HistoryView: View {
             deleteTarget = nil
         }
     }
-    
+
     @ViewBuilder
     private var deleteAlertMessage: some View {
         if let target = deleteTarget {
@@ -383,13 +396,13 @@ struct HistoryView: View {
             Text("This will permanently delete your \(target.plan.rawValue) fast from \(dateStr).")
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var historyEmptyState: some View {
         VStack(spacing: 24) {
             Spacer()
-            
+
             ZStack {
                 Circle()
                     .fill(
@@ -401,34 +414,34 @@ struct HistoryView: View {
                     )
                     .frame(width: 130, height: 130)
                     .shadow(color: .orange.opacity(0.15), radius: 16, x: 0, y: 6)
-                
+
                 Circle()
                     .fill(Color.orange.opacity(0.06))
                     .frame(width: 100, height: 100)
-                
+
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 48, weight: .thin, design: .rounded))
+                    .font(.adaptiveDisplay(size: 48, weight: .thin, design: .rounded, isRegular: isRegular))
                     .foregroundStyle(.orange)
                     .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
             .accessibilityHidden(true)
-            
+
             VStack(spacing: 10) {
                 Text("Your Fasting Journey\nStarts Here")
                     .font(.system(.title3, design: .rounded, weight: .bold))
                     .multilineTextAlignment(.center)
-                
+
                 Text("Start your first fast to see your\nhistory, streaks, and progress.")
                     .font(.system(.subheadline))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            
+
             // Empty state card
             VStack(spacing: 14) {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                     Text("Start Your First Fast")
                         .font(.system(.subheadline, design: .rounded, weight: .semibold))
                 }
@@ -443,10 +456,10 @@ struct HistoryView: View {
             }
             .buttonStyle(.pressable)
             .padding(.top, 4)
-            
+
             HStack(spacing: 6) {
                 Image(systemName: "lock.shield.fill")
-                    .font(.system(size: 11))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                 Text("All data stays on your device")
                     .font(.system(.caption))
             }
@@ -458,7 +471,7 @@ struct HistoryView: View {
                     .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
             )
             .padding(.top, 4)
-            
+
             Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -466,23 +479,23 @@ struct HistoryView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Your fasting journey starts here. Start your first fast to see your history, streaks, and progress.")
     }
-    
+
     // MARK: - Session List
-    
+
     private var sessionListContent: some View {
         List {
             statsSection
-            
+
             if activeFilterCount > 0 {
                 activeFiltersSection
             }
-            
+
             if filteredSessions.isEmpty {
                 noResultsSection
             } else {
                 sessionGroupSections
             }
-            
+
             if hasLockedSessions {
                 lockedSection
             }
@@ -494,9 +507,9 @@ struct HistoryView: View {
             isRefreshing = false
         }
     }
-    
+
     // MARK: - Session Group Sections
-    
+
     private var sessionGroupSections: some View {
         ForEach(groupedSessions, id: \.key) { group in
             Section {
@@ -511,7 +524,7 @@ struct HistoryView: View {
             }
         }
     }
-    
+
     private func sessionRow(session: FastingSession, index: Int) -> some View {
         NavigationLink {
             FastDetailView(session: session)
@@ -547,9 +560,9 @@ struct HistoryView: View {
             .tint(.blue)
         }
     }
-    
+
     // MARK: - No Results
-    
+
     private var noResultsSection: some View {
         Section {
             VStack(spacing: 12) {
@@ -557,20 +570,20 @@ struct HistoryView: View {
                     Circle()
                         .fill(Color(.tertiarySystemFill))
                         .frame(width: 56, height: 56)
-                    
+
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: 24))
+                        .font(.adaptiveTitle2(isRegular: isRegular))
                         .foregroundStyle(.tertiary)
                 }
-                
+
                 Text("No matching fasts")
                     .font(.system(.subheadline, design: .rounded, weight: .medium))
                     .foregroundStyle(.secondary)
-                
+
                 Text("Try adjusting your search or filters")
                     .font(.system(.caption))
                     .foregroundStyle(.tertiary)
-                
+
                 if activeFilterCount > 0 {
                     Button("Clear Filters") {
                         HapticManager.shared.lightTap()
@@ -584,9 +597,9 @@ struct HistoryView: View {
             .padding(.vertical, 24)
         }
     }
-    
+
     // MARK: - Active Filters
-    
+
     private var activeFiltersSection: some View {
         Section {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -627,9 +640,9 @@ struct HistoryView: View {
         }
         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
     }
-    
+
     // MARK: - Stats Section
-    
+
     private var statsSection: some View {
         Section {
             HStack(spacing: 10) {
@@ -639,14 +652,14 @@ struct HistoryView: View {
                     icon: "flame.fill",
                     color: .orange
                 )
-                
+
                 HistoryStatCard(
                     title: "Current Streak",
                     value: "\(currentStreak)",
                     icon: "bolt.fill",
                     color: .yellow
                 )
-                
+
                 HistoryStatCard(
                     title: "Avg Duration",
                     value: formatHours(averageDuration),
@@ -658,9 +671,9 @@ struct HistoryView: View {
         .listRowInsets(EdgeInsets())
         .listRowBackground(Color.clear)
     }
-    
+
     // MARK: - Locked Section
-    
+
     private var lockedSection: some View {
         Section {
             Button {
@@ -672,12 +685,12 @@ struct HistoryView: View {
                         RoundedRectangle(cornerRadius: 8, style: .continuous)
                             .fill(Color.purple.opacity(0.12))
                             .frame(width: 36, height: 36)
-                        
+
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 15))
+                            .font(.adaptiveSubheadline(isRegular: isRegular))
                             .foregroundStyle(.purple)
                     }
-                    
+
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Unlock Full History")
                             .font(.system(.subheadline, design: .rounded, weight: .semibold))
@@ -687,9 +700,9 @@ struct HistoryView: View {
                             .monospacedDigit()
                             .foregroundStyle(.secondary)
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.right")
                         .font(.system(.caption, weight: .semibold))
                         .foregroundStyle(.tertiary)
@@ -711,9 +724,9 @@ struct HistoryView: View {
             .accessibilityHint("Double tap to see upgrade options")
         }
     }
-    
+
     // MARK: - Helpers
-    
+
     private func resetFilters() {
         sortOption = .newestFirst
         completionFilter = .all
@@ -721,19 +734,19 @@ struct HistoryView: View {
         dateGrouping = .none
         searchText = ""
     }
-    
+
     private var currentStreak: Int {
         let calendar = Calendar.current
         var streak = 0
         var checkDate = calendar.startOfDay(for: .now)
-        
+
         let completedDays = Set(
             sessions
-                .filter { $0.isCompleted }
+                .filter(\.isCompleted)
                 .map { calendar.startOfDay(for: $0.startDate) }
         )
         .sorted(by: >)
-        
+
         for day in completedDays {
             if day == checkDate {
                 streak += 1
@@ -749,14 +762,14 @@ struct HistoryView: View {
         }
         return streak
     }
-    
+
     private var averageDuration: TimeInterval {
         let completed = sessions.filter(\.isCompleted)
         guard !completed.isEmpty else { return 0 }
         let total = completed.reduce(0.0) { $0 + $1.actualDuration }
         return total / Double(completed.count)
     }
-    
+
     private func formatHours(_ duration: TimeInterval) -> String {
         let hours = duration / 3600
         if hours < 1 {
@@ -771,15 +784,20 @@ struct HistoryView: View {
 private struct HistoryFilterPill: View {
     let text: String
     let onRemove: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             Text(text)
                 .font(.system(.caption, design: .rounded, weight: .medium))
-            
+
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
             }
             .buttonStyle(.pressable)
         }
@@ -800,7 +818,12 @@ private struct HistoryStatCard: View {
     let value: String
     let icon: String
     let color: Color
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
@@ -813,16 +836,16 @@ private struct HistoryStatCard: View {
                         )
                     )
                     .frame(width: 32, height: 32)
-                
+
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(color)
             }
-            
+
             Text(value)
                 .font(.system(.title2, design: .rounded, weight: .bold))
                 .monospacedDigit()
-            
+
             Text(title)
                 .font(.system(.caption, design: .rounded))
                 .foregroundStyle(.secondary)
@@ -847,7 +870,12 @@ private struct HistoryLockedStatCard: View {
     let icon: String
     let color: Color
     let action: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
@@ -855,16 +883,16 @@ private struct HistoryLockedStatCard: View {
                     Circle()
                         .fill(color.opacity(0.08))
                         .frame(width: 32, height: 32)
-                    
+
                     Image(systemName: icon)
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(color.opacity(0.4))
                 }
-                
+
                 Image(systemName: "lock.fill")
                     .font(.system(.footnote))
                     .foregroundStyle(.secondary)
-                
+
                 Text(title)
                     .font(.system(.caption, design: .rounded))
                     .foregroundStyle(.secondary)
@@ -891,7 +919,7 @@ struct HistoryFilterSheet: View {
     @Binding var planFilter: FastingPlan?
     @Binding var dateGrouping: DateGrouping
     let onDismiss: () -> Void
-    
+
     var body: some View {
         NavigationStack {
             List {
@@ -913,7 +941,7 @@ struct HistoryFilterSheet: View {
         }
         .presentationDetents([.medium, .large])
     }
-    
+
     private var sortSection: some View {
         Section("Sort By") {
             ForEach(HistorySortOption.allCases) { option in
@@ -923,7 +951,7 @@ struct HistoryFilterSheet: View {
             }
         }
     }
-    
+
     private var statusSection: some View {
         Section("Status") {
             ForEach(CompletionFilter.allCases) { filter in
@@ -933,7 +961,7 @@ struct HistoryFilterSheet: View {
             }
         }
     }
-    
+
     private var planSection: some View {
         Section("Plan Type") {
             filterRow(title: "All Plans", isSelected: planFilter == nil) {
@@ -946,7 +974,7 @@ struct HistoryFilterSheet: View {
             }
         }
     }
-    
+
     private var groupSection: some View {
         Section("Group By") {
             ForEach(DateGrouping.allCases) { grouping in
@@ -956,7 +984,7 @@ struct HistoryFilterSheet: View {
             }
         }
     }
-    
+
     private var resetSection: some View {
         Section {
             Button("Reset All Filters", role: .destructive) {
@@ -967,7 +995,7 @@ struct HistoryFilterSheet: View {
             }
         }
     }
-    
+
     private func filterRow(title: String, icon: String? = nil, isSelected: Bool, action: @escaping () -> Void) -> some View {
         Button(action: {
             HapticManager.shared.selectionChanged()

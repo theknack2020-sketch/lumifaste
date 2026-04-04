@@ -1,6 +1,6 @@
 import Foundation
 
-struct FastingRecipe: Identifiable, Sendable {
+struct FastingRecipe: Identifiable {
     let id: UUID
     let title: String
     let emoji: String
@@ -39,13 +39,16 @@ struct FastingRecipe: Identifiable, Sendable {
         self.isPremium = isPremium
     }
 
-    enum RecipeCategory: String, CaseIterable, Identifiable, Sendable {
+    enum RecipeCategory: String, CaseIterable, Identifiable {
         case breakingFast = "Breaking Fast"
         case meal = "Main Meal"
         case snack = "Snack"
         case drink = "Drink"
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
+
         var icon: String {
             switch self {
             case .breakingFast: "sunrise.fill"

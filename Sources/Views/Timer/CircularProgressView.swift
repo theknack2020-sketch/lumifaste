@@ -11,7 +11,7 @@ struct CircularProgressView: View {
     let lineWidth: CGFloat
     var themeAccent: Color = .accentColor
     var isBreathing: Bool = false
-    
+
     init(progress: Double, stage: FastingStage, lineWidth: CGFloat = 28, themeAccent: Color = .accentColor, isBreathing: Bool = false) {
         self.progress = progress
         self.stage = stage
@@ -19,16 +19,16 @@ struct CircularProgressView: View {
         self.themeAccent = themeAccent
         self.isBreathing = isBreathing
     }
-    
+
     private var progressPercent: Int {
         Int(min(progress, 1.0) * 100)
     }
-    
+
     /// Ring color: use stage color when actively fasting, theme accent when idle/fed
     private var ringColor: Color {
         stage == .fed ? themeAccent : stage.color
     }
-    
+
     /// Secondary ring color for gradient effect
     private var ringSecondaryColor: Color {
         switch stage {
@@ -39,7 +39,7 @@ struct CircularProgressView: View {
         case .autophagy: .pink
         }
     }
-    
+
     var body: some View {
         ZStack {
             // Inner radial gradient fill — very faint stage-tinted glow inside the circle
@@ -49,7 +49,7 @@ struct CircularProgressView: View {
                         colors: [
                             ringColor.opacity(0.06),
                             ringColor.opacity(0.02),
-                            Color.clear
+                            Color.clear,
                         ],
                         center: .center,
                         startRadius: 10,
@@ -57,7 +57,7 @@ struct CircularProgressView: View {
                     )
                 )
                 .padding(lineWidth + 8)
-            
+
             // Outer ambient glow ring — creates depth
             if progress > 0.01 {
                 Circle()
@@ -67,7 +67,7 @@ struct CircularProgressView: View {
                     )
                     .blur(radius: 10)
             }
-            
+
             // Background ring — more visible against dark backgrounds
             Circle()
                 .stroke(
@@ -75,7 +75,7 @@ struct CircularProgressView: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
-            
+
             // Glow shadow layer (drawn behind progress ring) — intensified for visibility
             if progress > 0.01 {
                 Circle()
@@ -90,7 +90,7 @@ struct CircularProgressView: View {
                     .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                     .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             }
-            
+
             // Progress ring — gradient stroke with strong glow
             Circle()
                 .trim(from: 0, to: min(progress, 1.0))
@@ -99,7 +99,7 @@ struct CircularProgressView: View {
                         gradient: Gradient(colors: [
                             ringSecondaryColor.opacity(0.5),
                             ringColor.opacity(0.8),
-                            ringColor
+                            ringColor,
                         ]),
                         center: .center,
                         startAngle: .degrees(0),
@@ -113,7 +113,7 @@ struct CircularProgressView: View {
                 .shadow(color: ringColor.opacity(0.15), radius: 40, x: 0, y: 0)
                 .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
-            
+
             // Bright dot at progress tip
             if progress > 0.01 {
                 GeometryReader { geo in
@@ -135,7 +135,7 @@ struct CircularProgressView: View {
                 .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                 .animation(.spring(response: 0.5, dampingFraction: 0.8), value: stage)
             }
-            
+
             // Inner decorative ring (thin)
             Circle()
                 .stroke(
@@ -161,7 +161,7 @@ private struct BreathingGlowModifier: ViewModifier {
     let isActive: Bool
     let color: Color
     @State private var phase: CGFloat = 0
-    
+
     func body(content: Content) -> some View {
         content
             .shadow(
@@ -174,7 +174,7 @@ private struct BreathingGlowModifier: ViewModifier {
                         phase = 1
                     }
                 } else {
-                    withAnimation(.easeOut(duration: 0.4)) {
+                    withAnimation(.spring(duration: 0.4, bounce: 0.15)) {
                         phase = 0
                     }
                 }

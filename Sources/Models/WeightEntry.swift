@@ -9,14 +9,14 @@ final class WeightEntry {
     /// Weight in kilograms (UI can convert to lbs for display)
     var weightKg: Double = 0
     var note: String = ""
-    
+
     init(date: Date = .now, weightKg: Double, note: String = "") {
-        self.id = UUID()
+        id = UUID()
         self.date = date
         self.weightKg = weightKg
         self.note = note
     }
-    
+
     /// Weight in pounds
     var weightLbs: Double {
         weightKg * 2.20462

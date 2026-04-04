@@ -4,7 +4,7 @@ import Foundation
 /// Shared model for the fasting Live Activity.
 /// Used by both the main app (to start/update/end) and the widget extension (to render).
 struct FastingActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
+    struct ContentState: Codable, Hashable {
         var elapsedSeconds: Int
         var targetSeconds: Int
         var currentStage: String

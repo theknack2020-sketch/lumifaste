@@ -7,9 +7,8 @@ import SwiftUI
 /// All health claims include scientific references.
 /// Content is educational only — not medical advice (K004 disclaimer).
 enum FastingEducation {
-    
     // MARK: - Stage Science (detailed body info per stage)
-    
+
     struct StageDetail: Identifiable {
         let id: String
         let stage: FastingStage
@@ -20,7 +19,7 @@ enum FastingEducation {
         let tips: [String]
         let reference: String
     }
-    
+
     static let stageDetails: [StageDetail] = [
         StageDetail(
             id: "fed",
@@ -33,12 +32,12 @@ enum FastingEducation {
                 "Nutrients absorbed through small intestine into bloodstream",
                 "Pancreas releases insulin to manage blood sugar",
                 "Liver stores excess glucose as glycogen",
-                "Body is in anabolic (building) mode"
+                "Body is in anabolic (building) mode",
             ],
             tips: [
                 "Use this time to plan your next fast",
                 "Eat nutrient-dense foods to prepare your body",
-                "Avoid processed sugars that cause rapid insulin spikes"
+                "Avoid processed sugars that cause rapid insulin spikes",
             ],
             reference: "Anton SD, et al. Flipping the Metabolic Switch. Obesity. 2018;26(2):254-268."
         ),
@@ -53,12 +52,12 @@ enum FastingEducation {
                 "Blood sugar gradually decreases to baseline",
                 "Insulin levels drop significantly",
                 "Ghrelin (hunger hormone) may peak then subside",
-                "Body begins transitioning from fed to fasted state"
+                "Body begins transitioning from fed to fasted state",
             ],
             tips: [
                 "Hunger peaks are temporary — they pass in 15-20 minutes",
                 "Drink water or black coffee to ease the transition",
-                "Stay busy — distraction is your best tool right now"
+                "Stay busy — distraction is your best tool right now",
             ],
             reference: "Patterson RE, Sears DD. Metabolic Effects of Intermittent Fasting. Annu Rev Nutr. 2017;37:371-393."
         ),
@@ -74,12 +73,12 @@ enum FastingEducation {
                 "Liver converts fatty acids to energy",
                 "Metabolic rate may increase slightly due to norepinephrine",
                 "Growth hormone levels begin to rise",
-                "Inflammation markers start to decrease"
+                "Inflammation markers start to decrease",
             ],
             tips: [
                 "Light exercise now can enhance fat burning",
                 "This is when real metabolic benefits begin",
-                "Stay hydrated — fat metabolism requires water"
+                "Stay hydrated — fat metabolism requires water",
             ],
             reference: "Mattson MP, Longo VD, Harvie M. Impact of intermittent fasting on health and disease processes. Ageing Res Rev. 2017;39:46-58."
         ),
@@ -95,12 +94,12 @@ enum FastingEducation {
                 "Mental clarity often improves noticeably",
                 "Growth hormone surges (up to 5x normal levels)",
                 "Cellular stress resistance pathways activate",
-                "BDNF (brain-derived neurotrophic factor) increases"
+                "BDNF (brain-derived neurotrophic factor) increases",
             ],
             tips: [
                 "Many people feel a burst of clarity and focus here",
                 "Electrolytes become more important — consider salt water",
-                "This is an excellent time for focused mental work"
+                "This is an excellent time for focused mental work",
             ],
             reference: "Cahill GF Jr. Fuel metabolism in starvation. Annu Rev Nutr. 2006;26:1-22."
         ),
@@ -116,30 +115,30 @@ enum FastingEducation {
                 "Mitochondria undergo renewal (mitophagy)",
                 "Immune system cells may be regenerated",
                 "Anti-aging pathways (AMPK, sirtuins) are fully active",
-                "Inflammation reaches its lowest point"
+                "Inflammation reaches its lowest point",
             ],
             tips: [
                 "You've achieved deep cellular benefits",
                 "Plan your fast-breaking meal carefully — go gentle",
-                "Consider bone broth or light soup to break this fast"
+                "Consider bone broth or light soup to break this fast",
             ],
             reference: "Bagherniya M, et al. The effect of fasting or calorie restriction on autophagy induction. Ageing Res Rev. 2018;47:183-197."
-        )
+        ),
     ]
-    
+
     static func detail(for stage: FastingStage) -> StageDetail? {
         stageDetails.first { $0.stage == stage }
     }
-    
+
     // MARK: - FAQ
-    
+
     struct FAQ: Identifiable {
         let id: Int
         let question: String
         let answer: String
         let category: String
     }
-    
+
     static let faqs: [FAQ] = [
         FAQ(id: 1, question: "Is intermittent fasting safe?",
             answer: "For most healthy adults, intermittent fasting is considered safe. However, it's not recommended for pregnant or breastfeeding women, children, people with eating disorders, or those with certain medical conditions. Always consult your doctor before starting any fasting program.",
@@ -193,17 +192,17 @@ enum FastingEducation {
             answer: "It's not strictly necessary for most people. Focus on eating nutrient-dense whole foods until satisfied. If weight loss stalls, you may benefit from tracking briefly to identify if you're over-compensating during eating windows.",
             category: "Nutrition"),
     ]
-    
+
     static var faqCategories: [String] {
         Array(Set(faqs.map(\.category))).sorted()
     }
-    
+
     static func faqs(for category: String) -> [FAQ] {
         faqs.filter { $0.category == category }
     }
-    
+
     // MARK: - Beginner's Guide
-    
+
     struct GuideSection: Identifiable {
         let id: Int
         let title: String
@@ -211,7 +210,7 @@ enum FastingEducation {
         let content: String
         let keyPoints: [String]
     }
-    
+
     static let beginnersGuide: [GuideSection] = [
         GuideSection(
             id: 1,
@@ -222,7 +221,7 @@ enum FastingEducation {
                 "Focus on when you eat, not what you eat",
                 "Alternate between eating and fasting windows",
                 "Your body is designed to handle periods without food",
-                "Humans have fasted throughout evolution"
+                "Humans have fasted throughout evolution",
             ]
         ),
         GuideSection(
@@ -235,7 +234,7 @@ enum FastingEducation {
                 "Sleep counts as fasting time (you're already doing 8 hours)",
                 "Push breakfast back by 1 hour each week",
                 "Within 2-3 weeks, aim for 16:8",
-                "Consistency matters more than duration"
+                "Consistency matters more than duration",
             ]
         ),
         GuideSection(
@@ -248,7 +247,7 @@ enum FastingEducation {
                 "Days 4-7: Body adapts, hunger becomes manageable",
                 "Week 2: Energy and focus often improve",
                 "Week 3-4: Fasting feels natural and routine",
-                "Month 2+: Full metabolic benefits develop"
+                "Month 2+: Full metabolic benefits develop",
             ]
         ),
         GuideSection(
@@ -261,7 +260,7 @@ enum FastingEducation {
                 "14:10 — Slightly more challenging, good fat burning",
                 "16:8 — Most popular, strong research support",
                 "18:6 — Intermediate, enters ketosis territory",
-                "20:4/OMAD — Advanced, maximum autophagy benefits"
+                "20:4/OMAD — Advanced, maximum autophagy benefits",
             ]
         ),
         GuideSection(
@@ -275,7 +274,7 @@ enum FastingEducation {
                 "Don't start with extreme fasts (20:4 or OMAD)",
                 "Don't ignore hunger signals that feel wrong",
                 "Don't use fasting to compensate for binge eating",
-                "Don't forget electrolytes during longer fasts"
+                "Don't forget electrolytes during longer fasts",
             ]
         ),
         GuideSection(
@@ -290,13 +289,13 @@ enum FastingEducation {
                 "Type 1 diabetes or insulin-dependent",
                 "Taking medications that require food",
                 "BMI below 18.5 (underweight)",
-                "Recovering from surgery or illness"
+                "Recovering from surgery or illness",
             ]
-        )
+        ),
     ]
-    
+
     // MARK: - Learn Articles
-    
+
     struct Article: Identifiable {
         let id: Int
         let title: String
@@ -307,13 +306,13 @@ enum FastingEducation {
         let references: [String]
         let isPremium: Bool
     }
-    
+
     struct ArticleSection: Identifiable {
         let id = UUID()
         let heading: String
         let body: String
     }
-    
+
     static let articles: [Article] = [
         Article(
             id: 1,
@@ -324,11 +323,11 @@ enum FastingEducation {
             sections: [
                 ArticleSection(heading: "Metabolic Switch", body: "When you fast, your body undergoes a metabolic switch from using glucose as its primary fuel source to using fatty acids and ketone bodies. This typically occurs 12-36 hours after your last meal, depending on activity level and glycogen stores."),
                 ArticleSection(heading: "Hormonal Changes", body: "Fasting triggers significant hormonal changes. Insulin drops, enabling fat mobilization. Human growth hormone increases up to 5-fold, preserving muscle mass. Norepinephrine is released, increasing metabolic rate and alertness."),
-                ArticleSection(heading: "Cellular Benefits", body: "At the cellular level, fasting activates autophagy — the body's cleanup mechanism. Damaged proteins and organelles are identified, broken down, and recycled. This process is crucial for cellular health and is linked to longevity.")
+                ArticleSection(heading: "Cellular Benefits", body: "At the cellular level, fasting activates autophagy — the body's cleanup mechanism. Damaged proteins and organelles are identified, broken down, and recycled. This process is crucial for cellular health and is linked to longevity."),
             ],
             references: [
                 "de Cabo R, Mattson MP. Effects of Intermittent Fasting on Health, Aging, and Disease. N Engl J Med. 2019;381(26):2541-2551.",
-                "Longo VD, Mattson MP. Fasting: Molecular Mechanisms and Clinical Applications. Cell Metab. 2014;19(2):181-192."
+                "Longo VD, Mattson MP. Fasting: Molecular Mechanisms and Clinical Applications. Cell Metab. 2014;19(2):181-192.",
             ],
             isPremium: false
         ),
@@ -341,11 +340,11 @@ enum FastingEducation {
             sections: [
                 ArticleSection(heading: "Caloric Reduction", body: "Intermittent fasting naturally reduces caloric intake by limiting the eating window. Studies show IF participants consume 10-25% fewer calories without consciously counting or restricting."),
                 ArticleSection(heading: "Fat Oxidation", body: "During fasting, low insulin levels allow your body to access stored fat. The rate of fat oxidation (fat burning) increases significantly after 12-16 hours without food. This is the primary mechanism behind fasting-related weight loss."),
-                ArticleSection(heading: "Preserving Muscle", body: "Unlike continuous calorie restriction, intermittent fasting helps preserve lean muscle mass. The spike in growth hormone during fasting protects muscle tissue while the body preferentially burns fat for fuel.")
+                ArticleSection(heading: "Preserving Muscle", body: "Unlike continuous calorie restriction, intermittent fasting helps preserve lean muscle mass. The spike in growth hormone during fasting protects muscle tissue while the body preferentially burns fat for fuel."),
             ],
             references: [
                 "Varady KA. Intermittent versus daily calorie restriction: which diet regimen is more effective for weight loss? Obes Rev. 2011;12(7):e593-601.",
-                "Heilbronn LK, et al. Alternate-day fasting in nonobese subjects: effects on body weight, body composition, and energy metabolism. Am J Clin Nutr. 2005;81(1):69-73."
+                "Heilbronn LK, et al. Alternate-day fasting in nonobese subjects: effects on body weight, body composition, and energy metabolism. Am J Clin Nutr. 2005;81(1):69-73.",
             ],
             isPremium: false
         ),
@@ -358,11 +357,11 @@ enum FastingEducation {
             sections: [
                 ArticleSection(heading: "Ketones: Premium Brain Fuel", body: "When fasting produces ketones, the brain gains access to an efficient fuel source. Ketones provide more ATP (energy) per unit of oxygen than glucose, which is why many fasters report heightened mental clarity."),
                 ArticleSection(heading: "BDNF and Neuroplasticity", body: "Fasting increases Brain-Derived Neurotrophic Factor (BDNF), a protein that supports the growth of new neurons and strengthens existing neural connections. Higher BDNF is associated with better learning, memory, and mood."),
-                ArticleSection(heading: "Neuroprotection", body: "Research suggests intermittent fasting may protect against neurodegenerative diseases by reducing oxidative stress, inflammation, and the accumulation of damaged proteins in the brain.")
+                ArticleSection(heading: "Neuroprotection", body: "Research suggests intermittent fasting may protect against neurodegenerative diseases by reducing oxidative stress, inflammation, and the accumulation of damaged proteins in the brain."),
             ],
             references: [
                 "Mattson MP. Energy intake and exercise as determinants of brain health and vulnerability to injury and disease. Cell Metab. 2012;16(6):706-722.",
-                "Gudden J, et al. The Effects of Intermittent Fasting on Brain and Cognitive Function. Nutrients. 2021;13(9):3166."
+                "Gudden J, et al. The Effects of Intermittent Fasting on Brain and Cognitive Function. Nutrients. 2021;13(9):3166.",
             ],
             isPremium: false
         ),
@@ -375,11 +374,11 @@ enum FastingEducation {
             sections: [
                 ArticleSection(heading: "Cardiovascular Markers", body: "Studies show intermittent fasting can improve key heart health markers: reduced LDL cholesterol, lower triglycerides, decreased blood pressure, and reduced inflammatory markers like C-reactive protein."),
                 ArticleSection(heading: "Cellular Aging", body: "Fasting activates sirtuins and AMPK — cellular pathways directly linked to longevity. These pathways enhance DNA repair, reduce oxidative damage, and improve mitochondrial function. They're the same pathways activated by calorie restriction, which extends lifespan in multiple species."),
-                ArticleSection(heading: "Inflammation Reduction", body: "Chronic low-grade inflammation drives heart disease, diabetes, and cancer. Fasting significantly reduces inflammatory markers, giving the body time to heal and repair without the constant burden of food processing.")
+                ArticleSection(heading: "Inflammation Reduction", body: "Chronic low-grade inflammation drives heart disease, diabetes, and cancer. Fasting significantly reduces inflammatory markers, giving the body time to heal and repair without the constant burden of food processing."),
             ],
             references: [
                 "Malinowski B, et al. Intermittent Fasting in Cardiovascular Disorders — An Overview. Nutrients. 2019;11(3):673.",
-                "Cabo R, Mattson MP. Effects of Intermittent Fasting on Health, Aging, and Disease. N Engl J Med. 2019;381(26):2541-2551."
+                "Cabo R, Mattson MP. Effects of Intermittent Fasting on Health, Aging, and Disease. N Engl J Med. 2019;381(26):2541-2551.",
             ],
             isPremium: true
         ),
@@ -392,25 +391,25 @@ enum FastingEducation {
             sections: [
                 ArticleSection(heading: "What is Autophagy?", body: "Autophagy (from Greek: 'self-eating') is the body's way of cleaning out damaged cells to regenerate newer, healthier cells. Yoshinori Ohsumi won the 2016 Nobel Prize in Physiology for discovering the mechanisms of autophagy."),
                 ArticleSection(heading: "When Does It Happen?", body: "Autophagy is always occurring at a low level, but it's significantly upregulated during fasting. The process accelerates after 18-24 hours without food, as the body's nutrient-sensing pathways (mTOR, AMPK) shift into cleanup mode."),
-                ArticleSection(heading: "Health Implications", body: "Enhanced autophagy is associated with reduced cancer risk (clearing precancerous cells), neuroprotection (removing toxic protein aggregates), improved immune function (recycling old immune cells), and anti-aging benefits.")
+                ArticleSection(heading: "Health Implications", body: "Enhanced autophagy is associated with reduced cancer risk (clearing precancerous cells), neuroprotection (removing toxic protein aggregates), improved immune function (recycling old immune cells), and anti-aging benefits."),
             ],
             references: [
                 "Bagherniya M, et al. The effect of fasting or calorie restriction on autophagy induction: A review of the literature. Ageing Res Rev. 2018;47:183-197.",
-                "Ohsumi Y. Historical landmarks of autophagy research. Cell Res. 2014;24(1):9-23."
+                "Ohsumi Y. Historical landmarks of autophagy research. Cell Res. 2014;24(1):9-23.",
             ],
             isPremium: true
-        )
+        ),
     ]
-    
+
     // MARK: - Glossary
-    
+
     struct GlossaryTerm: Identifiable {
         let id: Int
         let term: String
         let definition: String
         let relatedTerms: [String]
     }
-    
+
     static let glossary: [GlossaryTerm] = [
         GlossaryTerm(id: 1, term: "Autophagy", definition: "The body's cellular recycling process where damaged or dysfunctional cellular components are broken down and reused. Derived from Greek meaning 'self-eating'. Significantly enhanced during extended fasting (18+ hours).", relatedTerms: ["Mitophagy", "mTOR"]),
         GlossaryTerm(id: 2, term: "Ketosis", definition: "A metabolic state where the body primarily burns fat and produces ketone bodies for energy instead of relying on glucose. Typically begins after 18-24 hours of fasting.", relatedTerms: ["Ketone Bodies", "Fat Oxidation"]),
@@ -428,9 +427,9 @@ enum FastingEducation {
         GlossaryTerm(id: 14, term: "Eating Window", definition: "The designated period during which you consume all your daily calories. In a 16:8 schedule, the eating window is 8 hours. Meals and snacks should be consumed only during this time.", relatedTerms: ["Time-Restricted Eating", "Fasting Window"]),
         GlossaryTerm(id: 15, term: "Mitophagy", definition: "A specific form of autophagy targeting damaged mitochondria (the cell's energy producers). Fasting-induced mitophagy replaces old, inefficient mitochondria with new ones, improving cellular energy production.", relatedTerms: ["Autophagy", "Mitochondria"]),
     ]
-    
+
     // MARK: - Medical Disclaimer
-    
+
     static let disclaimer = """
     The information provided in Lumifaste is for educational and informational purposes only \
     and is not intended as medical advice, diagnosis, or treatment. Always consult a qualified \
@@ -439,6 +438,6 @@ enum FastingEducation {
     eating disorders. Individual results vary. If you feel unwell during a fast, stop immediately \
     and consult your doctor.
     """
-    
+
     static let shortDisclaimer = "Educational content only — not medical advice. Consult your doctor before starting any fasting program."
 }

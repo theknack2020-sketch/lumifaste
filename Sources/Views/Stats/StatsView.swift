@@ -1,6 +1,6 @@
-import SwiftUI
-import SwiftData
 import Charts
+import SwiftData
+import SwiftUI
 
 /// Main insights/stats screen — charts, streaks, trends.
 /// Free: basic stats (total, avg, streak counts). Premium: full charts, weight, time analysis.
@@ -8,26 +8,32 @@ struct StatsView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @Query(sort: \WeightEntry.date, order: .reverse)
     private var weightEntries: [WeightEntry]
-    
+
     @State private var showPaywall = false
     @State private var showWeightLog = false
     @State private var cardsAppeared = false
     @State private var showHealthKitImport = false
     @State private var healthKitImportCount = 0
     @State private var isLoading = true
-    
+
     // MARK: - Dynamic Type Support
+
     @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
-    
+
     private var completedSessions: [FastingSession] {
         sessions.filter(\.isCompleted)
     }
-    
+
     var body: some View {
         NavigationStack {
             Group {
@@ -37,7 +43,7 @@ struct StatsView: View {
                         ProgressView()
                             .controlSize(.large)
                         Text("Crunching your numbers…")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
@@ -63,10 +69,10 @@ struct StatsView: View {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "scalemass")
-                                .font(.system(size: 15))
+                                .font(.adaptiveSubheadline(isRegular: isRegular))
                             if !subscriptionManager.isSubscribed {
                                 Image(systemName: "lock.fill")
-                                    .font(.system(size: 9))
+                                    .font(.adaptiveSmallLabel(isRegular: isRegular))
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -75,7 +81,7 @@ struct StatsView: View {
                     .accessibilityLabel(subscriptionManager.isSubscribed ? "Log weight" : "Log weight — Pro feature")
                 }
             }
-            .sheet(isPresented: $showPaywall) {
+            .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView()
             }
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -85,7 +91,7 @@ struct StatsView: View {
             .onAppear {
                 if isLoading {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        withAnimation(.easeOut(duration: 0.3)) {
+                        withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
                             isLoading = false
                         }
                     }
@@ -97,13 +103,13 @@ struct StatsView: View {
             }
         }
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 28) {
             Spacer()
-            
+
             // Hero illustration — layered rings with glow
             ZStack {
                 // Outer ambient glow
@@ -117,49 +123,49 @@ struct StatsView: View {
                         )
                     )
                     .frame(width: 240, height: 240)
-                
+
                 // Decorative ring 1
                 Circle()
                     .stroke(themeManager.selectedTheme.accent.opacity(0.08), lineWidth: 1.5)
                     .frame(width: 180, height: 180)
-                
+
                 // Decorative ring 2
                 Circle()
                     .stroke(themeManager.selectedTheme.accent.opacity(0.15), lineWidth: 2)
                     .frame(width: 120, height: 120)
-                
+
                 // Center icon with glass background
                 ZStack {
                     Circle()
                         .fill(.ultraThinMaterial)
                         .frame(width: 80, height: 80)
                         .shadow(color: themeManager.selectedTheme.accent.opacity(0.3), radius: 16, y: 4)
-                    
+
                     Image(systemName: "chart.bar.xaxis.ascending")
-                        .font(.system(size: 32, weight: .medium))
+                        .font(.adaptiveDisplay(size: 32, weight: .medium, design: .default, isRegular: isRegular))
                         .foregroundStyle(themeManager.selectedTheme.accentGradient)
                         .symbolEffect(.pulse, options: .repeating.speed(0.4))
                 }
             }
             .entranceAnimation(delay: 0.1)
-            
+
             // Text content
             VStack(spacing: 10) {
                 Text("Insights Await")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                
+                    .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
+
                 Text("Complete a few fasts to unlock\ncharts, streaks, and trends.")
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                
+
                 Text("Your journey starts with a single fast")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.7))
                     .padding(.top, 4)
             }
             .entranceAnimation(delay: 0.25)
-            
+
             // Feature preview badges — what they'll unlock
             VStack(spacing: 12) {
                 HStack(spacing: 12) {
@@ -174,7 +180,7 @@ struct StatsView: View {
                 }
             }
             .entranceAnimation(delay: 0.4)
-            
+
             Spacer()
         }
         .padding(.horizontal, 24)
@@ -182,53 +188,53 @@ struct StatsView: View {
         .accessibilityLabel("Insights await. Complete a few fasts to unlock charts, streaks, and trends.")
         .accessibilityIdentifier("statsEmptyState")
     }
-    
+
     // MARK: - Stats Content
-    
+
     private var statsContent: some View {
         ScrollView {
             LazyVStack(spacing: 20) {
                 // Summary card — always visible (free: total fasts, streak, best streak)
                 summaryCard
                     .staggeredEntrance(index: 0, appeared: cardsAppeared)
-                
+
                 // Motivational badge — always visible
                 motivationalBadge
                     .staggeredEntrance(index: 1, appeared: cardsAppeared)
-                
+
                 // Pro-only sections: blurred preview + lock overlay for free users
                 proGatedSection(index: 2) {
                     weeklyComparisonSection
                 }
-                
+
                 proGatedSection(index: 3) {
                     weeklyChartSection
                 }
-                
+
                 proGatedSection(index: 4) {
                     monthlyCalendarSection
                 }
-                
+
                 proGatedSection(index: 5) {
                     streakHeatmapSection
                 }
-                
+
                 proGatedSection(index: 6) {
                     moodTrendSection
                 }
-                
+
                 proGatedSection(index: 7) {
                     hydrationSection
                 }
-                
+
                 proGatedSection(index: 8) {
                     timeAnalysisSection
                 }
-                
+
                 proGatedSection(index: 9) {
                     weightSection
                 }
-                
+
                 proGatedSection(index: 10) {
                     consistencySection
                 }
@@ -242,9 +248,9 @@ struct StatsView: View {
             }
         }
     }
-    
+
     /// Wraps a section with a blur + lock overlay for free users, or shows it fully for Pro.
-    private func proGatedSection<Content: View>(index: Int, @ViewBuilder content: () -> Content) -> some View {
+    private func proGatedSection(index: Int, @ViewBuilder content: () -> some View) -> some View {
         Group {
             if subscriptionManager.isSubscribed {
                 content()
@@ -260,17 +266,17 @@ struct StatsView: View {
             }
         }
     }
-    
+
     /// Lock overlay shown on premium-only chart sections
     private var proLockedOverlay: some View {
         VStack(spacing: 10) {
             Image(systemName: "lock.fill")
-                .font(.system(size: 24))
+                .font(.adaptiveTitle2(isRegular: isRegular))
                 .foregroundStyle(.secondary)
             Text("Pro Feature")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             Text("Upgrade to unlock full charts & trends")
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
             Button {
                 HapticManager.shared.lightTap()
@@ -278,9 +284,9 @@ struct StatsView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 12))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                     Text("Upgrade to Pro")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 20)
@@ -308,9 +314,9 @@ struct StatsView: View {
         .accessibilityLabel("Pro feature. Upgrade to unlock full charts and trends.")
         .accessibilityAddTraits(.isButton)
     }
-    
+
     // MARK: - Summary Card (3x2 Grid)
-    
+
     private var summaryCard: some View {
         let accent = themeManager.selectedTheme.accent
         let completed = completedSessions
@@ -320,13 +326,13 @@ struct StatsView: View {
         let completionRate = sessions.isEmpty ? 0 : Double(completed.count) / Double(sessions.count) * 100
         let (currentStreak, bestStreak) = computeStreaks()
         let todaySteps = HealthKitManager.shared.todayStepCount
-        
+
         return InsightCard(title: "Summary", icon: "square.grid.2x2.fill", color: accent) {
             VStack(spacing: 12) {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 10),
                     GridItem(.flexible(), spacing: 10),
-                    GridItem(.flexible(), spacing: 10)
+                    GridItem(.flexible(), spacing: 10),
                 ], spacing: 12) {
                     SummaryMetricCell(icon: "flame.fill", value: "\(totalFasts)", label: "Total Fasts", color: .orange)
                     SummaryMetricCell(icon: "clock.fill", value: String(format: "%.0f", totalHours), label: "Total Hours", color: accent)
@@ -335,23 +341,23 @@ struct StatsView: View {
                     SummaryMetricCell(icon: "bolt.fill", value: "\(currentStreak)", label: "Streak", color: .yellow)
                     SummaryMetricCell(icon: "trophy.fill", value: "\(bestStreak)", label: "Best Streak", color: .purple)
                 }
-                
+
                 // Today's step count from Apple Health
-                if HealthKitManager.shared.isAvailable && todaySteps > 0 {
+                if HealthKitManager.shared.isAvailable, todaySteps > 0 {
                     Divider()
                     HStack(spacing: 6) {
                         Image(systemName: "heart.fill")
-                            .font(.system(size: 10))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.red)
                         Image(systemName: "figure.walk")
-                            .font(.system(size: 13))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.green)
                         Text(todaySteps.formatted(.number.grouping(.automatic)))
-                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                             .monospacedDigit()
                             .contentTransition(.numericText())
                         Text("steps today")
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
@@ -363,29 +369,29 @@ struct StatsView: View {
             .accessibilityLabel("Summary: \(totalFasts) fasts, \(String(format: "%.0f", totalHours)) hours, \(formatHoursMinutes(avgDuration)) average, \(String(format: "%.0f%%", completionRate)) completion, \(currentStreak) day streak, \(bestStreak) best streak")
         }
     }
-    
+
     // MARK: - Motivational Badge
-    
+
     private var motivationalBadge: some View {
         let accent = themeManager.selectedTheme.accent
         let completed = completedSessions
         let completionRate = sessions.isEmpty ? 0 : Double(completed.count) / Double(sessions.count) * 100
         let (currentStreak, _) = computeStreaks()
-        
+
         let badge = determineBadge(fastCount: completed.count, completionRate: completionRate, currentStreak: currentStreak)
-        
+
         return HStack(spacing: 12) {
             Text(badge.emoji)
-                .font(.system(size: 28))
-            
+                .font(.adaptiveDisplay(size: 28, weight: .regular, design: .default, isRegular: isRegular))
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(badge.title)
                     .font(.system(.headline, design: .rounded))
                 Text(badge.subtitle)
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
         }
         .padding(14)
@@ -408,9 +414,9 @@ struct StatsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(badge.title): \(badge.subtitle)")
     }
-    
+
     // MARK: - Weekly Comparison
-    
+
     private var weeklyComparisonSection: some View {
         let accent = themeManager.selectedTheme.accent
         let (thisWeek, lastWeek) = weeklyComparison()
@@ -419,33 +425,33 @@ struct StatsView: View {
         let diff = thisWeekHours - lastWeekHours
         let pctChange: Double = lastWeekHours > 0 ? (diff / lastWeekHours) * 100 : (thisWeekHours > 0 ? 100 : 0)
         let countDiff = thisWeek.count - lastWeek.count
-        
+
         return InsightCard(title: "This Week vs Last Week", icon: "arrow.left.arrow.right", color: .purple) {
             VStack(spacing: 12) {
                 // Hours comparison
                 HStack(spacing: 0) {
                     VStack(spacing: 4) {
                         Text("This Week")
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                         Text(String(format: "%.1fh", thisWeekHours))
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(.adaptiveTitle2(isRegular: isRegular).weight(.bold))
                             .monospacedDigit()
                         Text("\(thisWeek.count) fasts")
-                            .font(.system(size: 11))
+                            .font(.adaptiveBadge(isRegular: isRegular))
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity)
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("This week")
                     .accessibilityValue(String(format: "%.1f hours, %d fasts", thisWeekHours, thisWeek.count))
-                    
+
                     VStack(spacing: 4) {
                         HStack(spacing: 4) {
                             Image(systemName: diff >= 0 ? "arrow.up.right" : "arrow.down.right")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.adaptiveCaption(isRegular: isRegular).weight(.bold))
                             Text(String(format: "%+.0f%%", pctChange))
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .font(.adaptiveDetail(isRegular: isRegular).weight(.bold))
                                 .monospacedDigit()
                         }
                         .foregroundStyle(diff >= 0 ? .green : .red)
@@ -454,16 +460,16 @@ struct StatsView: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("Weekly change")
                     .accessibilityValue(String(format: "%+.0f percent", pctChange))
-                    
+
                     VStack(spacing: 4) {
                         Text("Last Week")
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                         Text(String(format: "%.1fh", lastWeekHours))
-                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .font(.adaptiveTitle2(isRegular: isRegular).weight(.bold))
                             .monospacedDigit()
                         Text("\(lastWeek.count) fasts")
-                            .font(.system(size: 11))
+                            .font(.adaptiveBadge(isRegular: isRegular))
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity)
@@ -471,10 +477,10 @@ struct StatsView: View {
                     .accessibilityLabel("Last week")
                     .accessibilityValue(String(format: "%.1f hours, %d fasts", lastWeekHours, lastWeek.count))
                 }
-                
+
                 // Delta indicators row
                 Divider()
-                
+
                 HStack(spacing: 16) {
                     ComparisonDelta(
                         label: "Hours",
@@ -488,8 +494,8 @@ struct StatsView: View {
                         format: "%+.0f",
                         accent: accent
                     )
-                    
-                    if !thisWeek.isEmpty && !lastWeek.isEmpty {
+
+                    if !thisWeek.isEmpty, !lastWeek.isEmpty {
                         let thisAvg = thisWeekHours / Double(thisWeek.count)
                         let lastAvg = lastWeekHours / Double(lastWeek.count)
                         ComparisonDelta(
@@ -503,26 +509,26 @@ struct StatsView: View {
             }
         }
     }
-    
+
     // MARK: - Weekly Chart Section
-    
+
     private var weeklyChartSection: some View {
         InsightCard(title: "This Week", icon: "chart.bar.fill", color: .blue) {
             WeeklyFastingChart(sessions: sessions)
                 .frame(height: 200)
         }
     }
-    
+
     // MARK: - Monthly Calendar
-    
+
     private var monthlyCalendarSection: some View {
         InsightCard(title: "This Month", icon: "calendar", color: .green) {
             MonthlyCalendarView(sessions: sessions)
         }
     }
-    
+
     // MARK: - Streak Heatmap
-    
+
     private var streakHeatmapSection: some View {
         InsightCard(title: "Streak Heatmap", icon: "square.grid.3x3.fill", color: .orange) {
             StreakHeatmapView(
@@ -531,42 +537,42 @@ struct StatsView: View {
             )
         }
     }
-    
+
     // MARK: - Mood Trends
-    
+
     private var moodTrendSection: some View {
         MoodTrendChart()
     }
-    
+
     // MARK: - Hydration
-    
+
     private var hydrationSection: some View {
         HydrationChart()
     }
-    
+
     // MARK: - Time Analysis
-    
+
     private var timeAnalysisSection: some View {
         InsightCard(title: "Time Patterns", icon: "clock.badge.checkmark", color: .cyan) {
             TimeAnalysisView(sessions: sessions)
         }
     }
-    
+
     // MARK: - Weight Section
-    
+
     private var weightSection: some View {
         InsightCard(title: "Weight Trend", icon: "scalemass.fill", color: .pink) {
             VStack(spacing: 12) {
                 if weightEntries.isEmpty {
                     VStack(spacing: 8) {
                         Text("No weight data yet")
-                            .font(.system(size: 14))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                         Button {
                             showWeightLog = true
                         } label: {
                             Label("Log Weight", systemImage: "plus.circle.fill")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                         }
                         .buttonStyle(.pressable)
                         .accessibilityLabel("Log your first weight entry")
@@ -578,7 +584,7 @@ struct StatsView: View {
                     WeightTrendChart(entries: Array(weightEntries.reversed()))
                         .frame(height: 180)
                 }
-                
+
                 // HealthKit import button
                 if HealthKitManager.shared.isAvailable {
                     healthKitImportButton
@@ -586,15 +592,15 @@ struct StatsView: View {
             }
         }
     }
-    
+
     // MARK: - HealthKit Import
-    
+
     private var healthKitImportButton: some View {
         let hkManager = HealthKitManager.shared
-        
+
         return VStack(spacing: 8) {
             Divider()
-            
+
             Button {
                 HapticManager.shared.lightTap()
                 Task {
@@ -603,7 +609,7 @@ struct StatsView: View {
                     }
                     let existingDates = Set(weightEntries.map(\.date))
                     let imports = await hkManager.fetchWeightsForImport(existingDates: existingDates)
-                    
+
                     if imports.isEmpty {
                         healthKitImportCount = 0
                         showHealthKitImport = true
@@ -623,11 +629,11 @@ struct StatsView: View {
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "heart.fill")
-                        .font(.system(size: 12))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.red)
                     Text("Import from Apple Health")
-                        .font(.system(size: 13, weight: .medium))
-                    
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
+
                     if hkManager.isImporting {
                         ProgressView()
                             .controlSize(.mini)
@@ -655,41 +661,41 @@ struct StatsView: View {
             )
         }
     }
-    
+
     // MARK: - Consistency
-    
+
     private var consistencySection: some View {
         let total = sessions.count
         let completed = completedSessions.count
         let pct = total > 0 ? Double(completed) / Double(total) * 100 : 0
-        
+
         return InsightCard(title: "Consistency", icon: "checkmark.seal.fill", color: .mint) {
             VStack(spacing: 8) {
                 Text(String(format: "%.0f%%", pct))
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .font(.adaptiveDisplay(size: 40, weight: .bold, design: .rounded, isRegular: isRegular))
                     .monospacedDigit()
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
                                 pct >= 80 ? .green : pct >= 50 ? .orange : .red,
-                                pct >= 80 ? .mint : pct >= 50 ? .yellow : .orange
+                                pct >= 80 ? .mint : pct >= 50 ? .yellow : .orange,
                             ],
                             startPoint: .top,
                             endPoint: .bottom
                         )
                     )
-                
+
                 Text("of fasts completed")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
-                
+
                 HStack(spacing: 24) {
                     HStack(spacing: 5) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.green)
                         Text("\(completed) done")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                             .monospacedDigit()
                     }
                     .padding(.horizontal, 10)
@@ -698,13 +704,13 @@ struct StatsView: View {
                         Capsule()
                             .fill(.green.opacity(0.1))
                     )
-                    
+
                     HStack(spacing: 5) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 12))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.red)
                         Text("\(total - completed) missed")
-                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                            .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                             .monospacedDigit()
                     }
                     .padding(.horizontal, 10)
@@ -722,37 +728,37 @@ struct StatsView: View {
             .accessibilityValue(String(format: "%.0f percent, %d completed, %d missed", pct, completed, total - completed))
         }
     }
-    
+
     // MARK: - Badge Determination
-    
+
     private struct BadgeInfo {
         let emoji: String
         let title: String
         let subtitle: String
     }
-    
+
     private func determineBadge(fastCount: Int, completionRate: Double, currentStreak: Int) -> BadgeInfo {
         if currentStreak >= 30 {
-            return BadgeInfo(emoji: "👑", title: "Fasting Legend", subtitle: "\(currentStreak)-day streak! Unstoppable.")
+            BadgeInfo(emoji: "👑", title: "Fasting Legend", subtitle: "\(currentStreak)-day streak! Unstoppable.")
         } else if currentStreak >= 14 {
-            return BadgeInfo(emoji: "🔥", title: "On Fire", subtitle: "\(currentStreak) days in a row — incredible focus.")
+            BadgeInfo(emoji: "🔥", title: "On Fire", subtitle: "\(currentStreak) days in a row — incredible focus.")
         } else if currentStreak >= 7 {
-            return BadgeInfo(emoji: "⭐", title: "Week Warrior", subtitle: "A full week of consistency. Keep going!")
+            BadgeInfo(emoji: "⭐", title: "Week Warrior", subtitle: "A full week of consistency. Keep going!")
         } else if completionRate >= 80 {
-            return BadgeInfo(emoji: "🏆", title: "Consistent Faster", subtitle: "\(Int(completionRate))% completion. You're building a habit.")
+            BadgeInfo(emoji: "🏆", title: "Consistent Faster", subtitle: "\(Int(completionRate))% completion. You're building a habit.")
         } else if completionRate >= 70 {
-            return BadgeInfo(emoji: "💪", title: "Building Momentum", subtitle: "\(Int(completionRate))% completion rate. Strong trajectory.")
+            BadgeInfo(emoji: "💪", title: "Building Momentum", subtitle: "\(Int(completionRate))% completion rate. Strong trajectory.")
         } else if fastCount >= 10 {
-            return BadgeInfo(emoji: "📈", title: "Finding Your Rhythm", subtitle: "\(fastCount) fasts done. Your pattern is forming.")
+            BadgeInfo(emoji: "📈", title: "Finding Your Rhythm", subtitle: "\(fastCount) fasts done. Your pattern is forming.")
         } else if fastCount >= 5 {
-            return BadgeInfo(emoji: "🌱", title: "Growing Stronger", subtitle: "\(fastCount) fasts completed. Momentum building!")
+            BadgeInfo(emoji: "🌱", title: "Growing Stronger", subtitle: "\(fastCount) fasts completed. Momentum building!")
         } else {
-            return BadgeInfo(emoji: "🚀", title: "Getting Started", subtitle: "\(fastCount) fast\(fastCount == 1 ? "" : "s") so far. Every journey starts here.")
+            BadgeInfo(emoji: "🚀", title: "Getting Started", subtitle: "\(fastCount) fast\(fastCount == 1 ? "" : "s") so far. Every journey starts here.")
         }
     }
-    
+
     // MARK: - Computation Helpers
-    
+
     private func computeStreaks() -> (current: Int, best: Int) {
         let calendar = Calendar.current
         let completedDays = Set(
@@ -761,14 +767,14 @@ struct StatsView: View {
                 .map { calendar.startOfDay(for: $0.startDate) }
         )
         .sorted(by: >)
-        
+
         guard !completedDays.isEmpty else { return (0, 0) }
-        
+
         var currentStreak = 0
         var bestStreak = 0
         var tempStreak = 0
         var checkDate = calendar.startOfDay(for: .now)
-        
+
         for day in completedDays {
             if day == checkDate {
                 currentStreak += 1
@@ -782,7 +788,7 @@ struct StatsView: View {
                 break
             }
         }
-        
+
         let sortedAsc = completedDays.sorted()
         for (i, day) in sortedAsc.enumerated() {
             if i == 0 {
@@ -798,27 +804,27 @@ struct StatsView: View {
             }
             bestStreak = max(bestStreak, tempStreak)
         }
-        
+
         return (currentStreak, bestStreak)
     }
-    
+
     private func weeklyComparison() -> (thisWeek: [FastingSession], lastWeek: [FastingSession]) {
         let calendar = Calendar.current
         let now = Date.now
         let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
         let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek) ?? startOfThisWeek
-        
+
         let completed = completedSessions
         let thisWeek = completed.filter { $0.startDate >= startOfThisWeek }
         let lastWeek = completed.filter { $0.startDate >= startOfLastWeek && $0.startDate < startOfThisWeek }
-        
+
         return (thisWeek, lastWeek)
     }
-    
+
     private func formatHoursMinutes(_ duration: TimeInterval) -> String {
         let h = Int(duration) / 3600
         let m = (Int(duration) % 3600) / 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0, m > 0 { return "\(h)h \(m)m" }
         if h > 0 { return "\(h)h" }
         return "\(m)m"
     }
@@ -827,26 +833,31 @@ struct StatsView: View {
 // MARK: - Summary Metric Cell
 
 private struct SummaryMetricCell: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let icon: String
     let value: String
     let label: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(color)
-            
+
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(.adaptiveHeadline(isRegular: isRegular).weight(.bold))
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            
+
             Text(label)
-                .font(.system(size: 10))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }
@@ -863,24 +874,29 @@ private struct SummaryMetricCell: View {
 // MARK: - Comparison Delta
 
 private struct ComparisonDelta: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let label: String
     let delta: Double
     let format: String
     let accent: Color
-    
+
     var body: some View {
         VStack(spacing: 2) {
             HStack(spacing: 3) {
                 Image(systemName: delta > 0 ? "arrow.up" : delta < 0 ? "arrow.down" : "equal")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.adaptiveSmallLabel(isRegular: isRegular).weight(.bold))
                 Text(String(format: format, delta))
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                     .monospacedDigit()
             }
             .foregroundStyle(delta > 0 ? .green : delta < 0 ? .red : .secondary)
-            
+
             Text(label)
-                .font(.system(size: 10))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
         .frame(maxWidth: .infinity)
@@ -893,13 +909,12 @@ private struct ComparisonDelta: View {
 
 private extension View {
     func staggeredEntrance(index: Int, appeared: Bool) -> some View {
-        self
-            .opacity(appeared ? 1 : 0)
+        opacity(appeared ? 1 : 0)
             .offset(y: appeared ? 0 : 20)
             .scaleEffect(appeared ? 1 : 0.97, anchor: .top)
             .animation(
                 .spring(response: 0.5, dampingFraction: 0.78)
-                .delay(Double(index) * 0.06),
+                    .delay(Double(index) * 0.06),
                 value: appeared
             )
     }
@@ -908,16 +923,21 @@ private extension View {
 // MARK: - Insight Card Container
 
 struct InsightCard<Content: View>: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let title: String
     let icon: String
     let color: Color
     @ViewBuilder let content: () -> Content
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(color)
                 Text(title)
                     .font(.system(.headline, design: .rounded))
@@ -934,7 +954,7 @@ struct InsightCard<Content: View>: View {
                         )
                     )
             )
-            
+
             content()
         }
         .padding(16)
@@ -951,17 +971,22 @@ struct InsightCard<Content: View>: View {
 // MARK: - Insight Preview Badge (empty state)
 
 private struct InsightPreviewBadge: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let icon: String
     let title: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 18))
+                .font(.adaptiveHeadline(isRegular: isRegular))
                 .foregroundStyle(color)
             Text(title)
-                .font(.system(size: 11, weight: .medium))
+                .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

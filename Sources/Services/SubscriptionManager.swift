@@ -1,14 +1,13 @@
-import Foundation
-import StoreKit
 import AudioToolbox
+import Foundation
 import OSLog
+import StoreKit
 
 private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "StoreKit")
 
 @MainActor
 @Observable
 final class SubscriptionManager {
-    
     var isSubscribed = false
     var products: [Product] = []
     var purchaseError: String?
@@ -17,12 +16,12 @@ final class SubscriptionManager {
     var productsLoadFailed = false
     var isRestoring = false
     var restoreResult: RestoreResult?
-    
+
     enum RestoreResult: Equatable {
         case success
         case noPurchasesFound
         case failed(String)
-        
+
         /// User-facing message for the restore result
         var message: String {
             switch self {
@@ -30,28 +29,28 @@ final class SubscriptionManager {
                 "Your Premium subscription has been restored! All features are now unlocked."
             case .noPurchasesFound:
                 "No previous purchases found for this Apple ID. If you purchased with a different account, sign in with that account and try again."
-            case .failed(let reason):
+            case let .failed(reason):
                 reason
             }
         }
-        
+
         /// Whether the result is considered successful
         var isSuccess: Bool {
             if case .success = self { return true }
             return false
         }
     }
-    
+
     private let productIDs: Set<String> = [
         "com.theknack.lumifaste.premium.monthly",
-        "com.theknack.lumifaste.premium.yearly"
+        "com.theknack.lumifaste.premium.yearly",
     ]
-    
+
     @ObservationIgnored
-    nonisolated(unsafe) private var transactionListener: Task<Void, Never>?
-    
+    private nonisolated(unsafe) var transactionListener: Task<Void, Never>?
+
     // MARK: - Sound Preference
-    
+
     /// Whether in-app sounds are enabled (celebration chimes, purchase confirmations etc.)
     /// Reads from UserDefaults "lf_sounds_disabled" — false by default (sounds ON).
     /// HapticManager also reads this key. SettingsView toggles it.
@@ -63,44 +62,44 @@ final class SubscriptionManager {
             UserDefaults.standard.set(!newValue, forKey: "lf_sounds_disabled")
         }
     }
-    
+
     /// Play celebration chime (sound 1025) if sound is enabled.
     /// Centralized so all purchase/achievement celebrations respect the toggle.
     static func playCelebrationSound() {
         guard isSoundEnabled else { return }
         AudioServicesPlaySystemSound(1025)
     }
-    
+
     /// Play subtle tick/tock sound (sound 1057) if sound is enabled.
     static func playTickSound() {
         guard isSoundEnabled else { return }
         AudioServicesPlaySystemSound(1057)
     }
-    
+
     /// Play subtle key-press tone (sound 1113) if sound is enabled.
     static func playStartSound() {
         guard isSoundEnabled else { return }
         AudioServicesPlaySystemSound(1113)
     }
-    
+
     init() {
         transactionListener = listenForTransactions()
     }
-    
+
     // Note: transactionListener uses [weak self] so it auto-stops when SubscriptionManager
     // is deallocated. No explicit cancel needed in deinit (Swift 6 deinit can't access
     // MainActor-isolated stored properties).
-    
+
     // MARK: - Products
-    
+
     var monthlyProduct: Product? {
         products.first { $0.id.contains("monthly") }
     }
-    
+
     var yearlyProduct: Product? {
         products.first { $0.id.contains("yearly") }
     }
-    
+
     var yearlySavingsPercent: Int {
         guard let monthly = monthlyProduct,
               let yearly = yearlyProduct else { return 0 }
@@ -109,17 +108,17 @@ final class SubscriptionManager {
         let savings = ((monthlyAnnual - yearly.price) / monthlyAnnual) * Decimal(100)
         return NSDecimalNumber(decimal: savings).intValue
     }
-    
+
     /// Whether any product has an introductory offer (free trial)
     var hasIntroOffer: Bool {
         products.contains { $0.subscription?.introductoryOffer != nil }
     }
-    
+
     /// Introductory offer for the selected or first available product
     func introOffer(for product: Product?) -> Product.SubscriptionOffer? {
         (product ?? products.first)?.subscription?.introductoryOffer
     }
-    
+
     /// Human-readable trial text, e.g. "7-day free trial"
     func trialText(for product: Product?) -> String? {
         guard let offer = introOffer(for: product),
@@ -134,7 +133,7 @@ final class SubscriptionManager {
         @unknown default: return "Free trial"
         }
     }
-    
+
     /// Monthly equivalent price text for yearly product
     var yearlyMonthlyEquivalent: String? {
         guard let yearly = yearlyProduct else { return nil }
@@ -144,33 +143,33 @@ final class SubscriptionManager {
         formatter.locale = yearly.priceFormatStyle.locale
         return formatter.string(from: NSDecimalNumber(decimal: monthly))
     }
-    
+
     func loadProducts() async {
         guard !isLoadingProducts else { return }
-        
+
         isLoadingProducts = true
         productsLoadFailed = false
         purchaseError = nil
-        
+
         logger.info("Loading products: \(self.productIDs.joined(separator: ", "))")
-        
+
         // Exponential backoff: 1s, 2s, 4s
-        for attempt in 1...3 {
+        for attempt in 1 ... 3 {
             do {
                 try Task.checkCancellation()
-                
+
                 let loaded = try await Product.products(for: productIDs)
                     .sorted { $0.price < $1.price }
-                
+
                 logger.info("Attempt \(attempt): loaded \(loaded.count) products")
-                
+
                 if !loaded.isEmpty {
                     products = loaded
                     productsLoadFailed = false
                     isLoadingProducts = false
                     return
                 }
-                
+
                 if attempt < 3 {
                     let delay = pow(2.0, Double(attempt - 1)) // 1, 2, 4 seconds
                     try await Task.sleep(for: .seconds(delay))
@@ -187,23 +186,23 @@ final class SubscriptionManager {
                 }
             }
         }
-        
+
         productsLoadFailed = products.isEmpty
         isLoadingProducts = false
-        
+
         if productsLoadFailed {
             purchaseError = "Couldn't connect to the App Store. Please check your connection and try again."
             logger.error("All product load attempts failed")
         }
     }
-    
+
     // MARK: - Purchase
-    
+
     func purchase(_ product: Product) async -> Bool {
         isPurchasing = true
         purchaseError = nil
         defer { isPurchasing = false }
-        
+
         do {
             let result = try await withThrowingTaskGroup(of: Product.PurchaseResult.self) { group in
                 group.addTask { try await product.purchase() }
@@ -215,9 +214,9 @@ final class SubscriptionManager {
                 group.cancelAll()
                 return first
             }
-            
+
             switch result {
-            case .success(let verification):
+            case let .success(verification):
                 let transaction = try checkVerified(verification)
                 await transaction.finish()
                 await checkSubscriptionStatus()
@@ -242,12 +241,12 @@ final class SubscriptionManager {
             return false
         }
     }
-    
+
     // MARK: - Status
-    
+
     func checkSubscriptionStatus() async {
         var foundActive = false
-        
+
         for await result in Transaction.currentEntitlements {
             do {
                 let transaction = try checkVerified(result)
@@ -261,32 +260,32 @@ final class SubscriptionManager {
                 continue
             }
         }
-        
+
         isSubscribed = foundActive
         logger.info("Subscription status: \(foundActive ? "active" : "inactive")")
     }
-    
+
     // MARK: - Restore
-    
+
     /// Restore purchases and return the result for callers that need synchronous handling.
     @discardableResult
     func restorePurchases() async -> RestoreResult {
         isRestoring = true
         restoreResult = nil
         defer { isRestoring = false }
-        
+
         do {
             try await AppStore.sync()
             await checkSubscriptionStatus()
             let result: RestoreResult = isSubscribed ? .success : .noPurchasesFound
             restoreResult = result
-            
+
             if result.isSuccess {
                 logger.info("Restore successful — subscription active")
             } else {
                 logger.info("Restore completed — no active subscription found")
             }
-            
+
             return result
         } catch {
             let result = RestoreResult.failed("Could not connect to the App Store. Please check your internet connection and try again.")
@@ -295,9 +294,9 @@ final class SubscriptionManager {
             return result
         }
     }
-    
+
     // MARK: - Subscription Info
-    
+
     /// Returns a formatted string describing the current subscription period price, e.g. "$3.99/mo"
     var currentPriceDescription: String? {
         guard let monthly = monthlyProduct, let yearly = yearlyProduct else { return nil }
@@ -307,17 +306,17 @@ final class SubscriptionManager {
         }
         return nil
     }
-    
+
     // MARK: - Transaction Listener
-    
+
     private func listenForTransactions() -> Task<Void, Never> {
         Task { [weak self] in
             for await result in Transaction.updates {
                 guard let self else { return }
                 do {
-                    let transaction = try self.checkVerified(result)
+                    let transaction = try checkVerified(result)
                     await transaction.finish()
-                    self.checkSubscriptionStatusSync()
+                    checkSubscriptionStatusSync()
                 } catch {
                     // Verification failed — don't finish the transaction.
                     // StoreKit will retry verification automatically.
@@ -326,48 +325,48 @@ final class SubscriptionManager {
             }
         }
     }
-    
+
     private func checkSubscriptionStatusSync() {
         Task {
             await checkSubscriptionStatus()
         }
     }
-    
+
     // MARK: - Verification
-    
+
     private func checkVerified<T>(_ result: VerificationResult<T>) throws -> T {
         switch result {
-        case .unverified(_, let error):
+        case let .unverified(_, error):
             logger.error("Transaction verification failed: \(error.localizedDescription)")
             throw SubscriptionError.verificationFailed
-        case .verified(let safe):
+        case let .verified(safe):
             return safe
         }
     }
-    
+
     // MARK: - Friendly Errors
-    
+
     private func friendlyStoreKitError(_ error: StoreKitError) -> String {
         switch error {
         case .networkError:
-            return "Network error. Please check your connection and try again."
+            "Network error. Please check your connection and try again."
         case .userCancelled:
-            return "" // Don't show error for user cancellation
+            "" // Don't show error for user cancellation
         case .notAvailableInStorefront:
-            return "This subscription is not available in your region."
+            "This subscription is not available in your region."
         case .notEntitled:
-            return "You're not eligible for this offer."
+            "You're not eligible for this offer."
         default:
-            return "Something went wrong with the purchase. Please try again."
+            "Something went wrong with the purchase. Please try again."
         }
     }
-    
+
     private struct PurchaseTimeoutError: Error {}
 }
 
 enum SubscriptionError: LocalizedError {
     case verificationFailed
-    
+
     var errorDescription: String? {
         switch self {
         case .verificationFailed:

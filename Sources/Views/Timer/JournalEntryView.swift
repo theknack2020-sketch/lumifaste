@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 /// Post-fast journal entry — shown after fast completion.
 /// Quick emoji mood picker, energy slider (1-5), optional notes.
@@ -10,7 +10,11 @@ struct JournalEntryView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var selectedMood: FastingMood?
     @State private var energy: Double = 3
     @State private var noteText: String = ""
@@ -18,7 +22,7 @@ struct JournalEntryView: View {
     @State private var showError = false
     @State private var errorMessage: String?
     @State private var showPaywall = false
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -26,11 +30,11 @@ struct JournalEntryView: View {
                     // Header
                     headerSection
                         .entranceAnimation(delay: 0.05)
-                    
+
                     // Mood picker — always available
                     moodSection
                         .entranceAnimation(delay: 0.15)
-                    
+
                     // Energy slider — Pro only
                     if subscriptionManager.isSubscribed {
                         energySection
@@ -43,7 +47,7 @@ struct JournalEntryView: View {
                         )
                         .entranceAnimation(delay: 0.25)
                     }
-                    
+
                     // Notes — Pro only
                     if subscriptionManager.isSubscribed {
                         notesSection
@@ -56,17 +60,17 @@ struct JournalEntryView: View {
                         )
                         .entranceAnimation(delay: 0.35)
                     }
-                    
+
                     // Save button
                     saveButton
                         .entranceAnimation(delay: 0.45)
-                    
+
                     // Skip link
                     Button {
                         dismiss()
                     } label: {
                         Text("Skip for now")
-                            .font(.system(size: 14, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                     }
                     .buttonStyle(.plain)
@@ -94,23 +98,23 @@ struct JournalEntryView: View {
             } message: {
                 Text(errorMessage ?? "Something went wrong.")
             }
-            .sheet(isPresented: $showPaywall) {
+            .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView()
             }
         }
     }
-    
+
     // MARK: - Header
-    
+
     private var headerSection: some View {
         VStack(spacing: 8) {
             Image(systemName: "book.closed.fill")
-                .font(.system(size: 36))
+                .font(.adaptiveDisplay(size: 36, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(themeManager.selectedTheme.accent)
-            
+
             Text("How was your fast?")
                 .font(.system(.title3, weight: .bold))
-            
+
             Text("Take a moment to reflect on your \(formatDuration(session.actualDuration)) fast.")
                 .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
@@ -132,15 +136,15 @@ struct JournalEntryView: View {
         .shadow(color: .black.opacity(0.1), radius: 6, y: 3)
         .accessibilityElement(children: .combine)
     }
-    
+
     // MARK: - Mood Picker
-    
+
     private var moodSection: some View {
         VStack(spacing: 12) {
             Text("Mood")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             HStack(spacing: 12) {
                 ForEach(FastingMood.allCases) { mood in
                     Button {
@@ -151,9 +155,9 @@ struct JournalEntryView: View {
                     } label: {
                         VStack(spacing: 6) {
                             Text(mood.emoji)
-                                .font(.system(size: 32, design: .rounded))
+                                .font(.adaptiveDisplay(size: 32, weight: .regular, design: .rounded, isRegular: isRegular))
                             Text(mood.label)
-                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                                 .foregroundStyle(selectedMood == mood ? .primary : .secondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -185,39 +189,39 @@ struct JournalEntryView: View {
         )
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
     }
-    
+
     // MARK: - Energy Slider
-    
+
     private var energySection: some View {
         VStack(spacing: 12) {
             HStack {
                 Text("Energy Level")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Spacer()
                 Text(energyLabel)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(themeManager.selectedTheme.accent)
             }
-            
+
             HStack(spacing: 12) {
                 Image(systemName: "battery.25percent")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
-                
-                Slider(value: $energy, in: 1...5, step: 1)
+
+                Slider(value: $energy, in: 1 ... 5, step: 1)
                     .tint(themeManager.selectedTheme.accent)
                     .onChange(of: energy) { _, _ in
                         HapticManager.shared.selectionChanged()
                     }
-                
+
                 Image(systemName: "battery.100percent.bolt")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             // Energy dots visualization
             HStack(spacing: 8) {
-                ForEach(1...5, id: \.self) { level in
+                ForEach(1 ... 5, id: \.self) { level in
                     Circle()
                         .fill(level <= Int(energy)
                             ? themeManager.selectedTheme.accent
@@ -237,7 +241,7 @@ struct JournalEntryView: View {
         .accessibilityLabel("Energy level, \(energyLabel)")
         .accessibilityValue("\(Int(energy)) of 5")
     }
-    
+
     private var energyLabel: String {
         switch Int(energy) {
         case 1: "Very Low"
@@ -248,21 +252,21 @@ struct JournalEntryView: View {
         default: "Normal"
         }
     }
-    
+
     // MARK: - Notes
-    
+
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Notes")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-            
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
+
             Text("Optional — anything you want to remember")
-                .font(.system(size: 12, design: .rounded))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
-            
+
             TextField("How did the fast go?", text: $noteText, axis: .vertical)
                 .textFieldStyle(.plain)
-                .lineLimit(3...6)
+                .lineLimit(3 ... 6)
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -273,10 +277,10 @@ struct JournalEntryView: View {
                         noteText = String(newValue.prefix(500))
                     }
                 }
-            
+
             if !noteText.isEmpty {
                 Text("\(noteText.count)/500")
-                    .font(.system(size: 11, design: .rounded))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
@@ -288,9 +292,9 @@ struct JournalEntryView: View {
         )
         .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
     }
-    
+
     // MARK: - Save Button
-    
+
     private var saveButton: some View {
         Button {
             saveJournal()
@@ -298,7 +302,7 @@ struct JournalEntryView: View {
             HStack(spacing: 8) {
                 if saved {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .transition(.scale.combined(with: .opacity))
                 }
                 Text(saved ? "Saved!" : "Save Journal Entry")
@@ -319,36 +323,36 @@ struct JournalEntryView: View {
         .disabled(saved)
         .accessibilityLabel(saved ? "Journal saved" : "Save journal entry")
     }
-    
+
     // MARK: - Pro Locked Journal Section
-    
+
     private func journalProLockedSection(icon: String, title: String, subtitle: String) -> some View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Spacer()
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             Text(subtitle)
-                .font(.system(size: 13, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             Button {
                 showPaywall = true
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles")
-                        .font(.system(size: 11))
+                        .font(.adaptiveBadge(isRegular: isRegular))
                     Text("Upgrade to Pro")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16)
@@ -381,22 +385,22 @@ struct JournalEntryView: View {
         .accessibilityLabel("\(title). \(subtitle). Upgrade to Pro to unlock.")
         .accessibilityAddTraits(.isButton)
     }
-    
+
     // MARK: - Save
-    
+
     private func saveJournal() {
         let mood = selectedMood ?? .neutral
         let trimmedNote = noteText.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         let journal = FastingJournal(
             sessionID: session.id,
             mood: mood,
             energy: Int(energy),
             notes: trimmedNote
         )
-        
+
         modelContext.insert(journal)
-        
+
         let success = DataController.shared.save(modelContext, operation: "save journal entry")
         if success {
             HapticManager.shared.success()
@@ -411,9 +415,9 @@ struct JournalEntryView: View {
             showError = true
         }
     }
-    
+
     // MARK: - Helpers
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let h = Int(duration) / 3600
         let m = (Int(duration) % 3600) / 60

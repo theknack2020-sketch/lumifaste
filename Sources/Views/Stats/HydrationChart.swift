@@ -1,12 +1,18 @@
-import SwiftUI
-import SwiftData
 import Charts
+import SwiftData
+import SwiftUI
 
 /// Daily water intake bar chart over the last 14 days.
 /// Bars colored green when meeting goal, blue otherwise.
 /// Shows daily goal line, average annotation, and summary row.
 struct HydrationChart: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var allSessions: [FastingSession]
     @AppStorage("lf_water_goal") private var dailyGoal: Int = 8
@@ -111,7 +117,7 @@ struct HydrationChart: View {
                 .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 4]))
                 .annotation(position: .top, alignment: .leading) {
                     Text("Goal: \(dailyGoal)")
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                         .foregroundStyle(.orange)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
@@ -127,7 +133,7 @@ struct HydrationChart: View {
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                 .annotation(position: .bottom, alignment: .trailing) {
                     Text(String(format: "avg %.1f", dailyAverage))
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
@@ -144,7 +150,7 @@ struct HydrationChart: View {
                 AxisValueLabel {
                     if let intVal = value.as(Int.self) {
                         Text("\(intVal)")
-                            .font(.system(size: 9))
+                            .font(.adaptiveCaption2(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -155,7 +161,7 @@ struct HydrationChart: View {
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
                     .foregroundStyle(.secondary.opacity(0.3))
                 AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                    .font(.system(size: 9))
+                    .font(.adaptiveCaption2(isRegular: isRegular))
             }
         }
         .chartLegend(.hidden)
@@ -195,13 +201,13 @@ struct HydrationChart: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "drop.triangle")
-                .font(.system(size: 32))
+                .font(.adaptiveDisplay(size: 32, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .symbolEffect(.pulse, options: .repeating.speed(0.5))
                 .accessibilityHidden(true)
 
             Text("Track water during your fasts to see hydration trends here")
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -225,21 +231,26 @@ private struct HydrationSummaryCell: View {
     let label: String
     let value: String
     let color: Color
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
             Text(label)
-                .font(.system(size: 10))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }

@@ -7,9 +7,8 @@ private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "Live
 /// Manages the fasting Live Activity lifecycle — start, update, end.
 /// Call from FastingManager when fasting state changes.
 enum LiveActivityManager {
-
     /// Currently running fasting activity, if any.
-    nonisolated(unsafe) private(set) static var currentActivity: Activity<FastingActivityAttributes>?
+    private(set) nonisolated(unsafe) static var currentActivity: Activity<FastingActivityAttributes>?
 
     // MARK: - Start
 

@@ -5,6 +5,12 @@ struct RecipeDetailView: View {
     let recipe: FastingRecipe
     @Environment(\.dismiss) private var dismiss
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var checkedIngredients: Set<String> = []
     @State private var showMealLog = false
     @State private var contentAppeared = false
@@ -90,15 +96,15 @@ struct RecipeDetailView: View {
                     .frame(width: 120, height: 120)
 
                 Text(recipe.emoji)
-                    .font(.system(size: 72))
+                    .font(.adaptiveDisplay(size: 72, weight: .regular, design: .default, isRegular: isRegular))
             }
 
             // Category pill
             HStack(spacing: 6) {
                 Image(systemName: recipe.category.icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.adaptiveBadge(isRegular: isRegular).weight(.semibold))
                 Text(recipe.category.rawValue)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
             }
             .foregroundStyle(accent)
             .padding(.horizontal, 12)
@@ -114,7 +120,7 @@ struct RecipeDetailView: View {
 
     private var descriptionSection: some View {
         Text(recipe.description)
-            .font(.system(size: 15, design: .rounded))
+            .font(.adaptiveSubheadline(isRegular: isRegular))
             .foregroundStyle(.secondary)
             .lineSpacing(4)
             .multilineTextAlignment(.center)
@@ -144,10 +150,10 @@ struct RecipeDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "basket.fill")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(themeManager.selectedTheme.accent)
                 Text("Ingredients")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
             }
 
             VStack(spacing: 2) {
@@ -164,14 +170,14 @@ struct RecipeDetailView: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: checkedIngredients.contains(ingredient) ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 18))
+                                .font(.adaptiveHeadline(isRegular: isRegular))
                                 .foregroundStyle(checkedIngredients.contains(ingredient)
                                     ? themeManager.selectedTheme.accent
                                     : .secondary)
                                 .contentTransition(.symbolEffect(.replace))
 
                             Text(ingredient)
-                                .font(.system(size: 14, design: .rounded))
+                                .font(.adaptiveDetail(isRegular: isRegular))
                                 .foregroundStyle(checkedIngredients.contains(ingredient) ? .secondary : .primary)
                                 .strikethrough(checkedIngredients.contains(ingredient), color: .secondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -197,10 +203,10 @@ struct RecipeDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "list.number")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(themeManager.selectedTheme.accent)
                 Text("Steps")
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
             }
 
             VStack(alignment: .leading, spacing: 14) {
@@ -212,12 +218,12 @@ struct RecipeDetailView: View {
                                 .fill(themeManager.selectedTheme.accent.opacity(0.12))
                                 .frame(width: 28, height: 28)
                             Text("\(index + 1)")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.adaptiveDetail(isRegular: isRegular).weight(.bold))
                                 .foregroundStyle(themeManager.selectedTheme.accent)
                         }
 
                         Text(step)
-                            .font(.system(size: 14, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.primary.opacity(0.85))
                             .fixedSize(horizontal: false, vertical: true)
                             .lineSpacing(3)
@@ -241,9 +247,9 @@ struct RecipeDetailView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text("Log This Meal")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.adaptiveBody(isRegular: isRegular).weight(.bold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -268,17 +274,22 @@ private struct NutritionBadge: View {
     let value: String
     let label: String
     let color: Color
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(color)
             Text(value)
-                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                 .monospacedDigit()
             Text(label)
-                .font(.system(size: 11, design: .rounded))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

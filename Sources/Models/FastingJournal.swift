@@ -6,13 +6,15 @@ import SwiftData
 /// Post-fast mood self-report — emoji-based for quick selection.
 /// Stored as raw string in SwiftData for forward compatibility.
 enum FastingMood: String, CaseIterable, Identifiable, Codable {
-    case tired = "tired"
-    case neutral = "neutral"
-    case good = "good"
-    case great = "great"
-    
-    var id: String { rawValue }
-    
+    case tired
+    case neutral
+    case good
+    case great
+
+    var id: String {
+        rawValue
+    }
+
     var emoji: String {
         switch self {
         case .tired: "😴"
@@ -21,7 +23,7 @@ enum FastingMood: String, CaseIterable, Identifiable, Codable {
         case .great: "🔥"
         }
     }
-    
+
     var label: String {
         switch self {
         case .tired: "Tired"
@@ -46,21 +48,21 @@ final class FastingJournal {
     var moodRaw: String = "neutral"
     var energy: Int = 3
     var notes: String = ""
-    
+
     init(
         sessionID: UUID,
         mood: FastingMood,
         energy: Int,
         notes: String = ""
     ) {
-        self.id = UUID()
-        self.date = Date.now
+        id = UUID()
+        date = Date.now
         self.sessionID = sessionID
-        self.moodRaw = mood.rawValue
+        moodRaw = mood.rawValue
         self.energy = min(max(energy, 1), 5)
         self.notes = String(notes.prefix(500))
     }
-    
+
     /// Typed mood accessor
     var mood: FastingMood {
         get { FastingMood(rawValue: moodRaw) ?? .neutral }

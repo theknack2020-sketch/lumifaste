@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 /// Sheet for logging meals — shown during eating windows or after completing a fast.
 /// Supports pre-filling from a recipe selection.
@@ -7,6 +7,11 @@ struct MealLogView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     /// Optional pre-filled values from a recipe
     var prefillTitle: String?
@@ -28,7 +33,9 @@ struct MealLogView: View {
         case dinner = "Dinner"
         case snack = "Snack"
 
-        var id: String { rawValue }
+        var id: String {
+            rawValue
+        }
 
         var emoji: String {
             switch self {
@@ -101,7 +108,7 @@ struct MealLogView: View {
     private var mealTypePicker: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Meal Type")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -115,9 +122,9 @@ struct MealLogView: View {
                         } label: {
                             HStack(spacing: 6) {
                                 Text(type.emoji)
-                                    .font(.system(size: 18))
+                                    .font(.adaptiveHeadline(isRegular: isRegular))
                                 Text(type.rawValue)
-                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 10)
@@ -149,11 +156,11 @@ struct MealLogView: View {
     private var titleField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("What did you eat?")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
 
             TextField("Grilled chicken salad…", text: $titleText)
-                .font(.system(size: 16, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -172,7 +179,7 @@ struct MealLogView: View {
     private var emojiPicker: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Pick an emoji")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
@@ -184,7 +191,7 @@ struct MealLogView: View {
                         }
                     } label: {
                         Text(emoji)
-                            .font(.system(size: 28))
+                            .font(.adaptiveDisplay(size: 28, weight: .regular, design: .default, isRegular: isRegular))
                             .frame(width: 50, height: 50)
                             .background(
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -213,12 +220,12 @@ struct MealLogView: View {
     private var fastingFriendlyToggle: some View {
         HStack(spacing: 12) {
             Image(systemName: isFastingFriendly ? "leaf.fill" : "leaf")
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(isFastingFriendly ? .green : .secondary)
                 .contentTransition(.symbolEffect(.replace))
 
             Text("Fasting-friendly meal")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
 
             Spacer()
 
@@ -244,12 +251,12 @@ struct MealLogView: View {
     private var noteField: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Note (optional)")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
 
             TextField("How did it make you feel?", text: $noteText, axis: .vertical)
-                .font(.system(size: 14, design: .rounded))
-                .lineLimit(2...4)
+                .font(.adaptiveDetail(isRegular: isRegular))
+                .lineLimit(2 ... 4)
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -267,9 +274,9 @@ struct MealLogView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text("Save Meal")
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .font(.adaptiveBody(isRegular: isRegular).weight(.bold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -298,7 +305,8 @@ struct MealLogView: View {
             selectedEmoji = emoji
         }
         if let mealType = prefillMealType,
-           let type = MealType(rawValue: mealType) {
+           let type = MealType(rawValue: mealType)
+        {
             selectedMealType = type
         }
     }

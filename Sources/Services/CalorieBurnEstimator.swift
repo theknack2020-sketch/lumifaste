@@ -11,7 +11,6 @@ import Foundation
 /// - 18–24h: 1.15x (ketosis, elevated fat metabolism)
 /// - 24h+: 1.2x (deep ketosis / autophagy)
 enum CalorieBurnEstimator {
-
     /// Disclaimer text — show alongside any calorie estimate in the UI.
     static let disclaimer = "Estimated based on general metabolic research. Individual results vary."
 
@@ -25,12 +24,11 @@ enum CalorieBurnEstimator {
         guard fastingHours > 0 else { return 0 }
 
         // BMR in kcal/day
-        let dailyBMR: Double
-        if let weight = bodyWeightKg, weight > 0 {
+        let dailyBMR: Double = if let weight = bodyWeightKg, weight > 0 {
             // Simplified Mifflin-St Jeor for average adult
-            dailyBMR = 10 * weight + 625
+            10 * weight + 625
         } else {
-            dailyBMR = 1800
+            1800
         }
 
         let hourlyBMR = dailyBMR / 24.0
@@ -40,7 +38,7 @@ enum CalorieBurnEstimator {
             (12, 1.0),
             (18, 1.1),
             (24, 1.15),
-            (.infinity, 1.2)
+            (.infinity, 1.2),
         ]
 
         var totalKcal: Double = 0

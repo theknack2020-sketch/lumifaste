@@ -4,8 +4,13 @@ struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab = 0
+
+    private var isRegular: Bool {
+        horizontalSizeClass == .regular
+    }
+
     @State private var fastingStatusManager = FastingManager()
-    
+
     var body: some View {
         ZStack(alignment: .top) {
             TabView(selection: $selectedTab) {
@@ -17,7 +22,7 @@ struct ContentView: View {
                     .accessibilityIdentifier("tab_timer")
                     .accessibilityLabel("Timer tab")
                     .accessibilityHint("Fasting timer and controls")
-                
+
                 HistoryView()
                     .tabItem {
                         Label("History", systemImage: "clock.arrow.circlepath")
@@ -26,7 +31,7 @@ struct ContentView: View {
                     .accessibilityIdentifier("tab_history")
                     .accessibilityLabel("History tab")
                     .accessibilityHint("View past fasting sessions")
-                
+
                 StatsView()
                     .tabItem {
                         Label("Insights", systemImage: "chart.bar.fill")
@@ -35,7 +40,7 @@ struct ContentView: View {
                     .accessibilityIdentifier("tab_insights")
                     .accessibilityLabel("Insights tab")
                     .accessibilityHint("Charts, streaks, and fasting trends")
-                
+
                 LearnView()
                     .tabItem {
                         Label("Learn", systemImage: "book.fill")
@@ -44,7 +49,7 @@ struct ContentView: View {
                     .accessibilityIdentifier("tab_learn")
                     .accessibilityLabel("Learn tab")
                     .accessibilityHint("Educational content about fasting")
-                
+
                 SettingsView()
                     .tabItem {
                         Label("Settings", systemImage: "gearshape")
@@ -74,9 +79,9 @@ struct ContentView: View {
                     selectedTab = tab
                 }
             }
-            
+
             // Global fasting status indicator — visible on non-timer tabs (#13)
-            if fastingStatusManager.isActive && selectedTab != 0 {
+            if fastingStatusManager.isActive, selectedTab != 0 {
                 FastingStatusBar(manager: fastingStatusManager, themeAccent: themeManager.selectedTheme.accent) {
                     withAnimation(.smoothSpring) {
                         selectedTab = 0
@@ -94,7 +99,7 @@ struct ContentView: View {
 /// On iPad (regular width), uses sidebar-adaptable tab style for better layout.
 private struct iPadTabViewModifier: ViewModifier {
     let isRegular: Bool
-    
+
     func body(content: Content) -> some View {
         if #available(iOS 18.0, *), isRegular {
             content.tabViewStyle(.sidebarAdaptable)
@@ -112,9 +117,14 @@ private struct FastingStatusBar: View {
     let manager: FastingManager
     let themeAccent: Color
     let onTap: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     @State private var pulsePhase = false
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 8) {
@@ -124,26 +134,26 @@ private struct FastingStatusBar: View {
                     .frame(width: 8, height: 8)
                     .scaleEffect(pulsePhase ? 1.3 : 1.0)
                     .opacity(pulsePhase ? 0.7 : 1.0)
-                
+
                 Image(systemName: manager.isPaused ? "pause.fill" : "timer")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(manager.isPaused ? .orange : themeAccent)
-                
+
                 Text(formatElapsed(manager.elapsedTime))
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.bold))
                     .monospacedDigit()
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText(countsDown: false))
-                
+
                 Text("·")
                     .foregroundStyle(.tertiary)
-                
+
                 Text(manager.currentStage.rawValue)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(manager.currentStage.color)
-                
+
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
             .padding(.horizontal, 14)
@@ -165,7 +175,7 @@ private struct FastingStatusBar: View {
         }
         .accessibilityLabel("Currently fasting, \(formatElapsed(manager.elapsedTime)) elapsed, \(manager.currentStage.rawValue) stage. Tap to return to timer.")
     }
-    
+
     private func formatElapsed(_ t: TimeInterval) -> String {
         let h = Int(t) / 3600
         let m = (Int(t) % 3600) / 60

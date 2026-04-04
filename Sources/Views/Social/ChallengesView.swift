@@ -1,6 +1,6 @@
-import SwiftUI
-import SwiftData
 import AudioToolbox
+import SwiftData
+import SwiftUI
 
 /// Solo fasting challenges — progress bars + completion badges.
 /// Organized by Daily / Weekly / Monthly / Lifetime sections.
@@ -9,19 +9,24 @@ struct ChallengesView: View {
     let challengeManager: ChallengeManager
     @Environment(ThemeManager.self) private var themeManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var animatingChallenge: FastingChallenge?
     @State private var showPaywall = false
     @State private var showConfetti = false
     @State private var isLoading = true
-    
+
     /// Free users can have only 1 active challenge per category
     private let freeChallengeLimit = 1
-    
+
     /// Categories to display in order
     private let displayCategories: [ChallengeCategory] = [.daily, .weekly, .monthly, .lifetime]
-    
+
     var body: some View {
         ScrollView {
             if isLoading {
@@ -30,7 +35,7 @@ struct ChallengesView: View {
                     ProgressView()
                         .controlSize(.large)
                     Text("Loading challenges…")
-                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
@@ -38,43 +43,43 @@ struct ChallengesView: View {
                 .transition(.opacity)
                 .accessibilityLabel("Loading challenges")
             } else {
-            VStack(spacing: 20) {
-                // XP + progress header
-                xpHeader
-                    .entranceAnimation(delay: 0.1)
-                
-                // Category sections
-                ForEach(Array(displayCategories.enumerated()), id: \.element.id) { index, category in
-                    let active = challengeManager.activeChallenges(for: category)
-                    let completed = challengeManager.completedChallenges(for: category)
-                    
-                    if !active.isEmpty || !completed.isEmpty {
-                        categorySection(
-                            category: category,
-                            activeChallenges: active,
-                            completedChallenges: completed,
-                            sectionIndex: index
-                        )
+                VStack(spacing: 20) {
+                    // XP + progress header
+                    xpHeader
+                        .entranceAnimation(delay: 0.1)
+
+                    // Category sections
+                    ForEach(Array(displayCategories.enumerated()), id: \.element.id) { index, category in
+                        let active = challengeManager.activeChallenges(for: category)
+                        let completed = challengeManager.completedChallenges(for: category)
+
+                        if !active.isEmpty || !completed.isEmpty {
+                            categorySection(
+                                category: category,
+                                activeChallenges: active,
+                                completedChallenges: completed,
+                                sectionIndex: index
+                            )
+                        }
                     }
+
+                    // Empty state when nothing yet
+                    if challengeManager.completedCount == 0, sessions.filter(\.isCompleted).isEmpty {
+                        emptyState
+                            .padding(.horizontal, 16)
+                            .entranceAnimation(delay: 0.2)
+                    }
+
+                    // Footer
+                    Text("Challenges update automatically after each fast.\nDaily challenges reset at midnight, weekly on Monday.")
+                        .font(.adaptiveCaption(isRegular: isRegular))
+                        .foregroundStyle(.tertiary)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 8)
+                        .padding(.bottom, 24)
+                        .entranceAnimation(delay: 0.4)
                 }
-                
-                // Empty state when nothing yet
-                if challengeManager.completedCount == 0 && sessions.filter(\.isCompleted).isEmpty {
-                    emptyState
-                        .padding(.horizontal, 16)
-                        .entranceAnimation(delay: 0.2)
-                }
-                
-                // Footer
-                Text("Challenges update automatically after each fast.\nDaily challenges reset at midnight, weekly on Monday.")
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundStyle(.tertiary)
-                    .multilineTextAlignment(.center)
-                    .padding(.top, 8)
-                    .padding(.bottom, 24)
-                    .entranceAnimation(delay: 0.4)
-            }
-            .padding(.vertical, 16)
+                .padding(.vertical, 16)
             } // end else
         }
         .navigationTitle("Challenges")
@@ -86,7 +91,7 @@ struct ChallengesView: View {
                     .ignoresSafeArea()
             }
         }
-        .sheet(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
         .onAppear {
@@ -94,7 +99,7 @@ struct ChallengesView: View {
             // Brief loading state for smooth entrance
             if isLoading {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation(.easeOut(duration: 0.3)) {
+                    withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
                         isLoading = false
                     }
                 }
@@ -119,9 +124,9 @@ struct ChallengesView: View {
             }
         }
     }
-    
+
     // MARK: - XP & Progress Header
-    
+
     private var xpHeader: some View {
         let accent = themeManager.selectedTheme.accent
         let lifetimeCompleted = challengeManager.completedChallenges(for: .lifetime).count
@@ -129,17 +134,17 @@ struct ChallengesView: View {
         let percent = lifetimeTotal > 0
             ? Double(lifetimeCompleted) / Double(lifetimeTotal) * 100
             : 0
-        
+
         return VStack(spacing: 14) {
             // XP badge
             HStack(spacing: 8) {
                 Image(systemName: "star.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(.yellow)
                     .shadow(color: .yellow.opacity(0.3), radius: 4)
-                
+
                 Text(challengeManager.xpDisplayString)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.adaptiveTitle2(isRegular: isRegular).weight(.bold))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.yellow, .orange],
@@ -150,7 +155,7 @@ struct ChallengesView: View {
             }
             .accessibilityLabel("Total experience points: \(challengeManager.totalXP)")
             .accessibilityIdentifier("xpBadge")
-            
+
             // Lifetime completion ring
             ZStack {
                 Circle()
@@ -163,11 +168,11 @@ struct ChallengesView: View {
                         lineWidth: 3
                     )
                     .frame(width: 86, height: 86)
-                
+
                 Circle()
                     .stroke(Color(.systemGray4), lineWidth: 7)
                     .frame(width: 72, height: 72)
-                
+
                 Circle()
                     .trim(from: 0, to: percent / 100)
                     .stroke(
@@ -181,31 +186,31 @@ struct ChallengesView: View {
                     .frame(width: 72, height: 72)
                     .rotationEffect(.degrees(-90))
                     .animation(.progressSpring, value: percent)
-                
+
                 VStack(spacing: 0) {
                     Text("\(lifetimeCompleted)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
                         .monospacedDigit()
                     Text("of \(lifetimeTotal)")
-                        .font(.system(size: 10, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                 }
             }
             .shadow(color: accent.opacity(0.2), radius: 12, y: 2)
-            
+
             Text("Lifetime Challenges")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.secondary)
-            
+
             // Today's active count
             let todayActive = challengeManager.activeChallenges(for: .daily).count
             if todayActive > 0 {
                 HStack(spacing: 4) {
                     Image(systemName: "sun.max.fill")
-                        .font(.system(size: 11))
+                        .font(.adaptiveBadge(isRegular: isRegular))
                         .foregroundStyle(.orange)
                     Text("\(todayActive) daily challenge\(todayActive == 1 ? "" : "s") remaining")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -220,9 +225,9 @@ struct ChallengesView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("challengesHeader")
     }
-    
+
     // MARK: - Category Section
-    
+
     private func categorySection(
         category: ChallengeCategory,
         activeChallenges: [FastingChallenge],
@@ -232,11 +237,11 @@ struct ChallengesView: View {
         VStack(alignment: .leading, spacing: 12) {
             // Section header with category info
             categorySectionHeader(category)
-            
+
             // Active challenges
             ForEach(Array(activeChallenges.enumerated()), id: \.element.id) { index, challenge in
                 let isLocked = !subscriptionManager.isSubscribed && index >= freeChallengeLimit
-                
+
                 if isLocked {
                     lockedChallengeCard(challenge: challenge, index: index)
                 } else {
@@ -251,12 +256,12 @@ struct ChallengesView: View {
                     .staggeredAppear(index: sectionIndex * 3 + index)
                 }
             }
-            
+
             // Completed challenges in this category (compact grid)
             if !completedChallenges.isEmpty {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12)
+                    GridItem(.flexible(), spacing: 12),
                 ], spacing: 12) {
                     ForEach(Array(completedChallenges.enumerated()), id: \.element.id) { index, challenge in
                         CompletedBadge(
@@ -271,13 +276,13 @@ struct ChallengesView: View {
         }
         .padding(.horizontal, 16)
     }
-    
+
     // MARK: - Category Section Header
-    
+
     private func categorySectionHeader(_ category: ChallengeCategory) -> some View {
         HStack(spacing: 6) {
             Image(systemName: category.icon)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [themeManager.selectedTheme.accent, themeManager.selectedTheme.accent.opacity(0.6)],
@@ -285,25 +290,25 @@ struct ChallengesView: View {
                         endPoint: .bottomTrailing
                     )
                 )
-            
+
             Text(category.displayName)
                 .font(.system(.headline, design: .rounded))
-            
+
             Spacer()
-            
+
             // Show refresh info for time-bound categories
             switch category {
             case .daily:
                 Text("Resets at midnight")
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
             case .weekly:
                 Text("Resets Monday")
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
             case .monthly:
                 Text("Resets monthly")
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
             case .lifetime:
                 EmptyView()
@@ -311,9 +316,9 @@ struct ChallengesView: View {
         }
         .accessibilityLabel("\(category.displayName) challenges")
     }
-    
+
     // MARK: - Locked Challenge Card
-    
+
     private func lockedChallengeCard(challenge: FastingChallenge, index: Int) -> some View {
         EnhancedChallengeCard(
             challenge: challenge,
@@ -328,16 +333,16 @@ struct ChallengesView: View {
         .overlay {
             VStack(spacing: 8) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 20))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                 Text("Pro Feature")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 Button {
                     HapticManager.shared.lightTap()
                     showPaywall = true
                 } label: {
                     Text("Upgrade")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 16)
                         .padding(.vertical, 6)
@@ -366,9 +371,9 @@ struct ChallengesView: View {
         }
         .staggeredAppear(index: index)
     }
-    
+
     // MARK: - Empty State
-    
+
     private var emptyState: some View {
         VStack(spacing: 16) {
             ZStack {
@@ -382,28 +387,28 @@ struct ChallengesView: View {
                     )
                     .frame(width: 110, height: 110)
                     .shadow(color: themeManager.selectedTheme.accent.opacity(0.15), radius: 12, y: 4)
-                
+
                 Image(systemName: "flag.checkered")
-                    .font(.system(size: 48, weight: .light, design: .rounded))
+                    .font(.adaptiveDisplay(size: 48, weight: .light, design: .rounded, isRegular: isRegular))
                     .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.7))
                     .symbolEffect(.pulse, options: .repeating.speed(0.5))
             }
             .accessibilityHidden(true)
-            
+
             Text("Ready to Challenge Yourself?")
                 .font(.system(.title3, design: .rounded, weight: .bold))
-            
+
             Text("Complete fasts to make progress on challenges.\nEach fast brings you closer to earning badges and XP.")
-                .font(.system(size: 14, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             HStack(spacing: 6) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.orange)
                 Text("Start a fast to begin your first challenge")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(.secondary)
             }
             .padding(.horizontal, 16)
@@ -433,13 +438,18 @@ struct ChallengesView: View {
 // MARK: - Enhanced Challenge Card (Active)
 
 struct EnhancedChallengeCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let challenge: FastingChallenge
     let progress: Int
     let isCompleted: Bool
     let fraction: Double
     let accentColor: Color
     var isAnimating: Bool = false
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
@@ -448,24 +458,24 @@ struct EnhancedChallengeCard: View {
                     Circle()
                         .fill(challenge.color.opacity(0.12))
                         .frame(width: 44, height: 44)
-                    
+
                     Image(systemName: challenge.icon)
-                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .font(.adaptiveTitle3(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(challenge.color)
                 }
                 .shadow(color: challenge.color.opacity(0.2), radius: 4, y: 2)
                 .scaleEffect(isAnimating ? 1.2 : 1.0)
                 .animation(.spring(duration: 0.5, bounce: 0.5), value: isAnimating)
-                
+
                 // Title + subtitle + difficulty + XP
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(challenge.title)
                             .font(.system(.headline, design: .rounded))
-                        
+
                         // Difficulty badge
                         Text(challenge.difficulty.displayName)
-                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                            .font(.adaptiveSmallLabel(isRegular: isRegular).weight(.bold))
                             .foregroundStyle(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -475,28 +485,28 @@ struct EnhancedChallengeCard: View {
                             )
                             .accessibilityLabel("Difficulty: \(challenge.difficulty.displayName)")
                     }
-                    
+
                     Text(challenge.subtitle)
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
-                
+
                 Spacer()
-                
+
                 // Progress count + XP reward
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("\(progress)/\(challenge.targetCount)")
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.bold))
                         .monospacedDigit()
                         .foregroundStyle(challenge.color)
-                    
+
                     Text("+\(challenge.xpReward) XP")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.yellow.opacity(0.8))
                 }
             }
-            
+
             // Progress bar with percentage
             HStack(spacing: 8) {
                 GeometryReader { geo in
@@ -504,7 +514,7 @@ struct EnhancedChallengeCard: View {
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(Color(.systemGray5))
                             .frame(height: 8)
-                        
+
                         RoundedRectangle(cornerRadius: 4, style: .continuous)
                             .fill(
                                 LinearGradient(
@@ -519,9 +529,9 @@ struct EnhancedChallengeCard: View {
                     }
                 }
                 .frame(height: 8)
-                
+
                 Text("\(Int(fraction * 100))%")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(.adaptiveBadge(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(.tertiary)
                     .monospacedDigit()
                     .frame(width: 36, alignment: .trailing)
@@ -552,46 +562,51 @@ struct EnhancedChallengeCard: View {
 // MARK: - Completed Badge
 
 struct CompletedBadge: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let challenge: FastingChallenge
     let date: Date?
     var isAnimating: Bool = false
-    
+
     private var formattedDate: String? {
         guard let date else { return nil }
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: date)
     }
-    
+
     var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(challenge.color.opacity(0.15))
                     .frame(width: 52, height: 52)
-                
+
                 Image(systemName: challenge.badgeIcon)
-                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .font(.adaptiveTitle2(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(challenge.color)
             }
             .shadow(color: challenge.color.opacity(0.35), radius: 8, y: 3)
             .scaleEffect(isAnimating ? 1.3 : 1.0)
             .goldGlow(when: isAnimating)
             .animation(.spring(duration: 0.5, bounce: 0.5), value: isAnimating)
-            
+
             Text(challenge.title)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            
+
             // XP earned
             Text("+\(challenge.xpReward) XP")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.adaptiveCaption(isRegular: isRegular).weight(.bold))
                 .foregroundStyle(.yellow.opacity(0.7))
-            
+
             if let date = formattedDate {
                 Text(date)
-                    .font(.system(size: 10, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
             }
         }

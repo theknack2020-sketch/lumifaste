@@ -58,11 +58,10 @@ struct FastingStatusIntent: AppIntent {
         let minutes = (Int(manager.elapsedTime) % 3600) / 60
         let stage = manager.currentStage.rawValue
 
-        let status: String
-        if hours > 0 {
-            status = "You've been fasting for \(hours)h \(minutes)m. Current stage: \(stage)."
+        let status = if hours > 0 {
+            "You've been fasting for \(hours)h \(minutes)m. Current stage: \(stage)."
         } else {
-            status = "You've been fasting for \(minutes) minutes. Current stage: \(stage)."
+            "You've been fasting for \(minutes) minutes. Current stage: \(stage)."
         }
         return .result(dialog: "\(status)")
     }
@@ -77,7 +76,7 @@ struct LumifasteShortcuts: AppShortcutsProvider {
             intent: StartFastIntent(),
             phrases: [
                 "Start a fast with \(.applicationName)",
-                "Begin fasting in \(.applicationName)"
+                "Begin fasting in \(.applicationName)",
             ],
             shortTitle: "Start a Fast",
             systemImageName: "play.fill"
@@ -86,7 +85,7 @@ struct LumifasteShortcuts: AppShortcutsProvider {
             intent: StopFastIntent(),
             phrases: [
                 "End my fast in \(.applicationName)",
-                "Stop fasting in \(.applicationName)"
+                "Stop fasting in \(.applicationName)",
             ],
             shortTitle: "End My Fast",
             systemImageName: "stop.fill"
@@ -95,7 +94,7 @@ struct LumifasteShortcuts: AppShortcutsProvider {
             intent: FastingStatusIntent(),
             phrases: [
                 "How is my fast going in \(.applicationName)",
-                "Fasting status in \(.applicationName)"
+                "Fasting status in \(.applicationName)",
             ],
             shortTitle: "Fasting Status",
             systemImageName: "clock.fill"

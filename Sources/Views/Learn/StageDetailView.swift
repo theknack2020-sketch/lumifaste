@@ -3,35 +3,40 @@ import SwiftUI
 /// Detailed educational view for a specific fasting stage.
 /// Shows what happens to the body, metabolic info, tips, and scientific references.
 struct StageDetailView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let detail: FastingEducation.StageDetail
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 // Stage header
                 headerSection
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Body text
                 bodySection
                     .entranceAnimation(delay: 0.2)
-                
+
                 // Metabolic info
                 metabolicSection
                     .entranceAnimation(delay: 0.25)
-                
+
                 // What happens
                 whatHappensSection
                     .entranceAnimation(delay: 0.3)
-                
+
                 // Tips
                 tipsSection
                     .entranceAnimation(delay: 0.35)
-                
+
                 // Reference
                 referenceSection
                     .entranceAnimation(delay: 0.4)
-                
+
                 // Disclaimer
                 disclaimerFooter
                     .padding(.bottom, 24)
@@ -42,30 +47,30 @@ struct StageDetailView: View {
         .navigationTitle(detail.stage.rawValue)
         .navigationBarTitleDisplayMode(.inline)
     }
-    
+
     // MARK: - Header
-    
+
     private var headerSection: some View {
         VStack(spacing: 12) {
             Image(systemName: detail.stage.icon)
-                .font(.system(size: 36))
+                .font(.adaptiveDisplay(size: 36, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(detail.stage.color)
                 .accessibilityLabel("\(detail.stage.rawValue) stage icon")
-            
+
             Text(detail.headline)
-                .font(.system(size: 22, weight: .bold))
-            
+                .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
+
             HStack(spacing: 6) {
                 Text("Starts at \(Int(detail.stage.startHour))h")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(detail.stage.color)
-                
+
                 if let next = detail.stage.next {
                     Text("→")
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.tertiary)
                     Text("\(next.rawValue) at \(Int(next.startHour))h")
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -86,15 +91,15 @@ struct StageDetailView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(detail.stage.rawValue) stage. \(detail.headline). Starts at \(Int(detail.stage.startHour)) hours.")
     }
-    
+
     // MARK: - Body
-    
+
     private var bodySection: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Overview")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             Text(detail.bodyText)
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(3)
@@ -109,21 +114,21 @@ struct StageDetailView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Overview: \(detail.bodyText)")
     }
-    
+
     // MARK: - Metabolic Info
-    
+
     private var metabolicSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.orange)
                     .accessibilityHidden(true)
                 Text("Metabolic State")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
             Text(detail.metabolicInfo)
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(3)
@@ -138,29 +143,29 @@ struct StageDetailView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Metabolic state: \(detail.metabolicInfo)")
     }
-    
+
     // MARK: - What Happens
-    
+
     private var whatHappensSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "body.text")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.blue)
                     .accessibilityHidden(true)
                 Text("What Happens to Your Body")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
-            
+
             ForEach(detail.whatHappens, id: \.self) { item in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "circle.fill")
-                        .font(.system(size: 5))
+                        .font(.adaptiveCaption2(isRegular: isRegular))
                         .foregroundStyle(detail.stage.color)
                         .padding(.top, 6)
-                    
+
                     Text(item)
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -174,29 +179,29 @@ struct StageDetailView: View {
         )
         .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
     }
-    
+
     // MARK: - Tips
-    
+
     private var tipsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.yellow)
                     .accessibilityHidden(true)
                 Text("Tips for This Stage")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
-            
+
             ForEach(detail.tips, id: \.self) { tip in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.green)
                         .padding(.top, 1)
-                    
+
                     Text(tip)
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -210,23 +215,23 @@ struct StageDetailView: View {
         )
         .shadow(color: .yellow.opacity(0.08), radius: 6, x: 0, y: 3)
     }
-    
+
     // MARK: - Reference
-    
+
     private var referenceSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
                 Text("Reference")
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                     .foregroundStyle(.secondary)
             }
-            
+
             Text(detail.reference)
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -237,21 +242,21 @@ struct StageDetailView: View {
                 .fill(Color(.tertiarySystemBackground))
         )
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerFooter: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.red.opacity(0.7))
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text("Health Disclaimer")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(.secondary)
                 Text("The fasting stages described are based on general research. Individual results vary. This is not medical advice — always consult your healthcare provider before starting any fasting program.")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }

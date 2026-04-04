@@ -1,6 +1,6 @@
-import SwiftUI
-import SwiftData
 import AudioToolbox
+import SwiftData
+import SwiftUI
 
 /// Achievement badges grid — shown in Settings or as a standalone view.
 /// Shows earned badges with dates, locked badges with requirements.
@@ -9,26 +9,31 @@ struct AchievementsView: View {
     let achievementManager: AchievementManager
     @Environment(ThemeManager.self) private var themeManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
     @State private var animatingBadge: Achievement?
     @State private var showShareSheet = false
     @State private var showPaywall = false
     @State private var shareableImage: ShareableImage?
-    
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
+        GridItem(.flexible(), spacing: 12),
     ]
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
                 // Progress header
                 progressHeader
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Motivational empty state when nothing earned yet
                 if achievementManager.earnedCount == 0 {
                     VStack(spacing: 16) {
@@ -43,28 +48,28 @@ struct AchievementsView: View {
                                 )
                                 .frame(width: 110, height: 110)
                                 .shadow(color: themeManager.selectedTheme.accent.opacity(0.15), radius: 12, y: 4)
-                            
+
                             Image(systemName: "star.circle")
-                                .font(.system(size: 48, weight: .light, design: .rounded))
+                                .font(.adaptiveDisplay(size: 48, weight: .light, design: .rounded, isRegular: isRegular))
                                 .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.7))
                                 .symbolEffect(.pulse, options: .repeating.speed(0.5))
                         }
                         .accessibilityHidden(true)
-                        
+
                         Text("Your First Badge Awaits")
                             .font(.system(.title3, design: .rounded, weight: .bold))
-                        
+
                         Text("Complete fasts to unlock achievements.\nEvery journey starts with a single step.")
-                            .font(.system(size: 14, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
-                        
+
                         HStack(spacing: 6) {
                             Image(systemName: "flame.fill")
-                                .font(.system(size: 12))
+                                .font(.adaptiveCaption(isRegular: isRegular))
                                 .foregroundStyle(.orange)
                             Text("Start a fast to earn your first badge")
-                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                                 .foregroundStyle(.secondary)
                         }
                         .padding(.horizontal, 16)
@@ -91,7 +96,7 @@ struct AchievementsView: View {
                     .accessibilityLabel("Your first badge awaits. Complete fasts to unlock achievements.")
                     .accessibilityIdentifier("achievementsEmptyState")
                 }
-                
+
                 // Badge grid
                 LazyVGrid(columns: columns, spacing: 14) {
                     ForEach(Array(Achievement.allCases.enumerated()), id: \.element.id) { index, achievement in
@@ -113,7 +118,7 @@ struct AchievementsView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                
+
                 // Referral
                 referralSection
                     .padding(.horizontal, 16)
@@ -146,13 +151,13 @@ struct AchievementsView: View {
                 ActivityShareSheet(image: item.image, caption: item.caption)
             }
         }
-        .sheet(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
     }
-    
+
     // MARK: - Progress Header
-    
+
     private var progressHeader: some View {
         let accent = themeManager.selectedTheme.accent
         return VStack(spacing: 12) {
@@ -168,11 +173,11 @@ struct AchievementsView: View {
                         lineWidth: 3
                     )
                     .frame(width: 96, height: 96)
-                
+
                 Circle()
                     .stroke(Color(.systemGray4), lineWidth: 8)
                     .frame(width: 80, height: 80)
-                
+
                 Circle()
                     .trim(from: 0, to: achievementManager.completionPercent / 100)
                     .stroke(
@@ -186,18 +191,18 @@ struct AchievementsView: View {
                     .frame(width: 80, height: 80)
                     .rotationEffect(.degrees(-90))
                     .animation(.progressSpring, value: achievementManager.completionPercent)
-                
+
                 VStack(spacing: 0) {
                     Text("\(achievementManager.earnedCount)")
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
                         .monospacedDigit()
                     Text("of \(achievementManager.totalCount)")
-                        .font(.system(size: 11, design: .rounded))
+                        .font(.adaptiveBadge(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                 }
             }
             .shadow(color: accent.opacity(0.2), radius: 12, y: 2)
-            
+
             Text(String(format: "%.0f%% Complete", achievementManager.completionPercent))
                 .font(.system(.headline, design: .rounded))
                 .foregroundStyle(.secondary)
@@ -212,27 +217,27 @@ struct AchievementsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(achievementManager.earnedCount) of \(achievementManager.totalCount) achievements earned, \(String(format: "%.0f", achievementManager.completionPercent)) percent complete")
     }
-    
+
     // MARK: - Referral Section
-    
+
     private var referralSection: some View {
         let accent = themeManager.selectedTheme.accent
         return VStack(spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
-                    .font(.system(size: 20))
+                    .font(.adaptiveTitle3(isRegular: isRegular))
                     .foregroundStyle(accent)
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Tell a friend about Lumifaste")
                         .font(.system(.headline, design: .rounded))
                     Text("Share the app with friends who want a clean, ad-free fasting tracker")
-                        .font(.system(size: 12, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .lineLimit(2)
                 }
             }
-            
+
             ShareLink(
                 item: URL(string: "https://apps.apple.com/app/lumifaste/id6740062938")!,
                 subject: Text("Check out Lumifaste"),
@@ -240,9 +245,9 @@ struct AchievementsView: View {
             ) {
                 HStack(spacing: 6) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                     Text("Share Lumifaste")
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
@@ -274,28 +279,33 @@ struct AchievementsView: View {
 // MARK: - Achievement Badge
 
 struct AchievementBadge: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let achievement: Achievement
     let isEarned: Bool
     let dateEarned: Date?
     var isAnimating: Bool = false
     var isProLocked: Bool = false
-    
+
     private var formattedDate: String? {
         guard let date = dateEarned else { return nil }
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: date)
     }
-    
+
     var body: some View {
         VStack(spacing: 6) {
             ZStack {
                 Circle()
                     .fill(isEarned ? achievement.color.opacity(0.15) : Color(.systemGray5))
                     .frame(width: 56, height: 56)
-                
+
                 Image(systemName: achievement.icon)
-                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .font(.adaptiveTitle2(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(isEarned ? achievement.color : Color(.systemGray3))
             }
             .shadow(color: isEarned ? achievement.color.opacity(0.3) : .black.opacity(0.08), radius: isEarned ? 8 : 4, y: isEarned ? 3 : 2)
@@ -303,20 +313,20 @@ struct AchievementBadge: View {
             .opacity(isAnimating ? 0.7 : 1.0)
             .goldGlow(when: isAnimating)
             .animation(.spring(duration: 0.5, bounce: 0.5), value: isAnimating)
-            
+
             Text(achievement.title)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(isEarned ? .primary : .secondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-            
+
             if let date = formattedDate {
                 Text(date)
-                    .font(.system(size: 9, design: .rounded))
+                    .font(.adaptiveSmallLabel(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
             } else {
                 Text(achievement.subtitle)
-                    .font(.system(size: 9, design: .rounded))
+                    .font(.adaptiveSmallLabel(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -334,10 +344,10 @@ struct AchievementBadge: View {
             if isProLocked {
                 VStack(spacing: 2) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 12))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                     Text("Pro")
-                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular).weight(.bold))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -350,47 +360,52 @@ struct AchievementBadge: View {
 // MARK: - Achievement Unlock Overlay
 
 struct AchievementUnlockOverlay: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let achievement: Achievement
     let onDismiss: () -> Void
     @State private var appeared = false
-    
+
     var body: some View {
         ZStack {
             Color.black.opacity(appeared ? 0.4 : 0)
                 .ignoresSafeArea()
                 .onTapGesture { dismissWithAnimation() }
-            
+
             VStack(spacing: 16) {
                 Text("🏆")
-                    .font(.system(size: 48, design: .rounded))
-                
+                    .font(.adaptiveDisplay(size: 48, weight: .regular, design: .rounded, isRegular: isRegular))
+
                 Text("Achievement Unlocked!")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
-                
+                    .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
+
                 ZStack {
                     Circle()
                         .fill(achievement.color.opacity(0.15))
                         .frame(width: 80, height: 80)
-                    
+
                     Image(systemName: achievement.icon)
-                        .font(.system(size: 36, weight: .semibold, design: .rounded))
+                        .font(.adaptiveDisplay(size: 36, weight: .semibold, design: .rounded, isRegular: isRegular))
                         .foregroundStyle(achievement.color)
                 }
                 .shadow(color: achievement.color.opacity(0.4), radius: 12, y: 4)
-                
+
                 Text(achievement.title)
                     .font(.system(.headline, design: .rounded))
-                
+
                 Text(achievement.subtitle)
-                    .font(.system(size: 14, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                
+
                 Button {
                     dismissWithAnimation()
                 } label: {
                     Text("Awesome!")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(width: 160, height: 44)
                         .background(
@@ -423,7 +438,7 @@ struct AchievementUnlockOverlay: View {
             }
         }
     }
-    
+
     private func dismissWithAnimation() {
         withAnimation(.easeInOut(duration: 0.2)) {
             appeared = false
@@ -439,14 +454,13 @@ struct AchievementUnlockOverlay: View {
 struct ActivityShareSheet: UIViewControllerRepresentable {
     let image: UIImage
     let caption: String
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
+
+    func makeUIViewController(context _: Context) -> UIActivityViewController {
         let items: [Any] = [image, caption]
-        let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        return vc
+        return UIActivityViewController(activityItems: items, applicationActivities: nil)
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }
 
 #Preview {

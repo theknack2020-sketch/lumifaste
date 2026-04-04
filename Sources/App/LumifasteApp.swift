@@ -1,6 +1,9 @@
-import SwiftUI
-import SwiftData
 import BackgroundTasks
+import os
+import SwiftData
+import SwiftUI
+
+private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "App")
 
 @main
 struct LumifasteApp: App {
@@ -11,15 +14,15 @@ struct LumifasteApp: App {
     @AppStorage("lf_onboarding_complete") private var hasCompletedOnboarding = false
     @AppStorage("lf_appearance_mode") private var appearanceMode: String = AppearanceMode.system.rawValue
     @Environment(\.scenePhase) private var scenePhase
-    
+
     init() {
         do {
             let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
             let config = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
             modelContainer = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            print("[Lumifaste] CRITICAL: ModelContainer init failed: \(error)")
-            print("[Lumifaste] Falling back to local-only store...")
+            logger.error("ModelContainer init failed: \(error.localizedDescription)")
+            logger.warning("Falling back to local-only store")
             do {
                 let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
                 let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -32,10 +35,10 @@ struct LumifasteApp: App {
                 fatalError("[Lumifaste] Cannot create ModelContainer: \(error)")
             }
         }
-        
+
         // Register notification categories at launch
         NotificationManager.shared.registerCategories()
-        
+
         // Register background app refresh task
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.theknack.lumifaste.refresh",
@@ -47,16 +50,16 @@ struct LumifasteApp: App {
             }
             Self.handleBackgroundRefresh(refreshTask)
         }
-        
+
         // Initial clock checkpoint
         _ = ClockGuard.checkClockIntegrity()
         _ = ClockGuard.checkTimezoneChange()
     }
-    
+
     private var selectedAppearance: AppearanceMode {
         AppearanceMode(rawValue: appearanceMode) ?? .system
     }
-    
+
     var body: some Scene {
         WindowGroup {
             Group {
@@ -79,7 +82,7 @@ struct LumifasteApp: App {
                             if newPhase == .active {
                                 // Re-check clock integrity on foreground
                                 _ = ClockGuard.checkClockIntegrity()
-                                
+
                                 // Re-check notification permission (user may have changed in Settings)
                                 Task { @MainActor in
                                     await NotificationManager.shared.refreshPermissionStatus()
@@ -90,13 +93,15 @@ struct LumifasteApp: App {
                             }
                         }
                         .alert("Storage Low",
-                               isPresented: .constant(dataController.isStorageLow && hasCompletedOnboarding && !dataController.showSaveErrorAlert)) {
+                               isPresented: .constant(dataController.isStorageLow && hasCompletedOnboarding && !dataController.showSaveErrorAlert))
+                        {
                             Button("OK") {}
                         } message: {
                             Text("Your device storage is low (\(dataController.availableStorageString) remaining). Fasting data may not save correctly. Please free up some space.")
                         }
                         .alert("Save Error",
-                               isPresented: $dataController.showSaveErrorAlert) {
+                               isPresented: $dataController.showSaveErrorAlert)
+                        {
                             Button("OK") {
                                 dataController.showSaveErrorAlert = false
                             }
@@ -115,9 +120,9 @@ struct LumifasteApp: App {
         }
         .modelContainer(modelContainer)
     }
-    
+
     // MARK: - Deep Link Handling
-    
+
     /// Handle lumifaste:// URL scheme for shared content.
     /// lumifaste://start — timer tab
     /// lumifaste://achievements — settings tab (achievements)
@@ -132,7 +137,7 @@ struct LumifasteApp: App {
             break
         }
     }
-    
+
     /// Schedule a local notification nudge if user hasn't fasted in 3+ days (#13)
     @MainActor
     private func scheduleInactivityNudge() async {
@@ -141,36 +146,36 @@ struct LumifasteApp: App {
             predicate: #Predicate<FastingSession> { $0.isCompleted },
             sortBy: [SortDescriptor(\FastingSession.startDate, order: .reverse)]
         )
-        
+
         guard let sessions = try? context.fetch(descriptor) else { return }
-        
+
         if FastingManager.shouldShowNudge(sessions: sessions) {
             // Schedule nudge notification for tomorrow 10 AM if not already fasting
             let manager = FastingManager()
             guard !manager.isActive else { return }
-            
+
             let content = UNMutableNotificationContent()
             content.title = "Ready to Fast? 🌿"
             content.body = "It's been a few days since your last fast. Your body benefits from consistency — even a short 12h fast helps!"
             content.sound = .default
             content.categoryIdentifier = NotificationCategory.dailyReminder.rawValue
-            
+
             var components = Calendar.current.dateComponents([.year, .month, .day], from: Date.now.addingTimeInterval(86400))
             components.hour = 10
             components.minute = 0
-            
+
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
             let request = UNNotificationRequest(identifier: "inactivity_nudge", content: content, trigger: trigger)
-            
+
             try? await UNUserNotificationCenter.current().add(request)
         } else {
             // Cancel any pending nudge
             UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["inactivity_nudge"])
         }
     }
-    
+
     // MARK: - Background Task Scheduling
-    
+
     /// Schedule the background app refresh task. Called when the app enters background.
     private static func scheduleBackgroundRefresh() {
         let request = BGAppRefreshTaskRequest(identifier: "com.theknack.lumifaste.refresh")
@@ -178,36 +183,36 @@ struct LumifasteApp: App {
         do {
             try BGTaskScheduler.shared.submit(request)
         } catch {
-            print("[Lumifaste] Background refresh scheduling failed: \(error.localizedDescription)")
+            logger.warning("Background refresh scheduling failed: \(error.localizedDescription)")
         }
     }
-    
+
     /// Handle background refresh — reschedule retention notifications (streak protection, inactivity nudge).
     private static func handleBackgroundRefresh(_ task: BGAppRefreshTask) {
         // Schedule the next refresh before doing work
         scheduleBackgroundRefresh()
-        
+
         let workTask = Task { @MainActor in
             let manager = FastingManager()
             let isActive = manager.isActive
-            
+
             // Reschedule streak and inactivity notifications
             let status = await NotificationManager.shared.authorizationStatus()
             guard status == .authorized else { return }
-            
+
             // Streak reminder — protect streak if user hasn't fasted today
             let streak = UserDefaults.standard.integer(forKey: "lf_current_streak_cache")
-            if streak > 0 && !isActive {
+            if streak > 0, !isActive {
                 NotificationManager.shared.scheduleStreakReminder(currentStreak: streak)
             }
-            
+
             // Inactivity nudge
             if !isActive {
                 let content = UNMutableNotificationContent()
                 content.title = "Ready to Fast? 🌿"
                 content.body = "Keep your streak alive — start a fast today!"
                 content.sound = .default
-                
+
                 var components = DateComponents()
                 components.hour = 10
                 components.minute = 0
@@ -216,11 +221,11 @@ struct LumifasteApp: App {
                 try? await UNUserNotificationCenter.current().add(request)
             }
         }
-        
+
         task.expirationHandler = {
             workTask.cancel()
         }
-        
+
         Task {
             await workTask.value
             task.setTaskCompleted(success: true)

@@ -3,8 +3,13 @@ import SwiftUI
 /// Browsable fasting tips organized by category.
 /// Shows categorized tips with educational context.
 struct TipsView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedCategory: FastingTips.Category?
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
@@ -12,17 +17,17 @@ struct TipsView: View {
                 dailyTipCard
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Category grid
                 categoryGrid
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.2)
-                
+
                 // Tips for selected category (or all)
                 tipsSection
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.3)
-                
+
                 // Disclaimer
                 disclaimerFooter
                     .padding(.horizontal, 16)
@@ -33,33 +38,33 @@ struct TipsView: View {
         .navigationTitle("Fasting Tips")
         .navigationBarTitleDisplayMode(.large)
     }
-    
+
     // MARK: - Daily Tip
-    
+
     private var dailyTipCard: some View {
         let tip = FastingTips.dailyTip()
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "lightbulb.fill")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.yellow)
                 Text("Tip of the Day")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.bold))
                     .foregroundStyle(.secondary)
             }
-            
+
             HStack(spacing: 10) {
                 Text(tip.emoji)
-                    .font(.system(size: 28))
-                
+                    .font(.adaptiveDisplay(size: 28, weight: .regular, design: .default, isRegular: isRegular))
+
                 Text(tip.text)
-                    .font(.system(size: 15))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.primary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            
+
             Text(tip.category.rawValue)
-                .font(.system(size: 11, weight: .medium))
+                .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
@@ -75,21 +80,21 @@ struct TipsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Tip of the day: \(tip.text)")
     }
-    
+
     // MARK: - Category Grid
-    
+
     private var categoryGrid: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Categories")
-                .font(.system(size: 15, weight: .semibold))
-            
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     CategoryChip(title: "All", icon: "square.grid.2x2", isSelected: selectedCategory == nil) {
                         HapticManager.shared.selectionChanged()
                         withAnimation(.tapSpring) { selectedCategory = nil }
                     }
-                    
+
                     ForEach(FastingTips.Category.allCases) { category in
                         CategoryChip(
                             title: category.rawValue,
@@ -106,12 +111,12 @@ struct TipsView: View {
             }
         }
     }
-    
+
     // MARK: - Tips List
-    
+
     private var tipsSection: some View {
         let filteredTips = selectedCategory.map { FastingTips.tips(for: $0) } ?? FastingTips.tips
-        
+
         return LazyVStack(spacing: 10) {
             ForEach(Array(filteredTips.enumerated()), id: \.element.id) { index, tip in
                 TipCard(tip: tip)
@@ -119,16 +124,16 @@ struct TipsView: View {
             }
         }
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerFooter: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
             Text(FastingEducation.shortDisclaimer)
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
         .padding(.top, 8)
@@ -142,14 +147,19 @@ private struct CategoryChip: View {
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: icon)
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -172,20 +182,25 @@ private struct CategoryChip: View {
 
 private struct TipCard: View {
     let tip: FastingTips.Tip
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Text(tip.emoji)
-                .font(.system(size: 24))
+                .font(.adaptiveTitle2(isRegular: isRegular))
                 .frame(width: 36)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text(tip.text)
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .fixedSize(horizontal: false, vertical: true)
-                
+
                 Text(tip.category.rawValue)
-                    .font(.system(size: 11))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
         }

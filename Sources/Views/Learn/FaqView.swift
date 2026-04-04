@@ -3,20 +3,25 @@ import SwiftUI
 /// Frequently Asked Questions about intermittent fasting.
 /// 17 questions organized by category with expandable answers.
 struct FaqView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var expandedIds: Set<Int> = []
     @State private var selectedCategory: String?
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     private var categories: [String] {
         FastingEducation.faqCategories
     }
-    
+
     private var filteredFaqs: [FastingEducation.FAQ] {
         if let cat = selectedCategory {
             return FastingEducation.faqs(for: cat)
         }
         return FastingEducation.faqs
     }
-    
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
@@ -24,7 +29,7 @@ struct FaqView: View {
                 categoryFilter
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.1)
-                
+
                 // FAQ items
                 ForEach(Array(filteredFaqs.enumerated()), id: \.element.id) { index, faq in
                     FaqCard(
@@ -43,7 +48,7 @@ struct FaqView: View {
                     .padding(.horizontal, 16)
                     .staggeredAppear(index: index)
                 }
-                
+
                 // Disclaimer
                 disclaimerFooter
                     .padding(.horizontal, 16)
@@ -54,9 +59,9 @@ struct FaqView: View {
         .navigationTitle("FAQ")
         .navigationBarTitleDisplayMode(.large)
     }
-    
+
     // MARK: - Category Filter
-    
+
     private var categoryFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -64,7 +69,7 @@ struct FaqView: View {
                     HapticManager.shared.selectionChanged()
                     withAnimation(.tapSpring) { selectedCategory = nil }
                 }
-                
+
                 ForEach(categories, id: \.self) { cat in
                     FilterChip(title: cat, isSelected: selectedCategory == cat) {
                         HapticManager.shared.selectionChanged()
@@ -74,16 +79,16 @@ struct FaqView: View {
             }
         }
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerFooter: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle")
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
             Text(FastingEducation.shortDisclaimer)
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
     }
@@ -95,11 +100,16 @@ private struct FilterChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(
@@ -124,25 +134,30 @@ private struct FaqCard: View {
     let faq: FastingEducation.FAQ
     let isExpanded: Bool
     let onTap: () -> Void
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Question
             Button(action: onTap) {
                 HStack(spacing: 12) {
                     Image(systemName: "questionmark.circle.fill")
-                        .font(.system(size: 18))
+                        .font(.adaptiveHeadline(isRegular: isRegular))
                         .foregroundStyle(Color.accentColor)
-                    
+
                     Text(faq.question)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.primary)
                         .multilineTextAlignment(.leading)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                         .animation(.smoothSpring, value: isExpanded)
@@ -152,19 +167,19 @@ private struct FaqCard: View {
             .buttonStyle(.plain)
             .accessibilityLabel(faq.question)
             .accessibilityHint(isExpanded ? "Collapse answer" : "Expand answer")
-            
+
             // Answer
             if isExpanded {
                 VStack(alignment: .leading, spacing: 8) {
                     Divider()
-                    
+
                     Text(faq.answer)
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    
+
                     Text(faq.category)
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(Color.accentColor)
                         .padding(.top, 4)
                 }

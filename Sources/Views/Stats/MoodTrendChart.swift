@@ -1,12 +1,18 @@
-import SwiftUI
-import SwiftData
 import Charts
+import SwiftData
+import SwiftUI
 
 /// Mood & energy trend chart over the last 30 days.
 /// Displays mood as a line (tired=1 → great=4) with emoji point marks,
 /// optional energy overlay, and summary cards below.
 struct MoodTrendChart: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingJournal.date, order: .reverse)
     private var allEntries: [FastingJournal]
 
@@ -54,7 +60,6 @@ struct MoodTrendChart: View {
 
     // MARK: - Chart
 
-    @ViewBuilder
     private func chartView(accent: Color) -> some View {
         Chart {
             // Area fill under mood line
@@ -84,7 +89,7 @@ struct MoodTrendChart: View {
                 .interpolationMethod(.catmullRom)
                 .symbol {
                     Text(entry.mood.emoji)
-                        .font(.system(size: 12))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                 }
             }
 
@@ -94,7 +99,7 @@ struct MoodTrendChart: View {
                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
                 .annotation(position: .top, alignment: .trailing) {
                     Text("avg")
-                        .font(.system(size: 9, weight: .medium))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 4)
                         .padding(.vertical, 2)
@@ -125,7 +130,7 @@ struct MoodTrendChart: View {
                 AxisValueLabel {
                     if let intVal = value.as(Int.self) {
                         Text(moodLabel(for: intVal))
-                            .font(.system(size: 9))
+                            .font(.adaptiveCaption2(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -136,7 +141,7 @@ struct MoodTrendChart: View {
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5, dash: [3, 3]))
                     .foregroundStyle(.secondary.opacity(0.3))
                 AxisValueLabel(format: .dateTime.day().month(.abbreviated))
-                    .font(.system(size: 9))
+                    .font(.adaptiveCaption2(isRegular: isRegular))
             }
         }
         .chartLegend(.hidden)
@@ -169,13 +174,13 @@ struct MoodTrendChart: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "face.dashed")
-                .font(.system(size: 32))
+                .font(.adaptiveDisplay(size: 32, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .symbolEffect(.pulse, options: .repeating.speed(0.5))
                 .accessibilityHidden(true)
 
             Text("Complete fasts and log your mood to see trends here")
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -221,20 +226,25 @@ private struct MoodSummaryCard: View {
     let label: String
     let value: String
     let color: Color
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(color)
 
             Text(value)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
 
             Text(label)
-                .font(.system(size: 10))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
         }

@@ -13,48 +13,48 @@ final class FastingSession {
     var isCompleted: Bool = false
     var actualDuration: TimeInterval = 0
     var stageReached: String = ""
-    
+
     // MARK: - New fields
-    
+
     /// User's mood/energy at fast end (emoji string: 😴😐😊🔥)
     var mood: String?
-    
+
     /// User note attached to the completed fast
     var note: String?
-    
+
     /// Water intake count during fast (simple counter)
     var waterCount: Int = 0
-    
+
     /// Total paused duration (seconds) — subtracted from elapsed for accurate tracking
     var totalPausedDuration: TimeInterval = 0
-    
+
     init(
         startDate: Date,
         targetEndDate: Date,
         planType: FastingPlan
     ) {
-        self.id = UUID()
+        id = UUID()
         self.startDate = startDate
-        self.endDate = nil
+        endDate = nil
         self.targetEndDate = targetEndDate
         self.planType = planType.rawValue
-        self.isCompleted = false
-        self.actualDuration = 0
-        self.stageReached = FastingStage.fed.rawValue
-        self.mood = nil
-        self.note = nil
-        self.waterCount = 0
-        self.totalPausedDuration = 0
+        isCompleted = false
+        actualDuration = 0
+        stageReached = FastingStage.fed.rawValue
+        mood = nil
+        note = nil
+        waterCount = 0
+        totalPausedDuration = 0
     }
-    
+
     var plan: FastingPlan {
         FastingPlan(rawValue: planType) ?? .sixteenEight
     }
-    
+
     var stage: FastingStage {
         FastingStage(rawValue: stageReached) ?? .fed
     }
-    
+
     /// Orucu tamamla — gerçek süreyi kaydet
     func complete() {
         let end = Date.now

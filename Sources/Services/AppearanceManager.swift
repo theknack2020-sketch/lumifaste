@@ -6,9 +6,11 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
     case system = "System"
     case light = "Light"
     case dark = "Dark"
-    
-    var id: String { rawValue }
-    
+
+    var id: String {
+        rawValue
+    }
+
     /// Map to SwiftUI's optional ColorScheme (nil = follow system)
     var colorScheme: ColorScheme? {
         switch self {
@@ -17,7 +19,7 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
         case .dark: .dark
         }
     }
-    
+
     var icon: String {
         switch self {
         case .system: "circle.lefthalf.filled"

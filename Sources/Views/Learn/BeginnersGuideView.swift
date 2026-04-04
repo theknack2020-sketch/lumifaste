@@ -3,6 +3,12 @@ import SwiftUI
 /// Beginner's guide to intermittent fasting.
 /// Step-by-step walkthrough for new fasters.
 struct BeginnersGuideView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16) {
@@ -10,14 +16,14 @@ struct BeginnersGuideView: View {
                 headerCard
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Guide sections
                 ForEach(Array(FastingEducation.beginnersGuide.enumerated()), id: \.element.id) { index, section in
                     GuideSectionCard(section: section)
                         .padding(.horizontal, 16)
                         .staggeredAppear(index: index)
                 }
-                
+
                 // Disclaimer
                 disclaimerCard
                     .padding(.horizontal, 16)
@@ -28,13 +34,13 @@ struct BeginnersGuideView: View {
         .navigationTitle("Beginner's Guide")
         .navigationBarTitleDisplayMode(.large)
     }
-    
+
     // MARK: - Header
-    
+
     private var headerCard: some View {
         VStack(spacing: 12) {
             Image(systemName: "graduationcap.fill")
-                .font(.system(size: 36))
+                .font(.adaptiveDisplay(size: 36, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(
                     .linearGradient(
                         colors: [Color.accentColor, .purple],
@@ -43,13 +49,13 @@ struct BeginnersGuideView: View {
                     )
                 )
                 .accessibilityHidden(true)
-            
+
             Text("Your Fasting Journey Starts Here")
-                .font(.system(size: 20, weight: .bold))
+                .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
                 .multilineTextAlignment(.center)
-            
+
             Text("Everything you need to know to start intermittent fasting safely and effectively.")
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -63,17 +69,17 @@ struct BeginnersGuideView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Your fasting journey starts here. Everything you need to know to start intermittent fasting safely and effectively.")
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerCard: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.red)
-            
+
             Text(FastingEducation.shortDisclaimer)
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
         }
         .padding(14)
@@ -89,8 +95,13 @@ struct BeginnersGuideView: View {
 
 private struct GuideSectionCard: View {
     let section: FastingEducation.GuideSection
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var isExpanded = true
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header — tappable
@@ -102,43 +113,43 @@ private struct GuideSectionCard: View {
             } label: {
                 HStack(spacing: 12) {
                     Image(systemName: section.icon)
-                        .font(.system(size: 20))
+                        .font(.adaptiveTitle3(isRegular: isRegular))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 28)
                         .accessibilityHidden(true)
-                    
+
                     Text(section.title)
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                         .foregroundStyle(.primary)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.secondary)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
                 .padding(16)
             }
             .buttonStyle(.pressable)
-            
+
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(section.content)
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    
+
                     VStack(alignment: .leading, spacing: 8) {
                         ForEach(section.keyPoints, id: \.self) { point in
                             HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 13))
+                                    .font(.adaptiveDetail(isRegular: isRegular))
                                     .foregroundStyle(.green)
                                     .padding(.top, 1)
-                                
+
                                 Text(point)
-                                    .font(.system(size: 13))
+                                    .font(.adaptiveDetail(isRegular: isRegular))
                                     .foregroundStyle(.primary)
                                     .fixedSize(horizontal: false, vertical: true)
                             }

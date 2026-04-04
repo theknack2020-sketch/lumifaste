@@ -6,21 +6,26 @@ import SwiftUI
 struct NotificationPermissionView: View {
     @State private var permissionGranted = false
     @State private var permissionDenied = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
     var onComplete: () -> Void
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
-            
+
             // Icon
             ZStack {
                 Circle()
                     .fill(Color.blue.opacity(0.12))
                     .frame(width: 100, height: 100)
                     .shadow(color: .blue.opacity(0.15), radius: 12, x: 0, y: 4)
-                
+
                 Image(systemName: "bell.badge.fill")
-                    .font(.system(size: 44))
+                    .font(.adaptiveDisplay(size: 44, weight: .regular, design: .default, isRegular: isRegular))
                     .foregroundStyle(
                         .linearGradient(
                             colors: [.blue, .purple],
@@ -29,17 +34,17 @@ struct NotificationPermissionView: View {
                         )
                     )
             }
-            
+
             VStack(spacing: 10) {
                 Text("Stay on Track")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                
+                    .font(.adaptiveDisplay(size: 26, weight: .bold, design: .rounded, isRegular: isRegular))
+
                 Text("Notifications help you reach your fasting goals")
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            
+
             // Benefits list — glassmorphism card
             VStack(alignment: .leading, spacing: 14) {
                 benefitRow(
@@ -74,9 +79,9 @@ struct NotificationPermissionView: View {
                     .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
                     .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
             )
-            
+
             Spacer()
-            
+
             if permissionDenied {
                 deniedGuidance
             } else {
@@ -95,7 +100,7 @@ struct NotificationPermissionView: View {
                         }
                     } label: {
                         Text("Enable Notifications")
-                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .font(.adaptiveBody(isRegular: isRegular).weight(.semibold))
                             .foregroundStyle(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 54)
@@ -114,12 +119,12 @@ struct NotificationPermissionView: View {
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Enable notifications")
                     .accessibilityHint("Requests permission to send fasting alerts and reminders")
-                    
-                Button("Skip for Now") {
+
+                    Button("Skip for Now") {
                         HapticManager.shared.lightTap()
                         onComplete()
                     }
-                    .font(.system(size: 15))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Skip for now")
@@ -129,35 +134,35 @@ struct NotificationPermissionView: View {
         }
         .padding(24)
     }
-    
+
     // MARK: - Benefit Row
-    
+
     private func benefitRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(color.opacity(0.15))
                     .frame(width: 34, height: 34)
-                
+
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(color)
             }
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text(subtitle)
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title): \(subtitle)")
     }
-    
+
     // MARK: - Denial Guidance
-    
+
     /// In-app guidance when permission is denied
     private var deniedGuidance: some View {
         VStack(spacing: 14) {
@@ -165,14 +170,14 @@ struct NotificationPermissionView: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
                 Text("Notifications are disabled")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
-            
+
             Text("You can enable them anytime in Settings → Lumifaste → Notifications")
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             HStack(spacing: 12) {
                 Button("Open Settings") {
                     HapticManager.shared.lightTap()
@@ -180,17 +185,17 @@ struct NotificationPermissionView: View {
                         UIApplication.shared.open(url)
                     }
                 }
-                .font(.system(size: 15, weight: .medium))
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.blue)
                 .buttonStyle(.pressable)
                 .accessibilityLabel("Open Settings")
                 .accessibilityHint("Opens iOS Settings to enable notification permissions")
-                
+
                 Button("Continue Without") {
                     HapticManager.shared.lightTap()
                     onComplete()
                 }
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .buttonStyle(.pressable)
                 .accessibilityLabel("Continue without notifications")
@@ -214,35 +219,41 @@ struct NotificationPermissionView: View {
 
 /// Compact banner shown in settings when notifications are denied at OS level.
 struct NotificationDeniedBanner: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         HStack(spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(Color.red.opacity(0.12))
                     .frame(width: 36, height: 36)
-                
+
                 Image(systemName: "bell.slash.fill")
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .foregroundStyle(.red)
             }
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("Notifications Disabled")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 Text("Enable in iOS Settings to receive fasting alerts")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
-            
+
             Button("Settings") {
                 HapticManager.shared.lightTap()
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
             }
-            .font(.system(size: 13, weight: .medium))
+            .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
             .foregroundStyle(.blue)
             .buttonStyle(.pressable)
             .accessibilityLabel("Open Settings")

@@ -3,7 +3,6 @@ import Foundation
 /// 20 fasting-friendly recipes — static data.
 /// First 10 are free, last 10 are premium.
 enum FastingRecipeData {
-
     static let recipes: [FastingRecipe] = breakingFastRecipes + mainMealRecipes + snackRecipes + drinkRecipes
 
     // MARK: - Breaking Fast (5)
@@ -22,12 +21,12 @@ enum FastingRecipeData {
                 "1/4 tsp sea salt",
                 "1/4 tsp turmeric",
                 "Pinch of black pepper",
-                "Fresh parsley for garnish"
+                "Fresh parsley for garnish",
             ],
             steps: [
                 "Heat bone broth in a small pot over medium heat until it begins to steam.",
                 "Stir in sea salt, turmeric, and a pinch of black pepper.",
-                "Pour into a mug and garnish with fresh parsley."
+                "Pour into a mug and garnish with fresh parsley.",
             ],
             isPremium: false
         ),
@@ -45,13 +44,13 @@ enum FastingRecipeData {
                 "1/2 lemon, juiced",
                 "Red pepper flakes",
                 "Sea salt and black pepper",
-                "1 tbsp hemp seeds"
+                "1 tbsp hemp seeds",
             ],
             steps: [
                 "Toast the sourdough until golden brown and crisp.",
                 "Mash the avocado with lemon juice, salt, and pepper in a small bowl.",
                 "Spread the mashed avocado onto the toast.",
-                "Sprinkle with red pepper flakes and hemp seeds."
+                "Sprinkle with red pepper flakes and hemp seeds.",
             ],
             isPremium: false
         ),
@@ -68,12 +67,12 @@ enum FastingRecipeData {
                 "1/4 cup mixed berries",
                 "1 tbsp raw honey",
                 "2 tbsp granola",
-                "1 tbsp chia seeds"
+                "1 tbsp chia seeds",
             ],
             steps: [
                 "Spoon Greek yogurt into a bowl.",
                 "Arrange berries and granola on top.",
-                "Drizzle with honey and sprinkle chia seeds."
+                "Drizzle with honey and sprinkle chia seeds.",
             ],
             isPremium: false
         ),
@@ -91,14 +90,14 @@ enum FastingRecipeData {
                 "2 tbsp milk or cream",
                 "Salt and pepper",
                 "Fresh chives, chopped",
-                "1 slice whole-grain toast (optional)"
+                "1 slice whole-grain toast (optional)",
             ],
             steps: [
                 "Whisk eggs with milk, salt, and pepper in a bowl.",
                 "Melt butter in a non-stick pan over low heat.",
                 "Pour in the egg mixture and stir gently with a spatula, folding softly as curds form.",
                 "Remove from heat while still slightly wet — residual heat will finish cooking.",
-                "Garnish with chives and serve with toast."
+                "Garnish with chives and serve with toast.",
             ],
             isPremium: false
         ),
@@ -116,12 +115,12 @@ enum FastingRecipeData {
                 "1 scoop protein powder (vanilla)",
                 "1/2 cup almond milk",
                 "1 tbsp almond butter",
-                "Toppings: sliced banana, coconut flakes, granola"
+                "Toppings: sliced banana, coconut flakes, granola",
             ],
             steps: [
                 "Blend frozen banana, berries, protein powder, and almond milk until thick and smooth.",
                 "Pour into a bowl — it should be thicker than a regular smoothie.",
-                "Top with sliced banana, coconut flakes, granola, and a drizzle of almond butter."
+                "Top with sliced banana, coconut flakes, granola, and a drizzle of almond butter.",
             ],
             isPremium: false
         ),
@@ -145,13 +144,13 @@ enum FastingRecipeData {
                 "1/4 cup cherry tomatoes",
                 "2 tbsp olive oil",
                 "1 lemon, juiced",
-                "Salt, pepper, garlic powder"
+                "Salt, pepper, garlic powder",
             ],
             steps: [
                 "Season chicken with salt, pepper, and garlic powder. Grill over medium-high heat for 6 minutes per side.",
                 "Let chicken rest 5 minutes, then slice.",
                 "Toss greens with olive oil and lemon juice.",
-                "Top with sliced chicken, avocado, and cherry tomatoes."
+                "Top with sliced chicken, avocado, and cherry tomatoes.",
             ],
             isPremium: false
         ),
@@ -170,13 +169,13 @@ enum FastingRecipeData {
                 "1 tbsp olive oil",
                 "1/2 lemon",
                 "Fresh dill",
-                "Salt and pepper"
+                "Salt and pepper",
             ],
             steps: [
                 "Preheat oven to 400°F (200°C). Toss broccoli and sweet potato with olive oil, salt, and pepper on a sheet pan.",
                 "Place salmon fillet alongside the vegetables. Squeeze lemon over the salmon.",
                 "Roast for 18-20 minutes until salmon flakes easily.",
-                "Garnish with fresh dill and serve."
+                "Garnish with fresh dill and serve.",
             ],
             isPremium: false
         ),
@@ -195,14 +194,14 @@ enum FastingRecipeData {
                 "1 tsp fresh ginger, minced",
                 "1 clove garlic, minced",
                 "Butter lettuce leaves",
-                "Shredded carrot and cucumber for topping"
+                "Shredded carrot and cucumber for topping",
             ],
             steps: [
                 "Heat sesame oil in a skillet over medium-high heat.",
                 "Add garlic and ginger, sauté for 30 seconds until fragrant.",
                 "Add ground turkey and cook until browned, breaking it apart.",
                 "Stir in soy sauce and cook 1 more minute.",
-                "Spoon the mixture into lettuce cups and top with carrot and cucumber."
+                "Spoon the mixture into lettuce cups and top with carrot and cucumber.",
             ],
             isPremium: false
         ),
@@ -222,13 +221,13 @@ enum FastingRecipeData {
                 "1/4 cup shredded red cabbage",
                 "2 tbsp tahini",
                 "1 tbsp lemon juice",
-                "Olive oil, salt, paprika"
+                "Olive oil, salt, paprika",
             ],
             steps: [
                 "Toss chickpeas with olive oil, salt, and paprika. Roast at 400°F for 20 minutes until crispy.",
                 "Arrange quinoa, spinach, cabbage, and avocado in a bowl.",
                 "Top with roasted chickpeas.",
-                "Mix tahini with lemon juice and a splash of water. Drizzle over the bowl."
+                "Mix tahini with lemon juice and a splash of water. Drizzle over the bowl.",
             ],
             isPremium: true
         ),
@@ -248,13 +247,13 @@ enum FastingRecipeData {
                 "2 tbsp soy sauce",
                 "1 tbsp sesame oil",
                 "1 clove garlic, minced",
-                "1 tsp fresh ginger, minced"
+                "1 tsp fresh ginger, minced",
             ],
             steps: [
                 "Press tofu and cut into cubes (or clean shrimp). Heat sesame oil in a wok over high heat.",
                 "Stir-fry protein until golden, about 3-4 minutes. Set aside.",
                 "Add garlic, ginger, and all vegetables to the wok. Stir-fry for 3 minutes.",
-                "Return protein to wok, add soy sauce, and toss everything together for 1 minute."
+                "Return protein to wok, add soy sauce, and toss everything together for 1 minute.",
             ],
             isPremium: true
         ),
@@ -274,13 +273,13 @@ enum FastingRecipeData {
                 "1/2 tsp turmeric",
                 "3 cups vegetable broth",
                 "1 tbsp olive oil",
-                "Lemon juice and cilantro for serving"
+                "Lemon juice and cilantro for serving",
             ],
             steps: [
                 "Heat olive oil in a pot. Sauté onion until soft, then add garlic, cumin, and turmeric.",
                 "Add lentils and vegetable broth. Bring to a boil.",
                 "Reduce heat and simmer for 20 minutes until lentils are completely soft.",
-                "Blend partially for a creamy texture. Serve with a squeeze of lemon and fresh cilantro."
+                "Blend partially for a creamy texture. Serve with a squeeze of lemon and fresh cilantro.",
             ],
             isPremium: true
         ),
@@ -300,12 +299,12 @@ enum FastingRecipeData {
             ingredients: [
                 "1/4 cup raw almonds (about 23)",
                 "20g dark chocolate (70%+ cacao)",
-                "Pinch of sea salt (optional)"
+                "Pinch of sea salt (optional)",
             ],
             steps: [
                 "Portion almonds and dark chocolate onto a small plate.",
                 "Sprinkle with sea salt if desired.",
-                "Enjoy slowly — let the chocolate melt on your tongue."
+                "Enjoy slowly — let the chocolate melt on your tongue.",
             ],
             isPremium: true
         ),
@@ -322,12 +321,12 @@ enum FastingRecipeData {
                 "1 carrot, cut into sticks",
                 "1/2 cucumber, cut into sticks",
                 "1/2 bell pepper, sliced",
-                "Paprika for garnish"
+                "Paprika for garnish",
             ],
             steps: [
                 "Arrange vegetable sticks on a plate.",
                 "Spoon hummus into a small bowl.",
-                "Dust with paprika and serve."
+                "Dust with paprika and serve.",
             ],
             isPremium: true
         ),
@@ -342,12 +341,12 @@ enum FastingRecipeData {
             ingredients: [
                 "1 medium apple, sliced",
                 "2 tbsp natural peanut butter",
-                "Cinnamon (optional)"
+                "Cinnamon (optional)",
             ],
             steps: [
                 "Slice the apple into wedges.",
                 "Serve with peanut butter for dipping.",
-                "Dust with cinnamon for extra flavor."
+                "Dust with cinnamon for extra flavor.",
             ],
             isPremium: true
         ),
@@ -362,13 +361,13 @@ enum FastingRecipeData {
             ingredients: [
                 "2 large eggs",
                 "Salt and pepper",
-                "Everything bagel seasoning (optional)"
+                "Everything bagel seasoning (optional)",
             ],
             steps: [
                 "Place eggs in a pot and cover with cold water by 1 inch.",
                 "Bring to a boil, then cover and remove from heat. Let sit 10 minutes for hard-boiled.",
                 "Transfer to ice water for 2 minutes, then peel.",
-                "Season with salt, pepper, or everything bagel seasoning."
+                "Season with salt, pepper, or everything bagel seasoning.",
             ],
             isPremium: true
         ),
@@ -384,12 +383,12 @@ enum FastingRecipeData {
                 "40g aged cheddar or gouda",
                 "1/4 cup mixed berries",
                 "5 walnuts",
-                "1 tsp honey (optional)"
+                "1 tsp honey (optional)",
             ],
             steps: [
                 "Slice cheese into small pieces.",
                 "Arrange cheese, berries, and walnuts on a small plate.",
-                "Drizzle with honey if desired."
+                "Drizzle with honey if desired.",
             ],
             isPremium: true
         ),
@@ -409,12 +408,12 @@ enum FastingRecipeData {
             ingredients: [
                 "1 green tea bag or 1 tsp loose-leaf green tea",
                 "1 cup hot water (175°F / 80°C — not boiling)",
-                "Fresh mint leaves (optional)"
+                "Fresh mint leaves (optional)",
             ],
             steps: [
                 "Heat water to 175°F (80°C) — below boiling to avoid bitterness.",
                 "Steep the tea for 2-3 minutes. Do not over-steep.",
-                "Remove the tea bag and add mint leaves if desired."
+                "Remove the tea bag and add mint leaves if desired.",
             ],
             isPremium: false
         ),
@@ -429,12 +428,12 @@ enum FastingRecipeData {
             ingredients: [
                 "2 tbsp freshly ground coffee beans",
                 "1 cup filtered water",
-                "Pinch of cinnamon (optional, won't break fast)"
+                "Pinch of cinnamon (optional, won't break fast)",
             ],
             steps: [
                 "Brew coffee using your preferred method (pour-over, French press, or drip).",
                 "Serve black — no milk, cream, or sweeteners.",
-                "Add a pinch of cinnamon for flavor variety."
+                "Add a pinch of cinnamon for flavor variety.",
             ],
             isPremium: false
         ),
@@ -449,12 +448,12 @@ enum FastingRecipeData {
             ingredients: [
                 "1 cup bone broth (beef or chicken)",
                 "1/4 tsp Himalayan salt",
-                "Squeeze of lemon"
+                "Squeeze of lemon",
             ],
             steps: [
                 "Heat bone broth in a small pot or microwave until steaming.",
                 "Stir in salt and a squeeze of lemon.",
-                "Sip slowly like tea."
+                "Sip slowly like tea.",
             ],
             isPremium: false
         ),
@@ -470,12 +469,12 @@ enum FastingRecipeData {
                 "1 cup cold or warm water",
                 "Juice of 1/2 lemon",
                 "Fresh mint sprig (optional)",
-                "Ice cubes (for cold version)"
+                "Ice cubes (for cold version)",
             ],
             steps: [
                 "Squeeze fresh lemon juice into a glass of water.",
                 "Add mint and ice for a refreshing cold version, or use warm water for a soothing start.",
-                "Drink first thing in the morning or throughout your fast."
+                "Drink first thing in the morning or throughout your fast.",
             ],
             isPremium: false
         ),

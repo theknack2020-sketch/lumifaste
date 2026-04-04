@@ -3,24 +3,29 @@ import SwiftUI
 /// Article detail view — shows full educational content with scientific references.
 struct ArticleDetailView: View {
     let article: FastingEducation.Article
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 // Header
                 headerSection
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Article sections
                 ForEach(Array(article.sections.enumerated()), id: \.element.id) { index, section in
                     sectionView(section)
                         .staggeredAppear(index: index)
                 }
-                
+
                 // References
                 referencesSection
                     .entranceAnimation(delay: 0.3)
-                
+
                 // Disclaimer
                 disclaimerSection
                     .padding(.bottom, 24)
@@ -31,22 +36,22 @@ struct ArticleDetailView: View {
         .navigationTitle(article.title)
         .navigationBarTitleDisplayMode(.inline)
     }
-    
+
     // MARK: - Header
-    
+
     private var headerSection: some View {
         VStack(spacing: 14) {
             Image(systemName: article.icon)
-                .font(.system(size: 36))
+                .font(.adaptiveDisplay(size: 36, weight: .regular, design: .default, isRegular: isRegular))
                 .foregroundStyle(article.iconColor)
                 .accessibilityHidden(true)
-            
+
             Text(article.title)
-                .font(.system(size: 22, weight: .bold))
+                .font(.adaptiveTitle2(isRegular: isRegular).weight(.bold))
                 .multilineTextAlignment(.center)
-            
+
             Text(article.subtitle)
-                .font(.system(size: 15))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
@@ -60,16 +65,16 @@ struct ArticleDetailView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(article.title). \(article.subtitle)")
     }
-    
+
     // MARK: - Section
-    
+
     private func sectionView(_ section: FastingEducation.ArticleSection) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(section.heading)
-                .font(.system(size: 17, weight: .bold))
-            
+                .font(.adaptiveBody(isRegular: isRegular).weight(.bold))
+
             Text(section.body)
-                .font(.system(size: 14))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
                 .lineSpacing(3)
@@ -84,23 +89,23 @@ struct ArticleDetailView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(section.heading): \(section.body)")
     }
-    
+
     // MARK: - References
-    
+
     private var referencesSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                 Text("Scientific References")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(.secondary)
             }
-            
+
             ForEach(Array(article.references.enumerated()), id: \.offset) { _, ref in
                 Text(ref)
-                    .font(.system(size: 11))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -112,16 +117,16 @@ struct ArticleDetailView: View {
                 .fill(Color(.tertiarySystemBackground))
         )
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerSection: some View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "info.circle")
-                .font(.system(size: 12))
+                .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
             Text(FastingEducation.shortDisclaimer)
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
         .padding(.top, 8)

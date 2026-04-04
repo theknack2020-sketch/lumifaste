@@ -4,6 +4,12 @@ import SwiftUI
 struct RecipesView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var selectedCategory: FastingRecipe.RecipeCategory?
     @State private var selectedRecipe: FastingRecipe?
     @State private var showPaywall = false
@@ -35,7 +41,7 @@ struct RecipesView: View {
         .sheet(item: $selectedRecipe) { recipe in
             RecipeDetailView(recipe: recipe)
         }
-        .sheet(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
         .onAppear {
@@ -86,7 +92,7 @@ struct RecipesView: View {
     private var recipeGrid: some View {
         LazyVGrid(columns: [
             GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12)
+            GridItem(.flexible(), spacing: 12),
         ], spacing: 12) {
             ForEach(Array(filteredRecipes.enumerated()), id: \.element.id) { index, recipe in
                 let isLocked = recipe.isPremium && !subscriptionManager.isSubscribed
@@ -115,14 +121,19 @@ private struct CategoryChip: View {
     let isSelected: Bool
     let accent: Color
     let action: () -> Void
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                 Text(title)
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
@@ -149,6 +160,11 @@ private struct RecipeCard: View {
     let isLocked: Bool
     let accent: Color
     let action: () -> Void
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         Button(action: action) {
@@ -167,7 +183,7 @@ private struct RecipeCard: View {
                         .frame(width: 56, height: 56)
 
                     Text(recipe.emoji)
-                        .font(.system(size: 32))
+                        .font(.adaptiveDisplay(size: 32, weight: .regular, design: .default, isRegular: isRegular))
 
                     if isLocked {
                         Circle()
@@ -175,14 +191,14 @@ private struct RecipeCard: View {
                             .frame(width: 56, height: 56)
 
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                             .foregroundStyle(.secondary)
                     }
                 }
 
                 // Title
                 Text(recipe.title)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(isLocked ? .secondary : .primary)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -196,10 +212,10 @@ private struct RecipeCard: View {
                 // Protein
                 HStack(spacing: 3) {
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 9))
+                        .font(.adaptiveCaption2(isRegular: isRegular))
                         .foregroundStyle(.green)
                     Text("\(recipe.protein)g protein")
-                        .font(.system(size: 10, weight: .medium, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -230,14 +246,19 @@ private struct BadgePill: View {
     let icon: String
     let text: String
     let color: Color
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
 
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: icon)
-                .font(.system(size: 9))
+                .font(.adaptiveCaption2(isRegular: isRegular))
                 .foregroundStyle(color)
             Text(text)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 7)

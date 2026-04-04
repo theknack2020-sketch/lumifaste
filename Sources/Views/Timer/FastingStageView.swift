@@ -9,7 +9,7 @@ struct FastingStageView: View {
     let stage: FastingStage
     let elapsed: TimeInterval
     var isPremium: Bool = false
-    
+
     var body: some View {
         VStack(spacing: 8) {
             // Stage badge — always visible, animated on stage change
@@ -31,7 +31,7 @@ struct FastingStageView: View {
                     .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 1)
             )
             .animation(.smoothSpring, value: stage)
-            
+
             if isPremium {
                 // Premium: stage description — fade transition
                 Text(stage.subtitle)
@@ -39,7 +39,7 @@ struct FastingStageView: View {
                     .foregroundStyle(.secondary)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.3), value: stage)
-                
+
                 // Premium: metabolic info teaser
                 if let detail = FastingEducation.detail(for: stage) {
                     Text(detail.metabolicInfo.prefix(80) + "…")
@@ -51,7 +51,7 @@ struct FastingStageView: View {
                         .contentTransition(.opacity)
                         .animation(.easeInOut(duration: 0.3), value: stage)
                 }
-                
+
                 // Premium: next stage hint
                 if let next = stage.next {
                     let hoursUntilNext = max(0, (next.startHour * 3600 - elapsed) / 3600)
@@ -86,7 +86,7 @@ struct FastingStageView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
     }
-    
+
     private var accessibilityDescription: String {
         var desc = "Current stage: \(stage.rawValue). \(stage.subtitle)."
         if isPremium, let next = stage.next {
@@ -97,7 +97,7 @@ struct FastingStageView: View {
         }
         return desc
     }
-    
+
     private func formatHours(_ hours: Double) -> String {
         if hours < 1 {
             return "\(Int(hours * 60)) minutes"

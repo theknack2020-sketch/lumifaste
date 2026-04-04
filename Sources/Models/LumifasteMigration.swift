@@ -6,12 +6,14 @@ import SwiftData
 /// Schema V1 — initial release model.
 /// When model changes are needed, add V2 and a migration plan.
 enum LumifasteSchemaV1: VersionedSchema {
-    static var versionIdentifier: Schema.Version { Schema.Version(1, 0, 0) }
-    
+    static var versionIdentifier: Schema.Version {
+        Schema.Version(1, 0, 0)
+    }
+
     static var models: [any PersistentModel.Type] {
         [FastingSessionV1.self, WeightEntryV1.self]
     }
-    
+
     @Model
     final class FastingSessionV1 {
         var id: UUID
@@ -26,7 +28,7 @@ enum LumifasteSchemaV1: VersionedSchema {
         var note: String?
         var waterCount: Int
         var totalPausedDuration: TimeInterval
-        
+
         init(
             id: UUID = UUID(),
             startDate: Date,
@@ -55,14 +57,14 @@ enum LumifasteSchemaV1: VersionedSchema {
             self.totalPausedDuration = totalPausedDuration
         }
     }
-    
+
     @Model
     final class WeightEntryV1 {
         var id: UUID
         var date: Date
         var weightKg: Double
         var note: String
-        
+
         init(id: UUID = UUID(), date: Date = .now, weightKg: Double, note: String = "") {
             self.id = id
             self.date = date
@@ -80,14 +82,14 @@ enum LumifasteMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
         [LumifasteSchemaV1.self]
     }
-    
+
     static var stages: [MigrationStage] {
         // No migrations yet — first version.
         // When V2 is added:
         // [migrateV1toV2]
         []
     }
-    
+
     // Example migration stage for reference (uncomment when V2 is needed):
     //
     // static let migrateV1toV2 = MigrationStage.lightweight(

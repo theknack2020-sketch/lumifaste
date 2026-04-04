@@ -12,13 +12,15 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
     case fiveTwo = "5:2"
     case circadian = "Circadian"
     case custom = "Custom"
-    
-    var id: String { rawValue }
-    
+
+    var id: String {
+        rawValue
+    }
+
     // MARK: - Custom Plan Hours (UserDefaults-backed)
-    
+
     private static let customHoursKey = "lf_custom_fasting_hours"
-    
+
     /// User-defined custom fasting hours. Clamped to 1–72.
     static var customHours: Double {
         get {
@@ -29,7 +31,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
             UserDefaults.standard.set(min(max(newValue, 1), 72), forKey: customHoursKey)
         }
     }
-    
+
     /// Fasting window süresi (saat)
     var fastingHours: Double {
         switch self {
@@ -44,17 +46,17 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .custom: Self.customHours
         }
     }
-    
+
     /// Eating window süresi (saat)
     var eatingHours: Double {
         24 - fastingHours
     }
-    
+
     /// Fasting süresi TimeInterval olarak
     var fastingDuration: TimeInterval {
         fastingHours * 3600
     }
-    
+
     /// Kullanıcı dostu açıklama
     var displayName: String {
         switch self {
@@ -69,7 +71,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .custom: "Custom (\(Int(Self.customHours))h)"
         }
     }
-    
+
     /// Kısa açıklama
     var subtitle: String {
         switch self {
@@ -84,7 +86,7 @@ enum FastingPlan: String, CaseIterable, Identifiable, Codable {
         case .custom: "\(Int(Self.customHours))h fast · \(Int(max(0, 24 - Self.customHours)))h eat"
         }
     }
-    
+
     /// Zorluk seviyesi
     var difficulty: Int {
         switch self {

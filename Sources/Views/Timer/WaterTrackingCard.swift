@@ -1,5 +1,5 @@
-import SwiftUI
 import AudioToolbox
+import SwiftUI
 
 /// Enhanced water tracking card — daily goal, visual progress ring,
 /// quick-add buttons, wave animation, celebration on goal completion.
@@ -13,6 +13,12 @@ struct WaterTrackingCard: View {
     @AppStorage("lf_water_goal") private var dailyGoal: Int = 8
     @Environment(ThemeManager.self) private var themeManager
     @Environment(SubscriptionManager.self) private var subscriptionManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var celebrationTriggered = false
     @State private var wavePhase: CGFloat = 0
     @State private var justAdded = false
@@ -74,7 +80,7 @@ struct WaterTrackingCard: View {
         .animation(.smoothSpring, value: waterCount)
         .animation(.smoothSpring, value: goalReached)
         .onChange(of: waterCount) { oldValue, newValue in
-            if newValue >= dailyGoal && oldValue < dailyGoal && !celebrationTriggered {
+            if newValue >= dailyGoal, oldValue < dailyGoal, !celebrationTriggered {
                 celebrationTriggered = true
                 HapticManager.shared.achievementUnlocked()
             }
@@ -83,7 +89,7 @@ struct WaterTrackingCard: View {
             WaterGoalPickerSheet(currentGoal: $dailyGoal)
                 .presentationDetents([.height(280)])
         }
-        .sheet(isPresented: $showPaywall) {
+        .fullScreenCover(isPresented: $showPaywall) {
             PaywallView()
         }
         .accessibilityElement(children: .contain)
@@ -96,10 +102,10 @@ struct WaterTrackingCard: View {
         HStack {
             HStack(spacing: 6) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                     .foregroundStyle(waterBlue)
                 Text("Water Tracker")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
             .accessibilityLabel("Water Tracker")
 
@@ -115,10 +121,10 @@ struct WaterTrackingCard: View {
             } label: {
                 HStack(spacing: 3) {
                     Text("Goal: \(dailyGoal)")
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                        .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(.secondary)
                     Image(systemName: subscriptionManager.isSubscribed ? "chevron.right" : "lock.fill")
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -167,10 +173,10 @@ struct WaterTrackingCard: View {
             // Center count
             VStack(spacing: 0) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 11))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(waterBlue)
                 Text("\(waterCount)")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(.adaptiveHeadline(isRegular: isRegular).weight(.bold))
                     .monospacedDigit()
                     .contentTransition(.numericText(countsDown: false))
                     .scaleEffect(justAdded ? 1.2 : 1.0)
@@ -190,13 +196,13 @@ struct WaterTrackingCard: View {
     private var glassCountLabel: some View {
         HStack(spacing: 4) {
             Text("\(waterCount)")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.adaptiveTitle2(isRegular: isRegular).weight(.bold))
                 .monospacedDigit()
                 .foregroundStyle(waterBlue)
                 .contentTransition(.numericText(countsDown: false))
 
             Text("/ \(dailyGoal) glasses")
-                .font(.system(size: 13, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
         }
         .accessibilityLabel("\(waterCount) of \(dailyGoal) glasses of water")
@@ -211,7 +217,7 @@ struct WaterTrackingCard: View {
         }
     }
 
-    private func quickAddButton(count: Int, icon: String) -> some View {
+    private func quickAddButton(count: Int, icon _: String) -> some View {
         Button {
             HapticManager.shared.lightTap()
             onAddWater(count)
@@ -222,9 +228,9 @@ struct WaterTrackingCard: View {
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: "drop.fill")
-                    .font(.system(size: 10))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                 Text(count == 1 ? "+1" : "+2")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
             }
             .foregroundStyle(waterBlue)
             .padding(.horizontal, 14)
@@ -244,10 +250,10 @@ struct WaterTrackingCard: View {
     private var goalReachedBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 16))
+                .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.green)
             Text("Daily water goal reached! 💧")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.green)
         }
         .frame(maxWidth: .infinity)
@@ -301,24 +307,29 @@ struct WaveShape: Shape {
 struct WaterGoalPickerSheet: View {
     @Binding var currentGoal: Int
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedGoal: Int = 8
 
-    private let goalRange = Array(4...20)
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
+    private let goalRange = Array(4 ... 20)
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
                 Text("Daily Water Goal")
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.adaptiveTitle3(isRegular: isRegular).weight(.bold))
 
                 Text("\(selectedGoal)")
-                    .font(.system(size: 56, weight: .bold, design: .rounded))
+                    .font(.adaptiveDisplay(size: 56, weight: .bold, design: .rounded, isRegular: isRegular))
                     .foregroundStyle(.cyan)
                     .contentTransition(.numericText())
                     .animation(.tapSpring, value: selectedGoal)
 
                 Text("glasses per day")
-                    .font(.system(size: 14, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.secondary)
 
                 Picker("Goal", selection: $selectedGoal) {
@@ -335,7 +346,7 @@ struct WaterGoalPickerSheet: View {
                     dismiss()
                 } label: {
                     Text("Set Goal")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)

@@ -10,9 +10,11 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
     case fatBurning = "Fat Burning"
     case ketosis = "Ketosis"
     case autophagy = "Autophagy"
-    
-    var id: String { rawValue }
-    
+
+    var id: String {
+        rawValue
+    }
+
     /// Bu aşamanın başladığı saat
     var startHour: Double {
         switch self {
@@ -23,7 +25,7 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: 24
         }
     }
-    
+
     /// Bu aşamanın rengi
     var color: Color {
         switch self {
@@ -34,7 +36,7 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: .purple
         }
     }
-    
+
     /// SF Symbol ikonu
     var icon: String {
         switch self {
@@ -45,7 +47,7 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: "sparkles"
         }
     }
-    
+
     /// Emoji representation for Live Activity display
     var emoji: String {
         switch self {
@@ -56,7 +58,7 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: "✨"
         }
     }
-    
+
     /// Kısa açıklama
     var subtitle: String {
         switch self {
@@ -67,19 +69,19 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: "Cellular cleanup"
         }
     }
-    
+
     /// Verilen süreye göre hangi aşamadayız
     static func stage(for elapsed: TimeInterval) -> FastingStage {
         let hours = elapsed / 3600
         switch hours {
         case ..<4: return .fed
-        case 4..<12: return .earlyFasting
-        case 12..<18: return .fatBurning
-        case 18..<24: return .ketosis
+        case 4 ..< 12: return .earlyFasting
+        case 12 ..< 18: return .fatBurning
+        case 18 ..< 24: return .ketosis
         default: return .autophagy
         }
     }
-    
+
     /// Stage index (progress hesaplaması için)
     var index: Int {
         switch self {
@@ -90,7 +92,7 @@ enum FastingStage: String, CaseIterable, Identifiable, Codable {
         case .autophagy: 4
         }
     }
-    
+
     /// Sonraki stage (varsa)
     var next: FastingStage? {
         let all = FastingStage.allCases

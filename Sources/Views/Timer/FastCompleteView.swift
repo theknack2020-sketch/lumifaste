@@ -1,5 +1,5 @@
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 /// Fast completion report — natural premium conversion moment.
 /// Free: tebrik + basit özet. Premium: detaylı breakdown.
@@ -12,6 +12,11 @@ struct FastCompleteView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var showConfetti = false
     @State private var selectedMood: String?
     @State private var noteText: String = ""
@@ -24,12 +29,12 @@ struct FastCompleteView: View {
     @State private var contentAppeared = false
     @State private var showJournal = false
     @State private var showMealLog = false
-    
+
     @Query(sort: \WeightEntry.date, order: .reverse) private var weightEntries: [WeightEntry]
-    
+
     private let moods = ["😴", "😐", "😊", "🔥"]
     private let moodLabels = ["Tired", "Okay", "Good", "Energized"]
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -39,43 +44,43 @@ struct FastCompleteView: View {
                         Color(red: 0.18, green: 0.12, blue: 0.0),
                         Color.orange.opacity(0.12),
                         Color.yellow.opacity(0.08),
-                        Color(.systemBackground)
+                        Color(.systemBackground),
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         // Celebration header
                         celebrationHeader
                             .entranceAnimation(delay: 0.1)
-                        
+
                         // Basic stats — always visible
                         basicStats
                             .entranceAnimation(delay: 0.25)
-                        
+
                         // Mood picker (#6)
                         moodPicker
                             .entranceAnimation(delay: 0.3)
-                        
+
                         // Fast note (#10)
                         noteSection
                             .entranceAnimation(delay: 0.35)
-                        
+
                         // Share My Fast button
                         shareButton
                             .entranceAnimation(delay: 0.38)
-                        
+
                         // Journal entry button
                         journalButton
                             .entranceAnimation(delay: 0.42)
-                        
+
                         // Log first meal CTA
                         logFirstMealButton
                             .entranceAnimation(delay: 0.45)
-                        
+
                         // Premium breakdown
                         if isPremium {
                             premiumBreakdown
@@ -84,7 +89,7 @@ struct FastCompleteView: View {
                             premiumTeaser
                                 .entranceAnimation(delay: 0.4)
                         }
-                        
+
                         // Done button
                         Button {
                             HapticManager.shared.lightTap()
@@ -111,7 +116,7 @@ struct FastCompleteView: View {
                     .scaleEffect(contentAppeared ? 1.0 : 0.92)
                     .opacity(contentAppeared ? 1.0 : 0)
                 }
-                
+
                 // Confetti overlay
                 ConfettiView(isActive: showConfetti)
                     .ignoresSafeArea()
@@ -160,9 +165,9 @@ struct FastCompleteView: View {
             }
         }
     }
-    
+
     // MARK: - Share My Fast
-    
+
     private var shareButton: some View {
         Button {
             HapticManager.shared.shareAction()
@@ -178,9 +183,9 @@ struct FastCompleteView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text("Share My Fast")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
             .foregroundStyle(Color.accentColor)
             .frame(maxWidth: .infinity)
@@ -195,9 +200,9 @@ struct FastCompleteView: View {
         .accessibilityLabel("Share my fast results")
         .accessibilityHint("Creates a shareable image card of your fasting results")
     }
-    
+
     // MARK: - Journal Entry Button
-    
+
     private var journalButton: some View {
         Button {
             HapticManager.shared.lightTap()
@@ -205,9 +210,9 @@ struct FastCompleteView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "book.closed.fill")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text("Add Journal Entry")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
             .foregroundStyle(Color.accentColor)
             .frame(maxWidth: .infinity)
@@ -220,9 +225,9 @@ struct FastCompleteView: View {
         .buttonStyle(.pressable)
         .accessibilityLabel("Add a journal entry about this fast")
     }
-    
+
     // MARK: - Log First Meal Button
-    
+
     private var logFirstMealButton: some View {
         Button {
             HapticManager.shared.lightTap()
@@ -230,9 +235,9 @@ struct FastCompleteView: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "fork.knife")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 Text("Log Your First Meal")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
             }
             .foregroundStyle(.orange)
             .frame(maxWidth: .infinity)
@@ -246,9 +251,9 @@ struct FastCompleteView: View {
         .accessibilityLabel("Log your first meal after fasting")
         .accessibilityHint("Opens the meal logging screen")
     }
-    
+
     // MARK: - Save mood and note to session
-    
+
     private func saveMoodAndNote() {
         if let mood = selectedMood {
             session.mood = mood
@@ -267,25 +272,25 @@ struct FastCompleteView: View {
         }
         ReviewRequestManager.recordCompletedFast()
     }
-    
+
     // MARK: - Personalized congratulation based on fast length
-    
+
     private var fastLengthCongrats: (title: String, subtitle: String) {
         let hours = session.actualDuration / 3600
         switch hours {
         case ..<14:
             return ("Quick Fast! ⚡", "Every fast counts — you're building the habit.")
-        case 14..<18:
+        case 14 ..< 18:
             return ("Solid Fast! 💪", "Your body entered fat-burning mode. Great work.")
-        case 18..<24:
+        case 18 ..< 24:
             return ("Warrior Fast! 🔥", "Deep ketosis and cellular repair activated.")
         default:
             return ("Epic Fast! 🏆", "Incredible willpower. Your body thanks you.")
         }
     }
-    
+
     // MARK: - Celebration
-    
+
     private var celebrationHeader: some View {
         VStack(spacing: 12) {
             // Large checkmark icon — premium celebration
@@ -300,9 +305,9 @@ struct FastCompleteView: View {
                         )
                     )
                     .frame(width: 100, height: 100)
-                
+
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 80))
+                    .font(.adaptiveDisplay(size: 80, weight: .regular, design: .default, isRegular: isRegular))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [.yellow, .orange],
@@ -311,10 +316,10 @@ struct FastCompleteView: View {
                         )
                     )
                     .shadow(color: .orange.opacity(0.5), radius: 16, x: 0, y: 4)
-                
+
                 // Brand leaf watermark
                 Image(systemName: "leaf.fill")
-                    .font(.system(size: 16))
+                    .font(.adaptiveSubheadline(isRegular: isRegular))
                     .scaleEffect(x: -1)
                     .foregroundStyle(.white.opacity(0.7))
                     .offset(x: 28, y: -28)
@@ -322,42 +327,42 @@ struct FastCompleteView: View {
             .scaleEffect(celebrationScale)
             .opacity(celebrationOpacity)
             .accessibilityHidden(true)
-            
+
             Text(fastLengthCongrats.title)
                 .font(.system(.title, weight: .bold))
-            
+
             Text(fastLengthCongrats.subtitle)
                 .font(.system(.subheadline))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            
+
             if streak > 1 {
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
-                        .font(.system(size: 12))
+                        .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(.orange)
                     Text("\(streak)-day streak!")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.orange)
                         .contentTransition(.numericText())
                 }
                 .padding(.top, 4)
-                
+
                 // Pro upsell for free users with streak
-                if !isPremium && streak >= 3 {
+                if !isPremium, streak >= 3 {
                     HStack(spacing: 4) {
                         Image(systemName: "shield.fill")
-                            .font(.system(size: 10))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.purple.opacity(0.6))
                         Text("Protect your streak with Pro")
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.purple.opacity(0.6))
                     }
                     .padding(.top, 2)
                     .onTapGesture { onUpgrade() }
                 }
             }
-            
+
             // Social proof — community fasters count
             socialProofPill
         }
@@ -371,17 +376,17 @@ struct FastCompleteView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Congratulations! \(fastLengthCongrats.title). \(fastLengthCongrats.subtitle)")
     }
-    
+
     // MARK: - Social Proof Pill
-    
+
     private var socialProofPill: some View {
-        let todayCount = Int.random(in: 2400...4800) // Simulated — placeholder for aggregate API
+        let todayCount = Int.random(in: 2400 ... 4800) // Simulated — placeholder for aggregate API
         return HStack(spacing: 6) {
             Image(systemName: "person.2.fill")
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.green)
             Text("\(todayCount.formatted()) fasters completed today")
-                .font(.system(size: 12, weight: .medium, design: .rounded))
+                .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.secondary)
         }
         .padding(.horizontal, 14)
@@ -393,9 +398,9 @@ struct FastCompleteView: View {
         .padding(.top, 6)
         .accessibilityLabel("\(todayCount) fasters completed their fast today")
     }
-    
+
     // MARK: - Basic Stats (Free)
-    
+
     private var basicStats: some View {
         VStack(spacing: 16) {
             HStack(spacing: 0) {
@@ -403,30 +408,30 @@ struct FastCompleteView: View {
                 StatItem(title: "Plan", value: session.plan.rawValue, icon: "calendar", color: .orange)
                 StatItem(title: "Stage", value: session.stage.rawValue, icon: session.stage.icon, color: session.stage.color)
             }
-            
+
             // Water count display (#5)
             if session.waterCount > 0 {
                 HStack(spacing: 6) {
                     Image(systemName: "drop.fill")
-                        .font(.system(size: 13))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.cyan)
                     Text("\(session.waterCount) glasses of water")
-                        .font(.system(size: 13, design: .rounded))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .monospacedDigit()
                         .foregroundStyle(.secondary)
                 }
             }
-            
+
             // Estimated calorie burn
             let fastingHours = session.actualDuration / 3600.0
             let latestWeight = weightEntries.first?.weightKg
             let kcal = Int(CalorieBurnEstimator.estimate(fastingHours: fastingHours, bodyWeightKg: latestWeight))
             HStack(spacing: 6) {
                 Image(systemName: "flame.fill")
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(.orange)
                 Text("~\(kcal) kcal burned")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
@@ -442,14 +447,14 @@ struct FastCompleteView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Duration \(formatDuration(session.actualDuration)), Plan \(session.plan.rawValue), Reached \(session.stage.rawValue) stage")
     }
-    
+
     // MARK: - Mood Picker (#6)
-    
+
     private var moodPicker: some View {
         VStack(spacing: 10) {
             Text("How do you feel?")
-                .font(.system(size: 15, weight: .semibold, design: .rounded))
-            
+                .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
+
             HStack(spacing: 16) {
                 ForEach(Array(zip(moods, moodLabels)), id: \.0) { emoji, label in
                     Button {
@@ -460,9 +465,9 @@ struct FastCompleteView: View {
                     } label: {
                         VStack(spacing: 4) {
                             Text(emoji)
-                                .font(.system(size: 32, design: .rounded))
+                                .font(.adaptiveDisplay(size: 32, weight: .regular, design: .rounded, isRegular: isRegular))
                             Text(label)
-                                .font(.system(size: 10, design: .rounded))
+                                .font(.adaptiveCaption(isRegular: isRegular))
                                 .foregroundStyle(.secondary)
                         }
                         .padding(8)
@@ -488,18 +493,18 @@ struct FastCompleteView: View {
                 .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
-    
+
     // MARK: - Fast Note (#10)
-    
+
     private var noteSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Add a note")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.secondary)
-            
+
             TextField("How was this fast?", text: $noteText, axis: .vertical)
                 .textFieldStyle(.plain)
-                .lineLimit(2...4)
+                .lineLimit(2 ... 4)
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -513,14 +518,14 @@ struct FastCompleteView: View {
                 .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
         )
     }
-    
+
     // MARK: - Premium Breakdown
-    
+
     private var premiumBreakdown: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("Stage Breakdown")
                 .font(.system(.body, weight: .bold))
-            
+
             ForEach(Array(FastingStage.allCases.enumerated()), id: \.element.id) { index, stage in
                 let timeInStage = stageTime(for: stage)
                 if timeInStage > 0 {
@@ -529,7 +534,7 @@ struct FastCompleteView: View {
                             .font(.system(.footnote))
                             .foregroundStyle(stage.color)
                             .frame(width: 24)
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text(stage.rawValue)
                                 .font(.system(.footnote, weight: .medium))
@@ -537,9 +542,9 @@ struct FastCompleteView: View {
                                 .font(.system(.caption))
                                 .foregroundStyle(.secondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         Text(formatDurationShort(timeInStage))
                             .font(.system(.footnote, design: .rounded, weight: .semibold))
                             .monospacedDigit()
@@ -558,16 +563,16 @@ struct FastCompleteView: View {
                 .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
-    
+
     // MARK: - Premium Teaser (Free users)
-    
+
     private var premiumTeaser: some View {
         VStack(spacing: 14) {
             HStack(spacing: 12) {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 24))
+                    .font(.adaptiveTitle2(isRegular: isRegular))
                     .foregroundStyle(themeManager.selectedTheme.accent)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text("See Your Full Report")
                         .font(.system(.body, weight: .semibold))
@@ -576,7 +581,7 @@ struct FastCompleteView: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            
+
             Button {
                 saveMoodAndNote()
                 dismiss()
@@ -609,30 +614,30 @@ struct FastCompleteView: View {
                 .shadow(color: .black.opacity(0.25), radius: 8, x: 0, y: 4)
         )
     }
-    
+
     // MARK: - Helpers
-    
+
     private func stageTime(for stage: FastingStage) -> TimeInterval {
         let total = session.actualDuration
         let stageStart = stage.startHour * 3600
         let nextStart = stage.next?.startHour ?? 999
         let stageEnd = nextStart * 3600
-        
+
         guard total > stageStart else { return 0 }
         return min(total, stageEnd) - stageStart
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let h = Int(duration) / 3600
         let m = (Int(duration) % 3600) / 60
         if h > 0 { return "\(h)h \(m)m" }
         return "\(m)m"
     }
-    
+
     private func formatDurationShort(_ duration: TimeInterval) -> String {
         let h = Int(duration) / 3600
         let m = (Int(duration) % 3600) / 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0, m > 0 { return "\(h)h \(m)m" }
         if h > 0 { return "\(h)h" }
         return "\(m)m"
     }
@@ -641,11 +646,16 @@ struct FastCompleteView: View {
 // MARK: - Stat Item
 
 private struct StatItem: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let title: String
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 6) {
             Image(systemName: icon)

@@ -5,27 +5,33 @@ import SwiftUI
 struct LearnView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @State private var showPaywall = false
     @State private var isLoading = true
-    
+
     // MARK: - Dynamic Type Support
+
     @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 20
-    
+
     var body: some View {
         NavigationStack {
             Group {
                 if isLoading {
                     VStack(spacing: 16) {
                         Spacer()
-                        
+
                         ProgressView()
                             .controlSize(.large)
-                        
+
                         Text("Loading articles…")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.adaptiveSubheadline(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.secondary)
-                        
+
                         Spacer()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -36,14 +42,14 @@ struct LearnView: View {
             }
             .navigationTitle("Learn")
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            .sheet(isPresented: $showPaywall) {
+            .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView()
             }
             .onAppear {
                 // Brief loading state for smooth entrance
                 if isLoading {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-                        withAnimation(.easeOut(duration: 0.3)) {
+                        withAnimation(.spring(duration: 0.35, bounce: 0.15)) {
                             isLoading = false
                         }
                     }
@@ -51,40 +57,40 @@ struct LearnView: View {
             }
         }
     }
-    
+
     // MARK: - Learn Content
-    
+
     private var learnContent: some View {
         ScrollView {
             LazyVStack(spacing: sectionSpacing) {
                 // Brand header
                 HStack(spacing: 8) {
                     Image(systemName: "leaf.fill")
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .scaleEffect(x: -1)
                         .foregroundStyle(themeManager.selectedTheme.accent)
                     Text("Lumifaste Learn")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
-                
+
                 // Quick links
                 quickLinks
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.1)
-                
+
                 // Fasting stages science
                 stagesSection
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.2)
-                
+
                 // Articles
                 articlesSection
                     .padding(.horizontal, 16)
                     .entranceAnimation(delay: 0.3)
-                
+
                 // Disclaimer
                 disclaimerBanner
                     .padding(.horizontal, 16)
@@ -93,18 +99,18 @@ struct LearnView: View {
             .padding(.top, 12)
         }
     }
-    
+
     // MARK: - Quick Links
-    
+
     private var quickLinks: some View {
         let accent = themeManager.selectedTheme.accent
         return VStack(alignment: .leading, spacing: 12) {
             Text("Explore")
                 .font(.system(.headline, design: .rounded))
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible(), spacing: 10),
-                GridItem(.flexible(), spacing: 10)
+                GridItem(.flexible(), spacing: 10),
             ], spacing: 10) {
                 NavigationLink {
                     BeginnersGuideView()
@@ -117,7 +123,7 @@ struct LearnView: View {
                     )
                 }
                 .buttonStyle(.pressable)
-                
+
                 NavigationLink {
                     TipsView()
                 } label: {
@@ -129,7 +135,7 @@ struct LearnView: View {
                     )
                 }
                 .buttonStyle(.pressable)
-                
+
                 NavigationLink {
                     FaqView()
                 } label: {
@@ -141,7 +147,7 @@ struct LearnView: View {
                     )
                 }
                 .buttonStyle(.pressable)
-                
+
                 NavigationLink {
                     GlossaryView()
                 } label: {
@@ -153,7 +159,7 @@ struct LearnView: View {
                     )
                 }
                 .buttonStyle(.pressable)
-                
+
                 NavigationLink {
                     RecipesView()
                 } label: {
@@ -168,31 +174,31 @@ struct LearnView: View {
             }
         }
     }
-    
+
     // MARK: - Fasting Stages
-    
+
     private var stagesSection: some View {
         let accent = themeManager.selectedTheme.accent
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "chart.bar.xaxis.ascending")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(accent)
                 Text("Fasting Stages")
                     .font(.system(.headline, design: .rounded))
             }
-            
+
             Text("Understand what happens to your body at each stage of fasting.")
-                .font(.system(size: 13))
+                .font(.adaptiveDetail(isRegular: isRegular))
                 .foregroundStyle(.secondary)
-            
+
             // Contextual science disclaimer
             HStack(spacing: 8) {
                 Image(systemName: "info.circle.fill")
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.blue.opacity(0.7))
                 Text("Stages are based on general research. Individual results vary — this is educational content, not medical advice.")
-                    .font(.system(size: 11))
+                    .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.tertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -203,7 +209,7 @@ struct LearnView: View {
             )
             .accessibilityLabel("Disclaimer: Stages are based on general research. Individual results vary.")
             .accessibilityIdentifier("stagesScienceDisclaimer")
-            
+
             ForEach(Array(FastingEducation.stageDetails.enumerated()), id: \.element.id) { index, detail in
                 NavigationLink {
                     StageDetailView(detail: detail)
@@ -215,22 +221,22 @@ struct LearnView: View {
             }
         }
     }
-    
+
     // MARK: - Articles
-    
+
     private var articlesSection: some View {
         let accent = themeManager.selectedTheme.accent
         return VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
                 Image(systemName: "doc.richtext")
-                    .font(.system(size: 14))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(accent)
                 Text("Articles")
                     .font(.system(.headline, design: .rounded))
             }
-            
+
             ForEach(Array(FastingEducation.articles.enumerated()), id: \.element.id) { index, article in
-                if article.isPremium && !subscriptionManager.isSubscribed {
+                if article.isPremium, !subscriptionManager.isSubscribed {
                     Button {
                         HapticManager.shared.lightTap()
                         showPaywall = true
@@ -251,20 +257,20 @@ struct LearnView: View {
             }
         }
     }
-    
+
     // MARK: - Disclaimer
-    
+
     private var disclaimerBanner: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "heart.text.square.fill")
-                .font(.system(size: 18))
+                .font(.adaptiveHeadline(isRegular: isRegular))
                 .foregroundStyle(.red)
-            
+
             VStack(alignment: .leading, spacing: 4) {
                 Text("Health Disclaimer")
                     .font(.system(.headline, design: .rounded))
                 Text(FastingEducation.shortDisclaimer)
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -292,19 +298,24 @@ struct LearnView: View {
 // MARK: - Quick Link Card
 
 private struct QuickLinkCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let title: String
     let icon: String
     let color: Color
     var accentColor: Color = .blue
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 22))
+                .font(.adaptiveTitle3(isRegular: isRegular))
                 .foregroundStyle(color)
-            
+
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.primary)
                 .multilineTextAlignment(.center)
         }
@@ -334,40 +345,45 @@ private struct QuickLinkCard: View {
 // MARK: - Stage Card
 
 private struct StageCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let detail: FastingEducation.StageDetail
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Accent left bar
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(detail.stage.color.gradient)
                 .frame(width: 3, height: 40)
-            
+
             Image(systemName: detail.stage.icon)
-                .font(.system(size: 18))
+                .font(.adaptiveHeadline(isRegular: isRegular))
                 .foregroundStyle(detail.stage.color)
                 .frame(width: 32)
-            
+
             VStack(alignment: .leading, spacing: 3) {
                 Text(detail.stage.rawValue)
                     .font(.system(.headline, design: .rounded))
                     .foregroundStyle(.primary)
                 Text(detail.headline)
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(Int(detail.stage.startHour))h+")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                     .monospacedDigit()
                     .foregroundStyle(detail.stage.color)
             }
-            
+
             Image(systemName: "chevron.right")
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
         .padding(14)
@@ -385,30 +401,35 @@ private struct StageCard: View {
 // MARK: - Article Card
 
 private struct ArticleCard: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     let article: FastingEducation.Article
     let isLocked: Bool
-    
+
     var body: some View {
         HStack(spacing: 12) {
             // Accent left bar
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(isLocked ? Color.gray.gradient : article.iconColor.gradient)
                 .frame(width: 3, height: 40)
-            
+
             Image(systemName: article.icon)
-                .font(.system(size: 20))
+                .font(.adaptiveTitle3(isRegular: isRegular))
                 .foregroundStyle(isLocked ? .secondary : article.iconColor)
                 .frame(width: 32)
-            
+
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(article.title)
                         .font(.system(.headline, design: .rounded))
                         .foregroundStyle(.primary)
-                    
+
                     if isLocked {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 10))
+                            .font(.adaptiveCaption(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                             .padding(4)
                             .background(
@@ -417,16 +438,16 @@ private struct ArticleCard: View {
                             )
                     }
                 }
-                
+
                 Text(article.subtitle)
-                    .font(.system(size: 12))
+                    .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
             }
-            
+
             Spacer()
-            
+
             Image(systemName: "chevron.right")
-                .font(.system(size: 11))
+                .font(.adaptiveBadge(isRegular: isRegular))
                 .foregroundStyle(.tertiary)
         }
         .padding(14)

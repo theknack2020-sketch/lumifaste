@@ -3,8 +3,13 @@ import SwiftUI
 /// Glossary of fasting terms — autophagy, ketosis, etc.
 /// Searchable, alphabetically sorted.
 struct GlossaryView: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var searchText = ""
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     private var filteredTerms: [FastingEducation.GlossaryTerm] {
         if searchText.isEmpty {
             return FastingEducation.glossary.sorted { $0.term < $1.term }
@@ -14,7 +19,7 @@ struct GlossaryView: View {
             .filter { $0.term.lowercased().contains(query) || $0.definition.lowercased().contains(query) }
             .sorted { $0.term < $1.term }
     }
-    
+
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
@@ -23,14 +28,14 @@ struct GlossaryView: View {
                         .padding(.horizontal, 16)
                         .staggeredAppear(index: min(index, 10))
                 }
-                
+
                 if filteredTerms.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 32))
+                            .font(.adaptiveDisplay(size: 32, weight: .regular, design: .default, isRegular: isRegular))
                             .foregroundStyle(.tertiary)
                         Text("No matching terms")
-                            .font(.system(size: 15))
+                            .font(.adaptiveSubheadline(isRegular: isRegular))
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
@@ -50,8 +55,13 @@ struct GlossaryView: View {
 
 private struct GlossaryCard: View {
     let term: FastingEducation.GlossaryTerm
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var isExpanded = false
-    
+
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
@@ -60,38 +70,38 @@ private struct GlossaryCard: View {
             } label: {
                 HStack(spacing: 12) {
                     Text(term.term)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.primary)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.adaptiveBadge(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.tertiary)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
                 .padding(14)
             }
             .buttonStyle(.pressable)
-            
+
             if isExpanded {
                 VStack(alignment: .leading, spacing: 10) {
                     Divider()
-                    
+
                     Text(term.definition)
-                        .font(.system(size: 14))
+                        .font(.adaptiveDetail(isRegular: isRegular))
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    
+
                     if !term.relatedTerms.isEmpty {
                         HStack(spacing: 6) {
                             Text("Related:")
-                                .font(.system(size: 11))
+                                .font(.adaptiveBadge(isRegular: isRegular))
                                 .foregroundStyle(.tertiary)
-                            
+
                             ForEach(term.relatedTerms, id: \.self) { related in
                                 Text(related)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                                     .foregroundStyle(Color.accentColor)
                                     .padding(.horizontal, 7)
                                     .padding(.vertical, 3)

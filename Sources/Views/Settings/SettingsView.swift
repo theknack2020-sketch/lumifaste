@@ -1,6 +1,6 @@
-import SwiftUI
-import SwiftData
 import StoreKit
+import SwiftData
+import SwiftUI
 
 /// Settings — theme, units, export, support, legal, about.
 /// All interactive elements have VoiceOver accessibility labels.
@@ -9,13 +9,18 @@ struct SettingsView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     @Query(sort: \FastingSession.startDate, order: .reverse)
     private var sessions: [FastingSession]
-    
+
     @AppStorage("lf_appearance_mode") private var appearanceMode: String = AppearanceMode.system.rawValue
     @AppStorage("lf_weight_unit") private var useMetric = true
     @AppStorage("lf_sounds_disabled") private var soundsDisabled = false
-    
+
     @State private var showPaywall = false
     @State private var showRestoreAlert = false
     @State private var showExportShare = false
@@ -26,22 +31,23 @@ struct SettingsView: View {
     @State private var errorMessage: String?
     @State private var showResetConfirm = false
     @State private var challengeManager = ChallengeManager()
-    
+
     // MARK: - Dynamic Type Support
+
     @ScaledMetric(relativeTo: .body) private var cardPadding: CGFloat = 16
     @ScaledMetric(relativeTo: .body) private var sectionSpacing: CGFloat = 24
-    
+
     private var selectedAppearance: AppearanceMode {
         get { AppearanceMode(rawValue: appearanceMode) ?? .system }
         nonmutating set { appearanceMode = newValue.rawValue }
     }
-    
+
     private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
     }
-    
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -80,7 +86,7 @@ struct SettingsView: View {
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Settings")
             .dynamicTypeSize(...DynamicTypeSize.accessibility2)
-            .sheet(isPresented: $showPaywall) {
+            .fullScreenCover(isPresented: $showPaywall) {
                 PaywallView()
             }
             .sheet(isPresented: $showExportShare) {
@@ -100,7 +106,7 @@ struct SettingsView: View {
                     Text("Your Premium subscription has been restored!")
                 case .noPurchasesFound:
                     Text("No previous purchases found. If you believe this is an error, contact Apple Support.")
-                case .failed(let msg):
+                case let .failed(msg):
                     Text(msg)
                 case nil:
                     Text("")
@@ -137,9 +143,9 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Section Header
-    
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(.footnote, design: .rounded, weight: .bold))
@@ -153,10 +159,10 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 4)
     }
-    
+
     // MARK: - Glass Card Modifier
-    
-    private func glassCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+
+    private func glassCard(@ViewBuilder content: () -> some View) -> some View {
         content()
             .padding(16)
             .background(
@@ -166,13 +172,13 @@ struct SettingsView: View {
                     .shadow(color: .black.opacity(0.06), radius: 2, x: 0, y: 1)
             )
     }
-    
+
     // MARK: - Activity Section (Challenges & Achievements)
-    
+
     private var activitySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Activity")
-            
+
             glassCard {
                 VStack(spacing: 0) {
                     NavigationLink {
@@ -183,7 +189,7 @@ struct SettingsView: View {
                             Spacer()
                             if challengeManager.completedCount > 0 {
                                 Text("\(challengeManager.completedCount)/\(challengeManager.totalCount)")
-                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                                     .monospacedDigit()
                                     .foregroundStyle(.secondary)
                             }
@@ -194,9 +200,9 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("View fasting challenges and your progress")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     NavigationLink {
                         AchievementsView(achievementManager: AchievementManager())
                     } label: {
@@ -214,13 +220,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Premium Section
-    
+
     private var premiumSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Subscription")
-            
+
             if subscriptionManager.isSubscribed {
                 // Active premium — gradient banner
                 VStack(spacing: 14) {
@@ -235,13 +241,13 @@ struct SettingsView: View {
                                     )
                                 )
                                 .frame(width: 44, height: 44)
-                            
+
                             Image(systemName: "crown.fill")
-                                .font(.system(size: 20))
+                                .font(.adaptiveTitle3(isRegular: isRegular))
                                 .foregroundStyle(.white)
                                 .symbolEffect(.bounce, options: .speed(0.6), value: true)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Premium Active")
                                 .font(.system(.headline, design: .rounded, weight: .bold))
@@ -249,16 +255,16 @@ struct SettingsView: View {
                                 .font(.system(.caption))
                                 .foregroundStyle(.secondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         Text("✓")
                             .font(.system(.title3, weight: .bold))
                             .foregroundStyle(.green)
                     }
-                    
+
                     Divider()
-                    
+
                     Button {
                         if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
                             UIApplication.shared.open(url)
@@ -275,19 +281,19 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("Opens App Store subscription management")
-                    
+
                     Divider()
-                    
+
                     HStack(spacing: 12) {
                         ZStack {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
                                 .fill(Color.cyan.opacity(0.15))
                                 .frame(width: 30, height: 30)
                             Image(systemName: "snowflake")
-                                .font(.system(size: 14))
+                                .font(.adaptiveDetail(isRegular: isRegular))
                                 .foregroundStyle(.cyan)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Streak Freeze")
                                 .font(.system(.subheadline, weight: .medium))
@@ -295,11 +301,11 @@ struct SettingsView: View {
                                 .font(.system(.caption))
                                 .foregroundStyle(.secondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         Text("\(FastingManager.streakFreezeCount) available")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                             .foregroundStyle(.cyan)
                     }
                     .accessibilityElement(children: .combine)
@@ -342,34 +348,34 @@ struct SettingsView: View {
                                     )
                                     .frame(width: 36, height: 36)
                                     .shadow(color: .purple.opacity(0.35), radius: 8, y: 2)
-                                
+
                                 Image(systemName: "sparkles")
-                                    .font(.system(size: 16))
+                                    .font(.adaptiveSubheadline(isRegular: isRegular))
                                     .foregroundStyle(.white)
                                     .symbolEffect(.pulse, options: .repeating.speed(0.5))
                             }
-                            
+
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Upgrade to Premium")
                                     .font(.system(.subheadline, weight: .semibold))
                                 Text("Unlock all features")
-                                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                                    .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                                     .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.8))
                             }
-                            
+
                             Spacer()
-                            
+
                             Image(systemName: "arrow.right.circle.fill")
-                                .font(.system(size: 20))
+                                .font(.adaptiveTitle3(isRegular: isRegular))
                                 .foregroundStyle(themeManager.selectedTheme.accent)
                                 .symbolEffect(.pulse, options: .repeating.speed(0.6))
                         }
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("Opens premium subscription options")
-                    
+
                     Divider()
-                    
+
                     Button {
                         Task {
                             await subscriptionManager.restorePurchases()
@@ -409,13 +415,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Theme Section
-    
+
     private var themeSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Theme")
-            
+
             VStack(spacing: 12) {
                 // Theme preview card
                 ThemePreviewCard(theme: themeManager.selectedTheme)
@@ -426,14 +432,14 @@ struct SettingsView: View {
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(themeManager.selectedTheme.accent.opacity(0.12), lineWidth: 1)
                     )
-                
+
                 // Free themes
                 glassCard {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("FREE THEMES")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(.adaptiveBadge(isRegular: isRegular).weight(.bold))
                             .foregroundStyle(.secondary)
-                        
+
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
                                 ForEach(Array(ThemeManager.freeThemes.enumerated()), id: \.element.id) { index, theme in
@@ -457,19 +463,19 @@ struct SettingsView: View {
                         }
                     }
                 }
-                
+
                 // Premium themes
                 glassCard {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack(spacing: 6) {
                             Image(systemName: "crown.fill")
-                                .font(.system(size: 11))
+                                .font(.adaptiveBadge(isRegular: isRegular))
                                 .foregroundStyle(.purple)
                             Text("PREMIUM THEMES")
-                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .font(.adaptiveBadge(isRegular: isRegular).weight(.bold))
                                 .foregroundStyle(.purple)
                         }
-                        
+
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 14) {
                                 ForEach(Array(ThemeManager.premiumThemes.enumerated()), id: \.element.id) { index, theme in
@@ -501,13 +507,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Appearance Section
-    
+
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Appearance")
-            
+
             glassCard {
                 Picker(selection: Binding(
                     get: { selectedAppearance },
@@ -528,13 +534,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Sounds & Haptics Section
-    
+
     private var soundsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Sound & Haptics")
-            
+
             glassCard {
                 VStack(alignment: .leading, spacing: 8) {
                     Toggle(isOn: Binding(
@@ -550,7 +556,7 @@ struct SettingsView: View {
                     }
                     .accessibilityLabel("Sound and haptics")
                     .accessibilityHint(soundsDisabled ? "Sounds are off. Toggle to turn on." : "Sounds are on. Toggle to turn off.")
-                    
+
                     Text("When disabled, system sounds are muted. Haptic feedback follows your device settings.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
@@ -558,13 +564,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Units Section
-    
+
     private var unitsSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Units")
-            
+
             glassCard {
                 Picker(selection: $useMetric) {
                     Text("Kilograms (kg)").tag(true)
@@ -577,13 +583,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Apple Health Section
-    
+
     private var appleHealthSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Apple Health")
-            
+
             glassCard {
                 VStack(spacing: 0) {
                     // Header — Apple Health integration status
@@ -598,35 +604,35 @@ struct SettingsView: View {
                                     )
                                 )
                                 .frame(width: 40, height: 40)
-                            
+
                             Image(systemName: "heart.fill")
-                                .font(.system(size: 18))
+                                .font(.adaptiveHeadline(isRegular: isRegular))
                                 .foregroundStyle(.red)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Apple Health Integration")
                                 .font(.system(.body, design: .rounded, weight: .semibold))
                             Text(HealthKitManager.shared.isAvailable
-                                 ? "Connected"
-                                 : "Not Available")
+                                ? "Connected"
+                                : "Not Available")
                                 .font(.system(.caption, design: .rounded, weight: .medium))
                                 .foregroundStyle(HealthKitManager.shared.isAvailable ? .green : .secondary)
                         }
-                        
+
                         Spacer()
-                        
+
                         if HealthKitManager.shared.isAvailable {
                             Image(systemName: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
-                                .font(.system(size: 18))
+                                .font(.adaptiveHeadline(isRegular: isRegular))
                         }
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("Apple Health Integration, \(HealthKitManager.shared.isAvailable ? "Connected" : "Not Available")")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     // Feature list — what HealthKit does in this app
                     VStack(alignment: .leading, spacing: 10) {
                         healthFeatureRow(
@@ -635,14 +641,14 @@ struct SettingsView: View {
                             title: "Step Count",
                             description: "Reads your daily step count from Apple Health and displays it on the timer screen."
                         )
-                        
+
                         healthFeatureRow(
                             icon: "scalemass",
                             iconColor: .blue,
                             title: "Weight Tracking",
                             description: "Reads weight data from Apple Health and syncs weight entries you log back to Apple Health."
                         )
-                        
+
                         healthFeatureRow(
                             icon: "arrow.down.circle",
                             iconColor: .purple,
@@ -650,24 +656,24 @@ struct SettingsView: View {
                             description: "Import existing weight entries from Apple Health into Lumifaste from the Stats tab."
                         )
                     }
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     // Privacy note
                     HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 13))
+                            .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.secondary)
-                        
+
                         Text("Your health data stays on your device. Lumifaste never uploads, shares, or sells your health information.")
                             .font(.system(.caption))
                             .foregroundStyle(.tertiary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    
+
                     if HealthKitManager.shared.isAvailable {
                         Divider().padding(.vertical, 10)
-                        
+
                         // Open Health app
                         Button {
                             HapticManager.shared.lightTap()
@@ -691,7 +697,7 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     /// A single row describing a HealthKit feature
     private func healthFeatureRow(icon: String, iconColor: Color, title: String, description: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
@@ -700,10 +706,10 @@ struct SettingsView: View {
                     .fill(iconColor.opacity(0.12))
                     .frame(width: 28, height: 28)
                 Image(systemName: icon)
-                    .font(.system(size: 13))
+                    .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(iconColor)
             }
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(.subheadline, weight: .medium))
@@ -716,15 +722,15 @@ struct SettingsView: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title). \(description)")
     }
-    
+
     // MARK: - Data Section
-    
+
     // MARK: - iCloud Sync
-    
+
     private var iCloudSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("iCloud")
-            
+
             glassCard {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
@@ -744,7 +750,7 @@ struct SettingsView: View {
                     }
                     .accessibilityElement(children: .combine)
                     .accessibilityLabel("iCloud Sync enabled")
-                    
+
                     Text("Your fasting data syncs automatically across all your devices via iCloud.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
@@ -752,11 +758,11 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     private var dataSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Data")
-            
+
             glassCard {
                 VStack(alignment: .leading, spacing: 8) {
                     Button {
@@ -773,7 +779,7 @@ struct SettingsView: View {
                             Spacer()
                             if !subscriptionManager.isSubscribed {
                                 Image(systemName: "lock.fill")
-                                    .font(.system(size: 11))
+                                    .font(.adaptiveBadge(isRegular: isRegular))
                                     .foregroundStyle(.secondary)
                             }
                             Image(systemName: "arrow.up.right")
@@ -789,15 +795,15 @@ struct SettingsView: View {
                         : sessions.isEmpty
                         ? "No fasting data to export"
                         : "Exports \(sessions.count) fasting sessions as a CSV file")
-                    
+
                     Text(subscriptionManager.isSubscribed
                         ? "Export your fasting history as a CSV file. Your data always stays on your device unless you choose to share it."
                         : "Export is a Pro feature. Upgrade to download your fasting history as CSV.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
-                    
+
                     Divider().padding(.vertical, 4)
-                    
+
                     Button(role: .destructive) {
                         HapticManager.shared.warning()
                         showResetConfirm = true
@@ -819,13 +825,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Share Section
-    
+
     private var shareSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Spread the Word")
-            
+
             glassCard {
                 VStack(spacing: 0) {
                     ShareLink(
@@ -843,9 +849,9 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("Share Lumifaste with friends via messages, email, or social media")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     Button {
                         HapticManager.shared.lightTap()
                         ReviewRequestManager.requestReviewIfAppropriate()
@@ -854,9 +860,9 @@ struct SettingsView: View {
                             Label("Rate Lumifaste", systemImage: "star")
                             Spacer()
                             HStack(spacing: 2) {
-                                ForEach(0..<5) { _ in
+                                ForEach(0 ..< 5) { _ in
                                     Image(systemName: "star.fill")
-                                        .font(.system(size: 9))
+                                        .font(.adaptiveSmallLabel(isRegular: isRegular))
                                         .foregroundStyle(.yellow)
                                 }
                             }
@@ -868,13 +874,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Support Section
-    
+
     private var supportSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Support")
-            
+
             glassCard {
                 VStack(spacing: 0) {
                     Button {
@@ -892,9 +898,9 @@ struct SettingsView: View {
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Contact support by email")
                     .accessibilityHint("Opens email to send feedback or get help")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     Button {
                         showHealthDisclaimer = true
                     } label: {
@@ -908,9 +914,9 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.pressable)
                     .accessibilityHint("View important health and safety information")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     Button {
                         HapticManager.shared.lightTap()
                         if let url = URL(string: "App-prefs:SIRI") {
@@ -928,9 +934,9 @@ struct SettingsView: View {
                     .buttonStyle(.pressable)
                     .accessibilityLabel("Siri Shortcuts")
                     .accessibilityHint("Open Siri settings to manage voice shortcuts for Lumifaste")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     NavigationLink {
                         NotificationSettingsView()
                     } label: {
@@ -948,13 +954,13 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - Legal Section
-    
+
     private var legalSection: some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionHeader("Legal")
-            
+
             glassCard {
                 VStack(spacing: 0) {
                     Link(destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/privacy/")!) {
@@ -968,9 +974,9 @@ struct SettingsView: View {
                         }
                     }
                     .accessibilityHint("Opens privacy policy in your browser")
-                    
+
                     Divider().padding(.vertical, 10)
-                    
+
                     Link(destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/terms/")!) {
                         HStack {
                             Label("Terms of Use", systemImage: "doc.text")
@@ -986,9 +992,9 @@ struct SettingsView: View {
             }
         }
     }
-    
+
     // MARK: - About Section
-    
+
     private var aboutSection: some View {
         VStack(spacing: 12) {
             // Version card with accent bar
@@ -997,7 +1003,7 @@ struct SettingsView: View {
                     .fill(themeManager.selectedTheme.accent)
                     .frame(width: 3)
                     .padding(.vertical, 4)
-                
+
                 HStack {
                     Label("Version", systemImage: "info.circle")
                     Spacer()
@@ -1017,7 +1023,7 @@ struct SettingsView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .accessibilityElement(children: .combine)
             .accessibilityLabel("App version \(appVersion)")
-            
+
             // Footer with brand
             VStack(spacing: 8) {
                 ZStack {
@@ -1031,22 +1037,22 @@ struct SettingsView: View {
                             )
                         )
                         .frame(width: 50, height: 50)
-                    
+
                     Image(systemName: "leaf.fill")
-                        .font(.system(size: 22))
+                        .font(.adaptiveTitle3(isRegular: isRegular))
                         .scaleEffect(x: -1)
                         .foregroundStyle(themeManager.selectedTheme.accentGradient)
                         .symbolEffect(.pulse, options: .speed(0.3).repeating)
                 }
-                
+
                 Text("Lumifaste")
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                     .foregroundStyle(.secondary)
-                
+
                 Text("No ads. No tricks. Just results.")
                     .font(.system(.caption2, design: .rounded, weight: .medium))
                     .foregroundStyle(.tertiary)
-                
+
                 Text("© 2026 TheKnack")
                     .font(.system(.caption2, design: .rounded))
                     .foregroundStyle(.quaternary)
@@ -1056,9 +1062,9 @@ struct SettingsView: View {
             .padding(.top, 4)
         }
     }
-    
+
     // MARK: - Actions
-    
+
     private func exportData() {
         guard let url = FastingDataExporter.exportToFile(sessions: sessions) else {
             errorMessage = "Couldn't export your data. Please check your device storage and try again."
@@ -1068,22 +1074,23 @@ struct SettingsView: View {
         exportFileURL = url
         showExportShare = true
     }
-    
+
     private func sendSupportEmail() {
         let subject = "Lumifaste Support"
         let body = "\n\n---\nApp Version: \(appVersion)\niOS: \(UIDevice.current.systemVersion)\nDevice: \(UIDevice.current.model)"
-        
+
         let encodedSubject = subject.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let encodedBody = body.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        
+
         if let url = URL(string: "mailto:support@lumifaste.com?subject=\(encodedSubject)&body=\(encodedBody)"),
-           UIApplication.shared.canOpenURL(url) {
+           UIApplication.shared.canOpenURL(url)
+        {
             UIApplication.shared.open(url)
         } else {
             showMailError = true
         }
     }
-    
+
     private func rateApp() {
         if let url = URL(string: "itms-apps://itunes.apple.com/app/id6740062938?action=write-review") {
             UIApplication.shared.open(url)
@@ -1095,19 +1102,23 @@ struct SettingsView: View {
 
 private struct ShareSheet: UIViewControllerRepresentable {
     let activityItems: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
+
+    func makeUIViewController(context _: Context) -> UIActivityViewController {
         UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_: UIActivityViewController, context _: Context) {}
 }
 
 // MARK: - Health Disclaimer View
 
 struct HealthDisclaimerView: View {
     @Environment(\.dismiss) private var dismiss
-    
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isRegular: Bool {
+        sizeClass == .regular
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -1117,43 +1128,43 @@ struct HealthDisclaimerView: View {
                             Circle()
                                 .fill(Color.red.opacity(0.12))
                                 .frame(width: 80, height: 80)
-                            
+
                             Image(systemName: "heart.text.square.fill")
-                                .font(.system(size: 38))
+                                .font(.adaptiveDisplay(size: 38, weight: .regular, design: .default, isRegular: isRegular))
                                 .foregroundStyle(.red)
                         }
                         .shadow(color: .red.opacity(0.15), radius: 10, x: 0, y: 4)
-                        
+
                         Text("Health Disclaimer")
                             .font(.system(.title2, design: .rounded, weight: .bold))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 8)
-                    
+
                     disclaimerSection(
                         title: "Not Medical Advice",
                         text: "Lumifaste is a wellness tracking tool designed to help you monitor your intermittent fasting schedule. It does not provide medical advice, diagnosis, or treatment.",
                         color: .blue
                     )
-                    
+
                     disclaimerSection(
                         title: "Consult Your Doctor",
                         text: "Always consult a qualified healthcare professional before starting any fasting program, especially if you have diabetes, eating disorders, are pregnant or breastfeeding, take medications, or have any chronic health condition.",
                         color: .green
                     )
-                    
+
                     disclaimerSection(
                         title: "Listen to Your Body",
                         text: "If you feel dizzy, faint, or unwell during a fast, stop fasting immediately and eat. Fasting is not suitable for everyone, and your health and safety should always come first.",
                         color: .orange
                     )
-                    
+
                     disclaimerSection(
                         title: "Fasting Stage Information",
                         text: "The fasting stages and their descriptions shown in this app are based on general scientific research. Individual results vary significantly based on metabolism, diet, exercise, and many other factors. The times shown are approximate averages, not guarantees.",
                         color: .purple
                     )
-                    
+
                     disclaimerSection(
                         title: "Your Data",
                         text: "All your health and fasting data is stored locally on your device. We never collect, store, or share your personal health information.",
@@ -1173,14 +1184,14 @@ struct HealthDisclaimerView: View {
             }
         }
     }
-    
+
     private func disclaimerSection(title: String, text: String, color: Color) -> some View {
         HStack(spacing: 0) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(color)
                 .frame(width: 3)
                 .padding(.vertical, 4)
-            
+
             VStack(alignment: .leading, spacing: 6) {
                 Text(title)
                     .font(.system(.headline, design: .rounded))

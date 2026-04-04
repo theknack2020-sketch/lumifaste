@@ -9,7 +9,7 @@ struct FastShareCard: View {
     let stage: FastingStage
     let plan: FastingPlan
     let streak: Int
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Top gradient header
@@ -19,13 +19,13 @@ struct FastShareCard: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
-                
+
                 VStack(spacing: 8) {
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 28))
                         .scaleEffect(x: -1)
                         .foregroundStyle(.white.opacity(0.9))
-                    
+
                     Text("Lumifaste")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
@@ -34,7 +34,7 @@ struct FastShareCard: View {
                 .padding(.bottom, 12)
             }
             .frame(height: 100)
-            
+
             // Content
             VStack(spacing: 20) {
                 // Big duration
@@ -42,33 +42,33 @@ struct FastShareCard: View {
                     Text("I fasted for")
                         .font(.system(size: 14))
                         .foregroundStyle(.secondary)
-                    
+
                     Text(formatDuration(duration))
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
                 }
                 .padding(.top, 20)
-                
+
                 // Stats row
                 HStack(spacing: 0) {
                     cardStat(title: "Plan", value: plan.rawValue, icon: "calendar", color: .orange)
-                    
+
                     Rectangle()
                         .fill(Color(.separator))
                         .frame(width: 1, height: 40)
-                    
+
                     cardStat(title: "Stage", value: stage.rawValue, icon: stage.icon, color: stage.color)
-                    
+
                     if streak > 0 {
                         Rectangle()
                             .fill(Color(.separator))
                             .frame(width: 1, height: 40)
-                        
+
                         cardStat(title: "Streak", value: "\(streak) days", icon: "flame.fill", color: .orange)
                     }
                 }
                 .padding(.horizontal, 8)
-                
+
                 // Stage badge
                 HStack(spacing: 6) {
                     Image(systemName: stage.icon)
@@ -81,7 +81,7 @@ struct FastShareCard: View {
                 .padding(.vertical, 8)
                 .background(stage.color.opacity(0.12))
                 .clipShape(Capsule())
-                
+
                 // Footer branding
                 HStack(spacing: 4) {
                     Text("Track your fasts with")
@@ -108,7 +108,7 @@ struct FastShareCard: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Share card showing \(formatDuration(duration)) fast, \(plan.rawValue) plan, \(stage.rawValue) stage\(streak > 0 ? ", \(streak) day streak" : "")")
     }
-    
+
     private func cardStat(title: String, value: String, icon: String, color: Color) -> some View {
         VStack(spacing: 4) {
             Image(systemName: icon)
@@ -124,11 +124,11 @@ struct FastShareCard: View {
         }
         .frame(maxWidth: .infinity)
     }
-    
+
     private func formatDuration(_ duration: TimeInterval) -> String {
         let h = Int(duration) / 3600
         let m = (Int(duration) % 3600) / 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
+        if h > 0, m > 0 { return "\(h)h \(m)m" }
         if h > 0 { return "\(h)h" }
         return "\(m)m"
     }
@@ -139,7 +139,7 @@ struct FastShareCard: View {
 struct StreakShareCard: View {
     let streakDays: Int
     let achievement: Achievement
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Top gradient
@@ -149,13 +149,13 @@ struct StreakShareCard: View {
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
-                
+
                 VStack(spacing: 8) {
                     Image(systemName: "leaf.fill")
                         .font(.system(size: 28))
                         .scaleEffect(x: -1)
                         .foregroundStyle(.white.opacity(0.9))
-                    
+
                     Text("Lumifaste")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
@@ -164,23 +164,23 @@ struct StreakShareCard: View {
                 .padding(.bottom, 12)
             }
             .frame(height: 100)
-            
+
             VStack(spacing: 16) {
                 // Big streak number
                 VStack(spacing: 4) {
                     Text("🔥")
                         .font(.system(size: 40))
-                    
+
                     Text("\(streakDays)")
                         .font(.system(size: 56, weight: .bold, design: .rounded))
                         .foregroundStyle(.primary)
-                    
+
                     Text("Day Streak!")
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
                 .padding(.top, 20)
-                
+
                 // Achievement badge
                 HStack(spacing: 8) {
                     Image(systemName: achievement.icon)
@@ -194,7 +194,7 @@ struct StreakShareCard: View {
                 .padding(.vertical, 10)
                 .background(achievement.color.opacity(0.12))
                 .clipShape(Capsule())
-                
+
                 // Footer
                 HStack(spacing: 4) {
                     Text("Track your fasts with")
@@ -227,7 +227,6 @@ struct StreakShareCard: View {
 
 @MainActor
 enum ShareImageRenderer {
-    
     /// Render a FastShareCard to UIImage using ImageRenderer.
     static func renderFastCard(
         duration: TimeInterval,
@@ -240,7 +239,7 @@ enum ShareImageRenderer {
         renderer.scale = UIScreen.main.scale
         return renderer.uiImage
     }
-    
+
     /// Render a StreakShareCard to UIImage.
     static func renderStreakCard(
         streakDays: Int,
@@ -258,7 +257,7 @@ enum ShareImageRenderer {
 struct ShareableImage: Transferable {
     let image: UIImage
     let caption: String
-    
+
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .png) { item in
             guard let data = item.image.pngData() else {
@@ -267,7 +266,7 @@ struct ShareableImage: Transferable {
             return data
         }
     }
-    
+
     enum ShareError: Error {
         case renderFailed
     }

@@ -23,3 +23,6 @@ build/
 *.storekit-local
 fastlane/AuthKey_*.p8
 fastlane/api_key.json
+
+# App Store screenshots (large PNGs, don't track in git)
+fastlane/screenshots/
