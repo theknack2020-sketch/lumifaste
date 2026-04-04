@@ -253,6 +253,7 @@ struct ThemePickerCircle: View {
                     .font(.adaptiveCaption(isRegular: isRegular).weight(isSelected ? .semibold : .regular))
                     .foregroundStyle(isSelected ? .primary : .secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
         }
         .buttonStyle(.plain)

@@ -1576,6 +1576,7 @@ private struct PlanCard: View {
                     .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
 
                 // Difficulty dots
                 HStack(spacing: 3) {

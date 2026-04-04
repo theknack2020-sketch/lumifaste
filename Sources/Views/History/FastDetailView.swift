@@ -329,6 +329,7 @@ struct FastDetailView: View {
                 .font(.system(.title3, design: .rounded, weight: .semibold))
                 .monospacedDigit()
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .minimumScaleFactor(0.7)
 
             Text(title)

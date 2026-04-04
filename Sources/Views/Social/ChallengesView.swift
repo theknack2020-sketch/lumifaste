@@ -597,6 +597,7 @@ struct CompletedBadge: View {
             Text(challenge.title)
                 .font(.adaptiveCaption(isRegular: isRegular).weight(.semibold))
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .minimumScaleFactor(0.8)
 
             // XP earned

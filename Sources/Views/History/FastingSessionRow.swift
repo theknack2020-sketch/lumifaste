@@ -91,6 +91,7 @@ struct FastingSessionRow: View {
                                 .font(.system(.caption))
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
+                                .minimumScaleFactor(0.75)
                         }
                     }
                 }

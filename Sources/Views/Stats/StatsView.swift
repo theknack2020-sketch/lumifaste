@@ -854,12 +854,14 @@ private struct SummaryMetricCell: View {
                 .monospacedDigit()
                 .contentTransition(.numericText())
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .minimumScaleFactor(0.7)
 
             Text(label)
                 .font(.adaptiveCaption(isRegular: isRegular))
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
+                .minimumScaleFactor(0.75)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
