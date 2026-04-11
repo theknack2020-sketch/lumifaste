@@ -17,6 +17,12 @@ final class SubscriptionManager {
     var isRestoring = false
     var restoreResult: RestoreResult?
 
+    /// Whether the current Apple ID is eligible for the introductory free trial.
+    /// Updated after `loadProducts()` and on subscription status changes.
+    /// Apple Guideline 3.1.2(c): paywall must not promise a free trial to
+    /// users who are ineligible (e.g. previous subscribers).
+    var isEligibleForTrial = false
+
     enum RestoreResult: Equatable {
         case success
         case noPurchasesFound
@@ -167,6 +173,7 @@ final class SubscriptionManager {
                     products = loaded
                     productsLoadFailed = false
                     isLoadingProducts = false
+                    await refreshIntroOfferEligibility()
                     return
                 }
 
@@ -210,7 +217,10 @@ final class SubscriptionManager {
                     try await Task.sleep(for: .seconds(60))
                     throw PurchaseTimeoutError()
                 }
-                let first = try await group.next()!
+                guard let first = try await group.next() else {
+                    group.cancelAll()
+                    return Product.PurchaseResult.userCancelled
+                }
                 group.cancelAll()
                 return first
             }
@@ -305,6 +315,109 @@ final class SubscriptionManager {
             return "\(monthly.displayPrice)/mo or \(yearly.displayPrice)/yr"
         }
         return nil
+    }
+
+    // MARK: - Intro Offer Eligibility (Guideline 3.1.2(c))
+
+    /// Refreshes `isEligibleForTrial` by querying StoreKit for the current Apple ID's
+    /// eligibility for the introductory free trial on the yearly product (or first available).
+    /// Apple allows only one intro offer per subscription group per Apple ID — users who
+    /// previously subscribed are ineligible and must see the regular price upfront.
+    func refreshIntroOfferEligibility() async {
+        let target = yearlyProduct ?? monthlyProduct ?? products.first
+        guard let subInfo = target?.subscription else {
+            isEligibleForTrial = false
+            return
+        }
+        // StoreKit 2: isEligibleForIntroOffer is async on SubscriptionInfo.
+        isEligibleForTrial = await subInfo.isEligibleForIntroOffer
+        logger.info("Intro offer eligibility: \(self.isEligibleForTrial ? "eligible" : "ineligible")")
+    }
+
+    // MARK: - Billing Disclosure (Apple 3.1.2(c) compliant copy)
+
+    /// Period abbreviation for a subscription period ("mo", "yr", "wk", "day").
+    private func periodAbbrev(_ period: Product.SubscriptionPeriod) -> String {
+        switch period.unit {
+        case .day: return period.value == 1 ? "day" : "\(period.value) days"
+        case .week: return period.value == 1 ? "wk" : "\(period.value) wks"
+        case .month: return period.value == 1 ? "mo" : "\(period.value) mos"
+        case .year: return period.value == 1 ? "yr" : "\(period.value) yrs"
+        @unknown default: return "period"
+        }
+    }
+
+    /// Day count derived from a subscription period (used for trial label like "7-day free trial").
+    private func dayCount(_ period: Product.SubscriptionPeriod) -> Int {
+        switch period.unit {
+        case .day: return period.value
+        case .week: return period.value * 7
+        case .month: return period.value * 30
+        case .year: return period.value * 365
+        @unknown default: return period.value
+        }
+    }
+
+    /// Apple-compliant legal disclosure shown below the purchase CTA.
+    /// Per Guideline 3.1.2(c), must clearly state trial duration (if any),
+    /// recurring price, auto-renewal, and cancellation path.
+    ///
+    /// Examples:
+    /// - Eligible + yearly: "7-day free trial, then $29.99/yr. Auto-renews. Cancel anytime in Settings."
+    /// - Ineligible + yearly: "$29.99/yr. Auto-renews. Cancel anytime in Settings."
+    /// - Eligible + monthly: "7-day free trial, then $3.99/mo. Auto-renews. Cancel anytime in Settings."
+    func billingDisclosure(for product: Product?) -> String {
+        guard let product, let sub = product.subscription else {
+            return "Auto-renews. Cancel anytime in Settings."
+        }
+        let price = product.displayPrice
+        let period = periodAbbrev(sub.subscriptionPeriod)
+        if isEligibleForTrial,
+           let offer = sub.introductoryOffer,
+           offer.paymentMode == .freeTrial
+        {
+            let days = dayCount(offer.period)
+            return "\(days)-day free trial, then \(price)/\(period). Auto-renews. Cancel anytime in Settings."
+        }
+        return "\(price)/\(period). Auto-renews. Cancel anytime in Settings."
+    }
+
+    /// Primary CTA label — eligibility-driven so ineligible users don't see
+    /// a broken "Start Free Trial" promise.
+    func ctaLabel(for product: Product?) -> String {
+        guard let product, let sub = product.subscription else {
+            return "Subscribe"
+        }
+        if isEligibleForTrial,
+           let offer = sub.introductoryOffer,
+           offer.paymentMode == .freeTrial
+        {
+            let days = dayCount(offer.period)
+            return "Start \(days)-Day Free Trial"
+        }
+        return "Subscribe for \(product.displayPrice)"
+    }
+
+    /// Short subtitle under the CTA — pairs with the legal disclosure.
+    func ctaSubtitle(for product: Product?) -> String {
+        guard let product, let sub = product.subscription else {
+            return "Auto-renews · Cancel anytime"
+        }
+        let price = product.displayPrice
+        let period = periodAbbrev(sub.subscriptionPeriod)
+        if isEligibleForTrial,
+           sub.introductoryOffer?.paymentMode == .freeTrial
+        {
+            return "Then \(price)/\(period) · Cancel anytime"
+        }
+        return "\(price)/\(period) · Cancel anytime"
+    }
+
+    /// Hero banner text — eligible users see trial pitch, ineligible see value pitch.
+    var heroBannerText: String {
+        isEligibleForTrial
+            ? "Try everything free for 7 days"
+            : "Unlock everything with Premium"
     }
 
     // MARK: - Transaction Listener

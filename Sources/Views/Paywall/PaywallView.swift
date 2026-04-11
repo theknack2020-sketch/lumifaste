@@ -265,7 +265,7 @@ struct PaywallView: View {
                 .font(.adaptiveSubheadline(isRegular: isRegular))
                 .foregroundStyle(.orange)
 
-            Text("Try everything free for 7 days")
+            Text(subscriptionManager.heroBannerText)
                 .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
                 .foregroundStyle(.primary)
         }
@@ -281,7 +281,7 @@ struct PaywallView: View {
                 )
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Try everything free for 7 days")
+        .accessibilityLabel(subscriptionManager.heroBannerText)
     }
 
     // MARK: - Comparison Table (What You Get with Pro)
@@ -493,13 +493,13 @@ struct PaywallView: View {
                         } else {
                             Image(systemName: "sparkles")
                                 .font(.adaptiveSubheadline(isRegular: isRegular).weight(.semibold))
-                            Text("Start 7-Day Free Trial")
+                            Text(subscriptionManager.ctaLabel(for: selectedProduct))
                                 .font(.adaptiveHeadline(isRegular: isRegular).weight(.bold))
                         }
                     }
 
                     if !subscriptionManager.isPurchasing {
-                        Text("Cancel anytime · No charge for 7 days")
+                        Text(subscriptionManager.ctaSubtitle(for: selectedProduct))
                             .font(.adaptiveCaption(isRegular: isRegular).weight(.medium))
                             .foregroundStyle(.white.opacity(0.8))
                     }
@@ -570,10 +570,13 @@ struct PaywallView: View {
 
     private var legalSection: some View {
         VStack(spacing: 6) {
-            Text("Payment charged after trial. Auto-renews. Cancel anytime in Settings.")
+            // Apple Guideline 3.1.2(c): must clearly disclose trial duration (if any),
+            // recurring price, auto-renewal, and cancellation path — all in one place.
+            Text(subscriptionManager.billingDisclosure(for: selectedProduct))
                 .font(.adaptiveBadge(isRegular: isRegular))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 16) {
                 Link("Terms of Use", destination: URL(string: "https://theknack2020-sketch.github.io/lumifaste/terms/")!)
@@ -884,7 +887,7 @@ enum SoftPaywallReason {
         case .historyLimit:
             "Free accounts can view the last 7 fasts. Upgrade to see your complete fasting journey."
         case let .featureLocked(feature):
-            "\(feature) is a Premium feature. Start a free trial to unlock everything."
+            "\(feature) is a Premium feature. Upgrade to unlock everything."
         case .thirdFast:
             "3 fasts completed — you're serious about fasting. Premium helps you go further."
         }
@@ -998,11 +1001,11 @@ struct SoftPaywallView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.adaptiveDetail(isRegular: isRegular))
-                        Text("Start 7-Day Free Trial")
+                        Text(subscriptionManager.isEligibleForTrial ? "Start 7-Day Free Trial" : "Unlock Premium")
                             .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                     }
 
-                    Text("Cancel anytime")
+                    Text(subscriptionManager.isEligibleForTrial ? "Cancel anytime" : "Auto-renews · Cancel anytime")
                         .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                         .foregroundStyle(.white.opacity(0.75))
                 }
