@@ -118,6 +118,7 @@ private struct FastingStatusBar: View {
     let themeAccent: Color
     let onTap: () -> Void
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @State private var pulsePhase = false
 
@@ -167,7 +168,7 @@ private struct FastingStatusBar: View {
         .buttonStyle(.plain)
         .padding(.top, 4)
         .onAppear {
-            if !manager.isPaused {
+            if !manager.isPaused, !reduceMotion {
                 withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
                     pulsePhase = true
                 }

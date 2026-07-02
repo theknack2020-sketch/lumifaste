@@ -68,6 +68,7 @@ extension View {
 
 struct PulsingModifier: ViewModifier {
     let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPulsing = false
 
     func body(content: Content) -> some View {
@@ -75,13 +76,14 @@ struct PulsingModifier: ViewModifier {
             .scaleEffect(isActive && isPulsing ? 1.02 : 1.0)
             .opacity(isActive && isPulsing ? 0.92 : 1.0)
             .onAppear {
-                guard isActive else { return }
+                guard isActive, !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                     isPulsing = true
                 }
             }
             .onChange(of: isActive) { _, newValue in
                 if newValue {
+                    guard !reduceMotion else { return }
                     isPulsing = false
                     withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                         isPulsing = true
@@ -140,6 +142,7 @@ struct ConfettiParticle: Identifiable {
 
 struct ConfettiView: View {
     let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var particles: [ConfettiParticle] = []
     @State private var animationProgress: CGFloat = 0
 
@@ -150,20 +153,30 @@ struct ConfettiView: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                ForEach(particles) { particle in
-                    RoundedRectangle(cornerRadius: particle.size * 0.2, style: .continuous)
-                        .fill(particle.color)
-                        .frame(width: particle.size, height: particle.size * CGFloat.random(in: 0.5 ... 1.5))
-                        .rotationEffect(.degrees(particle.rotation + Double(animationProgress) * 360))
-                        .position(
-                            x: particle.x + particle.velocityX * animationProgress,
-                            y: particle.y + particle.velocityY * animationProgress + 200 * animationProgress * animationProgress
-                        )
-                        .opacity(Double(max(0, 1 - animationProgress * 0.8)))
+                if reduceMotion {
+                    // Static sparkle instead of animated confetti
+                    if isActive {
+                        Image(systemName: "sparkles")
+                            .font(.title)
+                            .foregroundStyle(.yellow)
+                            .position(x: geo.size.width / 2, y: geo.size.height * 0.3)
+                    }
+                } else {
+                    ForEach(particles) { particle in
+                        RoundedRectangle(cornerRadius: particle.size * 0.2, style: .continuous)
+                            .fill(particle.color)
+                            .frame(width: particle.size, height: particle.size * CGFloat.random(in: 0.5 ... 1.5))
+                            .rotationEffect(.degrees(particle.rotation + Double(animationProgress) * 360))
+                            .position(
+                                x: particle.x + particle.velocityX * animationProgress,
+                                y: particle.y + particle.velocityY * animationProgress + 200 * animationProgress * animationProgress
+                            )
+                            .opacity(Double(max(0, 1 - animationProgress * 0.8)))
+                    }
                 }
             }
             .onChange(of: isActive) { _, newValue in
-                if newValue {
+                if newValue, !reduceMotion {
                     spawnParticles(in: geo.size)
                     animationProgress = 0
                     withAnimation(.easeOut(duration: 2.0)) {
@@ -230,6 +243,7 @@ struct BreathingScaleModifier: ViewModifier {
     let isActive: Bool
     let maxScale: CGFloat
     let duration: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase = false
 
     func body(content: Content) -> some View {
@@ -237,6 +251,7 @@ struct BreathingScaleModifier: ViewModifier {
             .scaleEffect(isActive && phase ? maxScale : 1.0)
             .onChange(of: isActive) { _, newValue in
                 if newValue {
+                    guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
                         phase = true
                     }
@@ -247,10 +262,9 @@ struct BreathingScaleModifier: ViewModifier {
                 }
             }
             .onAppear {
-                if isActive {
-                    withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
-                        phase = true
-                    }
+                guard isActive, !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: duration).repeatForever(autoreverses: true)) {
+                    phase = true
                 }
             }
     }
@@ -313,16 +327,18 @@ struct AnimateFromZeroModifier: ViewModifier {
 
 struct GoldGlowModifier: ViewModifier {
     let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var glowPhase = false
 
     func body(content: Content) -> some View {
         content
             .shadow(
-                color: isActive ? Color.yellow.opacity(glowPhase ? 0.6 : 0.2) : .clear,
-                radius: isActive ? (glowPhase ? 12 : 4) : 0
+                color: isActive ? Color.yellow.opacity(reduceMotion ? 0.4 : (glowPhase ? 0.6 : 0.2)) : .clear,
+                radius: isActive ? (reduceMotion ? 8 : (glowPhase ? 12 : 4)) : 0
             )
             .onChange(of: isActive) { _, newValue in
                 if newValue {
+                    guard !reduceMotion else { return }
                     withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
                         glowPhase = true
                     }
@@ -333,10 +349,9 @@ struct GoldGlowModifier: ViewModifier {
                 }
             }
             .onAppear {
-                if isActive {
-                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                        glowPhase = true
-                    }
+                guard isActive, !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    glowPhase = true
                 }
             }
     }
@@ -352,12 +367,13 @@ extension View {
 
 struct ShimmerRotationModifier: ViewModifier {
     let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var rotation: Double = 0
 
     func body(content: Content) -> some View {
         content
             .overlay {
-                if isActive {
+                if isActive, !reduceMotion {
                     Circle()
                         .stroke(
                             AngularGradient(
@@ -379,14 +395,14 @@ struct ShimmerRotationModifier: ViewModifier {
                 }
             }
             .onAppear {
-                if isActive {
-                    withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
-                        rotation = 360
-                    }
+                guard isActive, !reduceMotion else { return }
+                withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                    rotation = 360
                 }
             }
             .onChange(of: isActive) { _, newValue in
                 if newValue {
+                    guard !reduceMotion else { return }
                     rotation = 0
                     withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
                         rotation = 360

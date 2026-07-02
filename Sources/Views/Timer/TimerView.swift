@@ -997,6 +997,7 @@ struct TimerView: View {
                     Image(systemName: "quote.opening")
                         .font(.adaptiveCaption(isRegular: isRegular))
                         .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.6))
+                        .accessibilityHidden(true)
                     Spacer()
                 }
 
@@ -1047,6 +1048,7 @@ struct TimerView: View {
                 Image(systemName: "lightbulb.fill")
                     .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.yellow)
+                    .accessibilityHidden(true)
                 Text(tip.text)
                     .font(.adaptiveBadge(isRegular: isRegular))
                     .foregroundStyle(.secondary)

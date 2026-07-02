@@ -19,6 +19,7 @@ struct WaterTrackingCard: View {
         sizeClass == .regular
     }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var celebrationTriggered = false
     @State private var wavePhase: CGFloat = 0
     @State private var justAdded = false
@@ -184,6 +185,7 @@ struct WaterTrackingCard: View {
             }
         }
         .onAppear {
+            guard !reduceMotion else { return }
             withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
                 wavePhase = .pi * 2
             }

@@ -69,6 +69,7 @@ struct LearnView: View {
                         .font(.adaptiveDetail(isRegular: isRegular))
                         .scaleEffect(x: -1)
                         .foregroundStyle(themeManager.selectedTheme.accent)
+                        .accessibilityHidden(true)
                     Text("Lumifaste Learn")
                         .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
                         .foregroundStyle(.secondary)
@@ -181,6 +182,7 @@ struct LearnView: View {
                 Image(systemName: "chart.bar.xaxis.ascending")
                     .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(accent)
+                    .accessibilityHidden(true)
                 Text("Fasting Stages")
                     .font(.system(.headline, design: .rounded))
             }
@@ -228,6 +230,7 @@ struct LearnView: View {
                 Image(systemName: "doc.richtext")
                     .font(.adaptiveDetail(isRegular: isRegular))
                     .foregroundStyle(accent)
+                    .accessibilityHidden(true)
                 Text("Articles")
                     .font(.system(.headline, design: .rounded))
             }

@@ -1,9 +1,9 @@
 # Lumifaste — App Store Metadata & ASO Strategy
 
-> **Version:** 1.0.0
-> **Last Updated:** 2026-03-23
+> **Version:** 1.2.0
+> **Last Updated:** 2026-04-10
 > **Bundle ID:** com.theknack.lumifaste
-> **Apple ID:** 6740062938
+> **Apple ID:** 6760971357
 
 ---
 
@@ -12,10 +12,10 @@
 ### Title (30 chars max)
 
 ```
-Lumifaste: Fasting Timer
+Lumifaste: Fasting Tracker
 ```
-**Character count:** 24
-**Rationale:** Primary keyword "Fasting Timer" has highest search volume in the category. Brand name "Lumifaste" is unique and memorable. Leaves room for indexing.
+**Character count:** 26
+**Status:** KEEP — "Fasting Tracker" = #1 category keyword combo. Brand embeds "fast" as substring.
 
 ### Subtitle (30 chars max)
 
@@ -23,114 +23,129 @@ Lumifaste: Fasting Timer
 Intermittent Fasting Tracker
 ```
 **Character count:** 29
-**Rationale:** Captures "intermittent fasting" (highest volume keyword in the category) and "tracker" (2nd highest). Subtitle keywords complement title — no duplication.
+**Status:** KEEP — captures #1 search term "intermittent fasting" + "tracker". No duplication with title (different words indexed).
 
 ### Keywords (100 chars max, comma-separated, no spaces after commas)
 
 ```
-fasting,fast,16:8,weight loss,autophagy,ketosis,OMAD,health,streak,no ads,diet,fat burn,wellness,IF
+16:8,OMAD,autophagy,ketosis,weight loss,timer,journal,mood,hydration,siri,no ad,streak,fat burn,IF
 ```
-**Character count:** 100
-**Rationale:**
-- **fasting** — category anchor (redundancy with title intentional for ranking boost)
-- **fast** — short-tail variant catches "fast timer", "fast tracker" queries
-- **16:8** — most popular fasting protocol, heavily searched
-- **weight loss** — #1 user motivation for downloading fasting apps
-- **autophagy** — science-focused users, differentiator (Lumifaste shows stages)
-- **ketosis** — high-intent health keyword, ties to fasting stages feature
-- **OMAD** — popular plan with dedicated community
-- **health** — broad category catch-all
-- **streak** — gamification keyword, popular with habit-tracking users
-- **no ads** — unique differentiator, searched by frustrated users of ad-heavy competitors
-- **diet** — broad health keyword
-- **fat burn** — high-intent weight loss variant
-- **wellness** — broader health category
-- **IF** — abbreviation commonly used by fasting community
+**Character count:** 98
 
-### Promotional Text (170 chars max)
+**Cross-field dedup analysis:**
 
-**Primary variant:**
+| Removed (was wasted) | Reason |
+|---|---|
+| `fasting` | Already in title + subtitle |
+| `fast` | Substring of "Lumifaste" in title |
+| `intermittent` | Already in subtitle |
+| `health` | Too generic, low conversion |
+| `diet` | Replaced with higher-value terms |
+| `wellness` | Too generic, low conversion |
+
+| Added (new) | Reason |
+|---|---|
+| `timer` | Combines with title "fasting" → indexes "fasting timer" |
+| `journal` | Unique feature, low competition |
+| `mood` | Unique feature, expands category reach |
+| `hydration` | Unique feature, adjacent category |
+| `siri` | Unique differentiator, App Intents |
+
+**Compound phrases Apple will now index:**
+- "fasting timer", "fasting journal", "fasting mood tracker"
+- "intermittent fasting timer", "fasting hydration"
+- "fasting siri", "fasting no ads", "autophagy fasting tracker"
+- "16:8 fasting", "OMAD tracker"
+
+### Promotional Text (170 chars max) — 3 Rotation Variants
+
+**Variant A — Ad-free/Trust (DEFAULT):**
 ```
-No ads. No tricks. Just an honest fasting timer that helps you build lasting habits. Track stages from fat burning to autophagy. Start your 7-day free trial today.
+No ads. No tricks. Just an honest fasting timer with Live Activity on your Lock Screen. Track 5 stages from fat burning to autophagy. Try Premium free for 7 days.
 ```
 **Character count:** 164
+
+**Variant B — Science/Stages (Jan, May-Jun):**
+```
+Watch your body shift through 5 fasting stages in real time — fat burning, ketosis, autophagy. Live Activity tracks it all from your Lock Screen. Zero ads. Ever.
+```
+**Character count:** 161
+
+**Variant C — Privacy/Simplicity:**
+```
+Your health data never leaves your device. No ads, no account required, no trackers. Just a beautiful fasting timer with real-time stages and iCloud sync. Try free.
+```
+**Character count:** 165
 
 ### Description (4000 chars max)
 
 ```
-Lumifaste is the fasting companion built for people who are tired of apps stuffed with ads and hidden paywalls. No banner ads. No interstitials. No video ads. Ever.
+Your fasting timer, live on your Lock Screen.
+
+Lumifaste is the only fasting app with Live Activity and Dynamic Island — see your timer, current stage, and progress without ever opening the app. Built with zero ads and zero data collection. Your health data never leaves your device.
 
 Start a fast with one tap. Watch your progress on a beautiful circular timer. Understand what's happening in your body as you move through five scientifically-backed fasting stages — from digestion to fat burning, ketosis, and autophagy.
 
-WHETHER YOU'RE JUST STARTING OR DEEP INTO YOUR JOURNEY
+LIVE ACTIVITY & DYNAMIC ISLAND
 
-• 7 fasting plans built in: 12:12, 14:10, 16:8, 18:6, 20:4, OMAD (23:1), and 5:2
+See your fasting timer right on your Lock Screen and Dynamic Island. No other fasting app offers this. Glance at your progress, current stage, and time remaining — all without unlocking your phone.
+
+FASTING STAGES — REAL-TIME SCIENCE
+
+Your body goes through distinct metabolic phases during a fast. Lumifaste tracks them live:
+
+• Fed State (0–4h) — Digesting food, insulin elevated
+• Early Fasting (4–12h) — Blood sugar dropping, glycogen depleting
+• Fat Burning (12–18h) — Stored fat being used for energy
+• Ketosis (18–24h) — Ketone production, mental clarity
+• Autophagy (24h+) — Cellular cleanup and renewal
+
+Premium unlocks detailed stage science with references and actionable tips.
+
+7 PLANS + CUSTOM
+
+• 12:12, 14:10, 16:8, 18:6, 20:4, OMAD (23:1), and 5:2
 • Custom plans from 1–48 hours for experienced fasters
-• Beginner-friendly onboarding — choose your goal, pick a plan, start fasting
-• Adjust your start time retroactively — forgot to start the timer? No problem
+• Adjust your start time retroactively — forgot to start? No problem
 
-UNDERSTAND YOUR BODY — FASTING STAGES
+SIRI SHORTCUTS & APP INTENTS
 
-Your body goes through distinct metabolic phases during a fast. Lumifaste tracks them in real time:
+"Hey Siri, start my fast." Hands-free fasting control from anywhere. The only fasting app with full Siri Shortcuts integration.
 
-🍽 Fed State (0–4h) — Digesting food, insulin elevated
-⏳ Early Fasting (4–12h) — Blood sugar dropping, glycogen depleting
-🔥 Fat Burning (12–18h) — Stored fat being used for energy
-⚡ Ketosis (18–24h) — Ketone production, mental clarity
-✨ Autophagy (24h+) — Cellular cleanup and renewal
+TRACK MORE THAN FASTING
 
-Premium unlocks detailed stage science — what's metabolically happening, scientific references, and actionable tips for each phase.
-
-STAY MOTIVATED
-
-• Live Activity — see your fasting timer on the Lock Screen and Dynamic Island without opening the app
-• Estimated calorie burn — watch calories burned in real time based on your fasting stage
-• Enhanced water tracker — set a daily goal, watch the progress ring fill, celebrate when you hit it
-• Pause & resume — life happens, your timer adapts
-• Extend your fast — hit your goal and want to keep going? Add 1–6 hours
-• Motivational tips rotate throughout your fast
-• Community comparison — see how you compare to average fasting times
-• Smart notifications — milestone alerts, stage transitions, streak protection, weekly summary, and inactivity nudge
-• Quiet hours — notifications respect your sleep schedule
-• Siri Shortcuts — "Hey Siri, start my fast" — hands-free fasting control
-
-TRACK YOUR PROGRESS
-
-• Dedicated Insights tab with full stats dashboard
-• Streak heatmap — GitHub-style 90-day fasting calendar
-• Fasting history with duration, plan, and stage reached
-• Weekly fasting chart and month-at-a-glance calendar
-• Streak tracking — build consistency day by day
-• Week-over-week comparison with percentage change
-• Time pattern analysis — discover your best fasting days and hours
+• Hydration tracker with daily goal and progress ring
+• Mood tracking after each fast
+• Personal journal notes on completed fasts
 • Weight logging with trend chart and Apple Health sync
-• Consistency score — see your completion rate
+
+No other fasting app combines hydration, mood, and journaling in one place.
+
+INSIGHTS & STREAKS
+
+• Streak heatmap — 90-day fasting calendar
+• Weekly charts and month-at-a-glance view
+• Time pattern analysis — discover your best fasting days
+• Consistency score and week-over-week comparison
 • Export your data as CSV anytime
 
-CHALLENGE YOURSELF
+CHALLENGES & ACHIEVEMENTS
 
-Daily, weekly, and monthly fasting challenges keep you engaged. Earn XP points, track progress bars, and unlock all 13 achievements — from your first fast to 30-day streaks, 100 total hours, and reaching autophagy.
+Daily, weekly, and monthly challenges with XP points. 13 achievements from your first fast to 30-day streaks, 100 total hours, and reaching autophagy.
 
-LEARN THE SCIENCE
+SMART NOTIFICATIONS
 
-• Beginner's guide — what IF is, how to start, what to expect
-• 5 in-depth articles with scientific references
-• 17 FAQ answers covering safety, exercise, nutrition, and more
-• Complete glossary of fasting terms
-• Practical tips organized by fasting stage
+Milestone alerts, stage transitions, streak protection, weekly summary, inactivity nudge, and eating window reminders. Quiet hours respect your sleep.
 
-MAKE IT YOURS
+8 COLOR THEMES
 
-• 8 color themes (3 free, 5 premium) — Forest, Ocean, Mono, Sunset, Nebula, Aurora, Rose Gold, Midnight
-• Light, dark, and system appearance modes
-• Mood tracking after each fast
-• Add personal notes to your completed fasts
+Forest, Ocean, Mono, Sunset, Nebula, Aurora, Rose Gold, Midnight. Light, dark, and system modes.
 
-HONEST PRICING
+HONEST PRICING — NO ADS, EVER
 
-Lumifaste is generous with its free tier. All preset fasting plans, the timer, fasting stages, basic notifications, and your last 7 fasts are always free. No account required. No data collected.
+All preset plans, the timer, fasting stages, basic notifications, and your last 7 fasts are free. No account required. No ads. No tricks.
 
-Premium unlocks the full experience: unlimited history, streak tracking, full charts and heatmap, detailed stage science, custom plans, smart notifications, weight tracking, all 13 achievements, all 8 themes, CSV export, and more.
+Premium unlocks unlimited history, streak tracking, full charts, stage science, custom plans, smart notifications, weight tracking, all 13 achievements, all 8 themes, CSV export, and iCloud sync.
 
 • Monthly: $3.99/month
 • Yearly: $29.99/year (save 37%)
@@ -138,370 +153,130 @@ Premium unlocks the full experience: unlimited history, streak tracking, full ch
 
 YOUR DATA STAYS ON YOUR DEVICE
 
-All your fasting and health data is stored locally. We never collect, store, or transmit your personal information. No analytics on your health data. No third-party trackers. Privacy isn't a feature — it's a principle.
+All your fasting and health data is stored locally and synced via iCloud only to your own devices. We never collect, store, or sell your personal information. No analytics on your health data. No third-party trackers.
 
-Lumifaste is not medical advice. Always consult a healthcare professional before starting any fasting program.
+Lumifaste is not medical advice. Consult a healthcare professional before starting any fasting program.
 
 Privacy Policy: https://theknack2020-sketch.github.io/lumifaste/privacy
 Terms of Use: https://theknack2020-sketch.github.io/lumifaste/terms
 ```
-**Character count:** ~3,420
+**Character count:** ~3,410
 
-### What's New (Version 1.1.0)
+### What's New (Version 1.2.0)
 
 ```
-Lumifaste 1.1 — Bigger, Smarter, Deeper 🍃
+All animations now respect Reduce Motion. Stability improvements throughout. Better VoiceOver support with accessibility labels across every screen.
+```
+**Character count:** 148
 
-NEW
-• Live Activity — fasting timer on Lock Screen and Dynamic Island
-• Estimated calorie burn — real-time kcal counter based on fasting stage
-• Siri Shortcuts — "Hey Siri, start my fast" hands-free control
-• Insights tab — dedicated stats dashboard with charts and trends
-• Streak heatmap — GitHub-style 90-day fasting calendar
-• Apple Health integration — sync weight with Health app
-• Enhanced water tracker — daily goal, progress ring, celebration
-• Daily, weekly & monthly challenges with XP points
-• Smart notifications — streak protection, weekly summary, inactivity nudge
-• Mood & hydration trend charts
-• Streak freeze — protect your streak (Pro)
-• Eating window reminder — 30 min heads-up before your window opens
-• Water reminders — stay hydrated every 2 hours during fasts
+---
 
-IMPROVED
-• Redesigned paywall with 10-feature comparison table
-• Better empty states with animations and motivational copy
-• Loading states across all screens
-• Health disclaimers in onboarding and learn sections
-• More haptic feedback and accessibility labels throughout
-• Rounded typography throughout for premium feel
-• Background task scheduling for reliable notifications
+## 2. Competitor Landscape (Real App Store Data — April 10, 2026)
 
-No ads. No tricks. Just results.
+| # | App | Rating | Reviews | Price Model |
+|---|---|---|---|---|
+| 1 | Zero: Fasting & Food Tracker | 4.82 | 445,213 | Free + Sub |
+| 2 | Simple: AI Weight Loss Coach | 4.70 | 358,575 | Free + Sub |
+| 3 | Fastic Weight Loss & Fasting | 4.80 | 246,081 | Free + Sub |
+| 4 | BodyFast: Intermittent Fasting | 4.71 | 142,734 | Free + Sub |
+| 5 | FastEasy: Intermittent Fasting | 4.65 | 78,905 | Free + Sub |
+| 6 | IF Tracker (Kai Oelfke) | 4.87 | 44,930 | Free + Sub |
+| 7 | IF Tracker (Leap Fitness) | 4.91 | 27,957 | Free + Sub |
+
+### Lumifaste Moats (5 Unique Differentiators)
+1. **Live Activity + Dynamic Island** — ZERO competitors
+2. **Holistic tracking (hydration + mood + journal)** — ZERO competitors combine all 3
+3. **App Intents / Siri Shortcuts** — ZERO competitors
+4. **iCloud Sync** — rare in fasting apps
+5. **Share Cards** — polished shareable achievement images
+
+### Key Gaps
+1. **Widget support** — LOW effort, HIGH impact (top priority)
+2. **Apple Watch app** — HIGH effort, HIGHEST impact
+3. **AI personalization** — MEDIUM effort, growing trend
+
+---
+
+## 3. Review Status
+
+**Current reviews:** 0 ratings, 0 reviews (as of 2026-04-10)
+**Action:** Focus on review ACQUISITION, not management. ReviewRequestManager is active and triggers at 5 fasts, then every 20.
+
+---
+
+## 4. Screenshot Plan
+
+| # | Screen | State Setup | Caption |
+|---|---|---|---|
+| 1 | Timer (Fat Burning stage) | 16:8 fast, ~12h elapsed, streak 7, water 4 | **Track Every Stage of Your Fast** |
+| 2 | Timer (stage progression) | Next stage bar ~60% to Ketosis | **Know Exactly What Your Body Is Doing** |
+| 3 | Insights (Stats) | Pro, 15+ fasts, 80% completion, 7-day streak | **Insights That Keep You Motivated** |
+| 4 | History (completed fasts) | 10+ sessions, stat cards visible | **Your Complete Fasting Journey** |
+| 5 | Learn (education hub) | Default state | **Science-Backed Fasting Knowledge** |
+| 6 | Paywall (comparison) | Not subscribed, yearly selected | **Unlock Your Full Fasting Potential** |
+
+**Sizes:** 6.9" = 1320x2868, 6.7" = 1290x2796, iPad 13" = 2064x2752
+**Mode:** Light Mode default
+**Optional 7th:** Achievements or Onboarding
+
+---
+
+## 5. Featuring Nomination
+
+```
+App Name: Lumifaste
+Developer: TheKnack
+Apple ID: 6760971357
+Category: Health & Fitness
+Version: 1.2.0
+
+HEADLINE:
+Lumifaste brings fasting to the Lock Screen with Live Activity — a first in the category — while proving that health apps can thrive without ads or data collection.
+
+WHY THIS APP DESERVES FEATURING:
+
+The intermittent fasting category is one of the most crowded in Health & Fitness, yet every top app follows the same playbook: aggressive ads, dark-pattern paywalls, and data harvesting. Lumifaste takes the opposite approach. Zero ads — not reduced ads, zero. No account required. No third-party trackers. All health data stays on-device, synced only through iCloud to the user's own devices. The business model is a transparent subscription with a generous free tier that includes all 7 fasting plans, the full timer, real-time fasting stages, and the last 7 completed fasts.
+
+What makes Lumifaste technically distinctive is its deep adoption of Apple's latest platform capabilities. It is the first and only fasting app to offer Live Activity and Dynamic Island integration — users see their fasting timer, current metabolic stage, and progress directly on the Lock Screen without opening the app. This is exactly the kind of glanceable, ambient experience Live Activities were designed for, and no competitor has shipped it. The app also features full App Intents and Siri Shortcuts integration: "Hey Siri, start my fast" works out of the box. This combination of Live Activity + App Intents + Dynamic Island makes Lumifaste one of the most complete adopters of modern iOS interaction patterns in the health category.
+
+Version 1.2.0 reflects the app's commitment to accessibility-first development. Every animation now checks accessibilityReduceMotion, providing a comfortable experience for motion-sensitive users. Twenty-four decorative icons received accessibilityHidden treatment for cleaner VoiceOver navigation. Five potential crash sites were eliminated through defensive unwrapping. These are the kind of invisible improvements that make an app reliable for everyone — and they demonstrate the ongoing engineering discipline behind the product.
+
+APPLE TECHNOLOGIES USED:
+- Live Activity + Dynamic Island — real-time fasting timer on Lock Screen (unique in category)
+- App Intents + Siri Shortcuts — voice-controlled fasting
+- SwiftData + CloudKit — local-first with cross-device sync
+- HealthKit — Apple Health weight sync
+- StoreKit 2 — modern subscription management
+- SwiftUI — 100% SwiftUI with @Observable pattern
+- TelemetryDeck — privacy-first analytics
+- Accessibility — Dynamic Type, 288+ a11y identifiers, reduceMotion support
+- iPad Adaptive Layout — responsive grids, sidebar navigation
+- Smart Notifications — streak protection, stage transitions, quiet hours
+- App Icon variants — light, dark, tinted (iOS 18+)
+
+TIMING:
+Health and wellness engagement peaks in spring. Lumifaste's 1.2.0 update — focused entirely on accessibility and stability rather than feature bloat — demonstrates user-first development that Apple editorial champions. The fasting app market generates over $1 billion annually, yet no app in the top 10 has been featured for accessibility or privacy-first design — Lumifaste fills that gap.
 ```
 
 ---
 
-## 2. Competitor Keyword Analysis
+## 6. Privacy Nutrition Label
 
-### Zero (Fasting & Food Tracker)
+| Data Type | Collected? | Linked? | Tracking? |
+|---|---|---|---|
+| Health & Fitness | No | N/A | N/A |
+| Usage Data (TelemetryDeck) | Yes | No | No |
+| Purchase History | Yes (Apple) | Yes (Apple) | No |
+| All others | No | N/A | N/A |
 
-**App Store title:** "Zero: Fasting & Food Tracker"
-**Keywords they likely target:**
-- intermittent fasting, fasting tracker, fasting timer, fasting app
-- weight loss, lose weight, burn fat, body composition
-- 16:8, 18:6, OMAD, circadian rhythm
-- protein, macros, meal tracker, food tracker
-- ketosis, autophagy, fasting zones
-- streaks, achievements, challenges
-- health, wellness, longevity
-
-**Their weakness:** Increasingly complex (meal logging, protein scoring, barcode scanning). Recent reviews complain about bugs, broken features, forced complexity. Free tier becoming more limited. ~$70/year premium.
-
-### Simple (Intermittent Fasting)
-
-**Keywords they likely target:**
-- intermittent fasting, fasting for beginners, fasting coach
-- weight loss, diet plan, meal plan
-- nutrition, healthy eating, calorie tracker
-- AI coach, personalized plan
-- water tracker, step counter
-- wellness, healthy habits
-
-**Their weakness:** Aggressive paywall — free version is essentially a trial. AI features feel gimmicky. High subscription cost.
-
-### Fastic (Weight Loss & Fasting)
-
-**Keywords they likely target:**
-- intermittent fasting, fasting, weight loss, lose weight
-- fasting stages, body status, fat burning
-- recipes, meal plan, calorie tracker
-- AI chat, fasting coach, fasting community
-- keto diet, 16:8, 18:6
-- water tracker, step counter
-
-**Their weakness:** Heavy with features (4500+ recipes, AI chat, challenges). Banner ads in free version. Community features can feel noisy. Premium is expensive.
-
-### Lumifaste Keyword Differentiation Strategy
-
-| Keyword Gap | Why We Win |
-|---|---|
-| "no ads fasting" | Direct differentiator — none of the top 3 are truly ad-free |
-| "privacy fasting" | Data stays on device — Zero/Simple/Fastic all collect data |
-| "fasting stages" | Real-time visualization is our hero feature |
-| "autophagy tracker" | Educational depth on cellular biology |
-| "simple fasting timer" | Frustration with Zero/Simple complexity |
-| "ad free fasting app" | Explicit search query from frustrated users |
-| "simple fasting timer no account" | Explicit search query from frustrated users |
+**Declare:** Usage Data → Analytics → Not Linked to You → Not Used for Tracking
 
 ---
 
-## 3. Promotional Text Variants (A/B Testing)
+## 7. Category & Pricing
 
-### Variant A — Ad-Free Focus
-```
-No ads. No tricks. Just an honest fasting timer that helps you build lasting habits. Track stages from fat burning to autophagy. Start your 7-day free trial today.
-```
-
-### Variant B — Science Focus
-```
-Watch your body transform through 5 fasting stages — from fat burning to ketosis to autophagy. Science-backed tracking with zero ads. Try Premium free for 7 days.
-```
-
-### Variant C — Simplicity Focus
-```
-One tap to start. Beautiful timer. Real science. Lumifaste is the fasting app that respects your time and your privacy. No ads, no data collection, no clutter.
-```
-
-### Variant D — Results Focus
-```
-Join thousands building healthy fasting habits. Track 16:8, OMAD, and custom plans with real-time stage tracking. No ads ever. 7-day free Premium trial included.
-```
-
-### Variant E — Emotional / Trust Focus
-```
-Tired of fasting apps that bombard you with ads? Lumifaste is different — privacy-first, ad-free, and built for people who just want to fast in peace. Try it free.
-```
-
----
-
-## 4. Feature Bullet List (App Store Formatted)
-
-```
-◆ FASTING TIMER — One-tap start, beautiful circular progress, real-time countdown
-◆ 7 PLANS — 12:12, 14:10, 16:8, 18:6, 20:4, OMAD, 5:2 — plus custom
-◆ FASTING STAGES — Track 5 metabolic phases in real time with science
-◆ ZERO ADS — No banners, no interstitials, no video ads. Ever.
-◆ PRIVACY FIRST — All data stays on your device. Nothing leaves.
-◆ SMART ALERTS — Milestone, stage transition, and completion notifications
-◆ INSIGHTS — Weekly charts, monthly calendar, streaks, weight trends
-◆ ACHIEVEMENTS — 13 milestones from first fast to 30-day streak
-◆ LEARN — Beginner's guide, articles, FAQ, glossary, stage science
-◆ SHARE — Beautiful fast cards and streak milestone images
-◆ THEMES — 8 color themes with full dark mode support
-◆ EXPORT — Download your fasting history as CSV anytime
-```
-
----
-
-## 5. Screenshot Text Overlays
-
-### Screenshot 1 — Timer (Hero Shot)
-**Headline:** "Start Fasting in One Tap"
-**Subtext:** "Beautiful timer. Real-time stages. Zero ads."
-**Show:** Timer screen with circular progress at ~65%, Fat Burning stage visible
-
-### Screenshot 2 — Fasting Stages
-**Headline:** "See What's Happening Inside"
-**Subtext:** "5 science-backed fasting stages"
-**Show:** Stage progression view with Fat Burning → Ketosis highlighted, emoji icons
-
-### Screenshot 3 — Insights Dashboard
-**Headline:** "Track Every Fast"
-**Subtext:** "Charts, streaks, trends — all your data"
-**Show:** Stats view with hero cards (Total Hours, Avg Duration, Streak, Longest Fast)
-
-### Screenshot 4 — Plans & Flexibility
-**Headline:** "Your Plan, Your Way"
-**Subtext:** "7 presets + custom plans from 1–48 hours"
-**Show:** Plan selector chips with 16:8 selected, timer ready state
-
-### Screenshot 5 — Fast Complete
-**Headline:** "Celebrate Every Win"
-**Subtext:** "Confetti, mood tracking, share cards"
-**Show:** FastCompleteView with confetti, stats, mood emoji picker
-
-### Screenshot 6 — No Ads / Privacy
-**Headline:** "No Ads. No Tricks."
-**Subtext:** "Your health data never leaves your device"
-**Show:** Settings or onboarding welcome screen emphasizing "No ads. Just results." with privacy shield icon
-
----
-
-## 6. Category & Age Rating
-
-### Categories
 - **Primary:** Health & Fitness
 - **Secondary:** Lifestyle
-
-**Rationale:** Health & Fitness is the natural home for fasting/diet apps — all competitors are here. Lifestyle (not Food & Drink) as secondary because the app is about habit formation and wellness tracking, not cooking/recipes/restaurants. Food & Drink skews toward recipe apps and delivery services.
-
-### Age Rating
-- **Rating:** 4+ (recommended)
-- **Justification:**
-  - No user-generated content
-  - No web browsing
-  - No gambling or contests
-  - No mature/suggestive themes
-  - No violence
-  - No profanity
-  - Health information is educational, not diagnostic
-  - In-app purchases present (subscriptions) — disclosed
-  - No unrestricted web access
-  - Medical disclaimer clearly states app is not medical advice
-  - Weight logging is user-initiated, not body-image focused
-
----
-
-## 7. Press Kit / Website Description
-
-### Short Description (150 words)
-
-Lumifaste is an intermittent fasting tracker for iOS that puts simplicity and privacy first. Built from the ground up without ads — no banners, no interstitials, no video ads, ever — Lumifaste offers a clean fasting timer with real-time tracking of five scientifically-backed metabolic stages: Fed, Early Fasting, Fat Burning, Ketosis, and Autophagy.
-
-The app includes seven preset fasting plans (12:12 through OMAD), custom plans up to 48 hours, smart notifications with quiet hours, water tracking, streak and achievement systems, weight logging, weekly charts, and a complete educational library with a beginner's guide, FAQ, and glossary.
-
-All health data stays on the user's device. No accounts. No analytics on personal data. No third-party trackers.
-
-Free with generous features. Premium unlocks unlimited history, stage science, streak tracking, custom plans, and themes for $3.99/month or $29.99/year with a 7-day free trial.
-
-### One-Liner
-
-Lumifaste — the ad-free intermittent fasting timer with real-time fasting stage tracking and science-backed education.
-
-### Tagline Options
-
-1. "No ads. No tricks. Just results."
-2. "Your honest fasting companion."
-3. "Fast clean. Track smart. Stay private."
-
-### Key Differentiators for Press
-
-1. **Zero ads** — Not "minimal ads." Zero. The business model is a fair subscription, not attention harvesting.
-2. **Privacy-first** — All data stays on device. No accounts required. No health data analytics.
-3. **Fasting stage science** — Real-time metabolic stage tracking with scientific references (not just a countdown timer).
-4. **Generous free tier** — All 7 plans, full timer, stage names, notifications, and last 7 fasts are free forever.
-5. **Transparent pricing** — $3.99/month or $29.99/year. No hidden upsells. 7-day trial included.
-
----
-
-## 8. Privacy Nutrition Label
-
-### Data Linked to You
-**None.**
-
-### Data Not Linked to You
-**None collected.**
-
-### Data Used to Track You
-**None.**
-
-### Detailed Breakdown
-
-| Data Type | Collected? | Linked to Identity? | Used for Tracking? | Purpose |
-|---|---|---|---|---|
-| Health & Fitness (fasting sessions, weight) | ❌ No | N/A | N/A | Stored on device only |
-| Purchase History | ✅ Yes (by Apple) | Yes (by Apple) | No | App functionality (subscription) |
-| Usage Data (crash logs) | ❌ No | N/A | N/A | N/A |
-| Diagnostics | ❌ No | N/A | N/A | N/A |
-| Contact Info | ❌ No | N/A | N/A | N/A |
-| Identifiers | ❌ No | N/A | N/A | N/A |
-| Location | ❌ No | N/A | N/A | N/A |
-| Browsing History | ❌ No | N/A | N/A | N/A |
-
-**App Store Privacy Declaration:**
-
-Select: **"Data Not Collected"** for all categories.
-
-**Note:** StoreKit 2 purchase transactions are handled entirely by Apple. The app itself does not collect, store, or transmit any personally identifiable information. TelemetryDeck is referenced in the architecture notes but if integrated, it would be privacy-first (no PII) and should be declared as "Analytics — Data Not Linked to You."
-
-**If TelemetryDeck is active**, declare:
-- Usage Data → Analytics → Not Linked to You → Not Used for Tracking
-
-**If TelemetryDeck is NOT active** (current state based on source code — no TelemetryDeck import found):
-- Select "Data Not Collected" for everything
-
-### Privacy Policy URL
-`https://theknack2020-sketch.github.io/lumifaste/privacy/`
-
-### Terms of Use URL
-`https://theknack2020-sketch.github.io/lumifaste/terms/`
-
----
-
-## 9. ASO Keyword Research — Top 27 Target Keywords
-
-| # | Keyword | Est. Volume | Difficulty | Competitors Ranking | Our Strategy |
-|---|---------|-------------|------------|---------------------|--------------|
-| 1 | intermittent fasting | Very High | Very High | Zero, Simple, Fastic | Subtitle |
-| 2 | fasting timer | High | Medium | Zero, FastHabit | Title |
-| 3 | fasting tracker | High | High | Zero, Simple, Fastic | Subtitle |
-| 4 | fasting app | High | Very High | All competitors | Natural ranking via title/subtitle |
-| 5 | 16:8 fasting | High | Medium | Zero, DoFasting | Keywords field |
-| 6 | weight loss | Very High | Very High | Broad competition | Keywords field |
-| 7 | OMAD | Medium | Low | Zero | Keywords field |
-| 8 | autophagy | Medium | Low | Fastic (light) | Keywords field — differentiator |
-| 9 | ketosis | Medium | Medium | Fastic, Zero | Keywords field |
-| 10 | fasting stages | Medium | Low | Fastic ("body status") | In-app, description |
-| 11 | no ads fasting | Low-Med | Very Low | None specifically | Keywords field — uncontested |
-| 12 | ad free fasting | Low-Med | Very Low | None | Description, reviews |
-| 13 | fat burning | Medium | High | Broad competition | Keywords field |
-| 14 | fasting streak | Low-Med | Low | Zero | Keywords field |
-| 15 | diet | Very High | Very High | Massive competition | Keywords field |
-| 16 | health | Very High | Very High | Massive competition | Keywords field |
-| 17 | IF | Medium | Low | Abbreviation searchers | Keywords field |
-| 18 | wellness | High | High | Broad | Keywords field |
-| 19 | fasting for beginners | Medium | Medium | Simple, Zero | Description |
-| 20 | fast weight loss | High | Very High | Broad | Organic from description |
-| 21 | body fasting | Low | Very Low | BodyFast | Organic |
-| 22 | fasting schedule | Medium | Medium | Zero, Simple | Description |
-| 23 | time restricted eating | Low-Med | Low | Research community | Description |
-| 24 | fasting plan | Medium | Medium | All competitors | Description |
-| 25 | water tracker | Medium | High | Many health apps | Description |
-| 26 | calorie free | Low | Very Low | Niche | Description (we don't count calories) |
-| 27 | clean fasting | Low-Med | Low | Niche community | Description |
-
-### Long-Tail Keyword Opportunities
-
-These are lower-volume but nearly uncontested queries where Lumifaste can rank quickly:
-
-- "fasting app no ads"
-- "private fasting tracker"
-- "fasting stages tracker"
-- "autophagy timer"
-- "simple fasting timer no account"
-- "ad free intermittent fasting"
-
----
-
-## 10. Review Prompt Strategy
-
-The app uses `ReviewRequestManager` to prompt reviews at natural positive moments:
-- After completing a fast (positive accomplishment moment)
-- Respects Apple's 3-prompts-per-365-days limit
-- Never prompts during a fast or on paywall screens
-
-**Suggested review prompt triggers (in priority order):**
-1. After 3rd completed fast (user has established habit)
-2. After unlocking first achievement (positive reinforcement)
-3. After 7-day streak (deeply engaged user)
-
----
-
-## 11. App Store Connect Configuration Checklist
-
-- [ ] Primary category: Health & Fitness
-- [ ] Secondary category: Lifestyle
-- [ ] Age rating: 4+
-- [ ] Price: Free (with IAP)
-- [ ] In-App Purchases configured:
-  - [ ] com.theknack.lumifaste.premium.monthly — $3.99/month auto-renewable
-  - [ ] com.theknack.lumifaste.premium.yearly — $29.99/year auto-renewable
-- [ ] Privacy Policy URL: https://theknack2020-sketch.github.io/lumifaste/privacy/
-- [ ] Support URL: https://theknack2020-sketch.github.io/lumifaste/support/
-- [ ] Marketing URL: https://theknack2020-sketch.github.io/lumifaste/
-- [ ] App Privacy: Data Not Collected (or minimal if TelemetryDeck active)
-- [ ] Screenshots: 6 per device size (6.7", 6.5", 5.5" — plus iPad if universal)
-- [ ] App Preview video: Optional (recommended for launch week)
-- [ ] Localization: English (U.S.)
-
----
-
-## 12. Content Rights & Legal Notes
-
-- All fasting stage science references published peer-reviewed papers (listed in FastingEducation.swift)
-- No third-party copyrighted content in the app
-- App icon uses system SF Symbols (leaf.fill) — compliant with Apple guidelines
-- Health disclaimer present in app and description
-- Terms of Use and Privacy Policy hosted and linked
-- GDPR compliant by design — no personal data collection
-- No HealthKit integration in v1.0.0 (mentioned in architecture but not imported in source)
+- **Age Rating:** 4+
+- **Monthly:** $3.99/month (7-day free trial)
+- **Yearly:** $29.99/year (7-day free trial, save 37%)

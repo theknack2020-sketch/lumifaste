@@ -165,12 +165,17 @@ final class AchievementManager {
         for day in completedDays {
             if day == checkDate {
                 streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
-            } else if day == calendar.date(byAdding: .day, value: -1, to: checkDate)! {
-                streak += 1
-                checkDate = calendar.date(byAdding: .day, value: -1, to: day)!
+                guard let prevDate = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prevDate
             } else {
-                break
+                guard let prevDate = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                if day == prevDate {
+                    streak += 1
+                    guard let dayBefore = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                    checkDate = dayBefore
+                } else {
+                    break
+                }
             }
         }
         return streak

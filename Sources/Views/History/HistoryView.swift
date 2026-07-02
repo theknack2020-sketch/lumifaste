@@ -706,6 +706,7 @@ struct HistoryView: View {
                     Image(systemName: "chevron.right")
                         .font(.system(.caption, weight: .semibold))
                         .foregroundStyle(.tertiary)
+                        .accessibilityHidden(true)
                 }
             }
             .buttonStyle(.pressable)

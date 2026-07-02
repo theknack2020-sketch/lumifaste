@@ -39,8 +39,8 @@ final class HealthKitManager {
 
     private let healthStore: HKHealthStore?
 
-    private let weightType = HKQuantityType.quantityType(forIdentifier: .bodyMass)!
-    private let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount)!
+    private let weightType = HKQuantityType(.bodyMass)
+    private let stepType = HKQuantityType(.stepCount)
 
     private init() {
         if HKHealthStore.isHealthDataAvailable() {

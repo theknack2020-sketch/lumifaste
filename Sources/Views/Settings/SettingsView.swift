@@ -198,6 +198,7 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -214,6 +215,7 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -279,6 +281,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -473,6 +476,7 @@ struct SettingsView: View {
                             Image(systemName: "crown.fill")
                                 .font(.adaptiveBadge(isRegular: isRegular))
                                 .foregroundStyle(.purple)
+                                .accessibilityHidden(true)
                             Text("PREMIUM THEMES")
                                 .font(.adaptiveBadge(isRegular: isRegular).weight(.bold))
                                 .foregroundStyle(.purple)
@@ -666,6 +670,7 @@ struct SettingsView: View {
                         Image(systemName: "lock.shield.fill")
                             .font(.adaptiveDetail(isRegular: isRegular))
                             .foregroundStyle(.secondary)
+                            .accessibilityHidden(true)
 
                         Text("Your health data stays on your device. Lumifaste never uploads, shares, or sells your health information.")
                             .font(.system(.caption))
@@ -690,6 +695,7 @@ struct SettingsView: View {
                                 Image(systemName: "arrow.up.right")
                                     .font(.system(.caption2))
                                     .foregroundStyle(.tertiary)
+                                    .accessibilityHidden(true)
                             }
                         }
                         .buttonStyle(.pressable)
@@ -787,6 +793,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -817,6 +824,7 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -847,6 +855,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -868,6 +877,7 @@ struct SettingsView: View {
                                         .foregroundStyle(.yellow)
                                 }
                             }
+                            .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -895,6 +905,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -912,6 +923,7 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -931,6 +943,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -948,6 +961,7 @@ struct SettingsView: View {
                             Image(systemName: "chevron.right")
                                 .font(.system(.caption2, weight: .semibold))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .buttonStyle(.pressable)
@@ -973,6 +987,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .accessibilityHint("Opens privacy policy in your browser")
@@ -987,6 +1002,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.system(.caption2))
                                 .foregroundStyle(.tertiary)
+                                .accessibilityHidden(true)
                         }
                     }
                     .accessibilityHint("Opens terms of use in your browser")
@@ -1072,6 +1088,7 @@ struct SettingsView: View {
                 Image(systemName: "arrow.up.right.square")
                     .font(.adaptiveCaption(isRegular: isRegular))
                     .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

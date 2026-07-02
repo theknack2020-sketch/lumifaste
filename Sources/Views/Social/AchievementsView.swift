@@ -316,7 +316,6 @@ struct AchievementBadge: View {
                 .font(.adaptiveBadge(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(isEarned ? .primary : .secondary)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
                 .minimumScaleFactor(0.8)
 
             if let date = formattedDate {
