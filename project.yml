@@ -25,6 +25,8 @@ packages:
   TelemetryDeck:
     url: https://github.com/TelemetryDeck/SwiftSDK
     from: "2.0.0"
+  TheKnackKit:
+    path: ../TheKnackKit
 
 targets:
   Lumifaste:
@@ -38,6 +40,8 @@ targets:
       - target: LiveActivityWidget
         embed: true
       - package: TelemetryDeck
+      - package: TheKnackKit
+        product: SessionClock
     settings:
       base:
         INFOPLIST_FILE: Sources/Resources/Info.plist

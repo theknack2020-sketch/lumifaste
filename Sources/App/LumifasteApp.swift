@@ -78,6 +78,12 @@ struct LumifasteApp: App {
                             // Schedule inactivity nudge (#13) — checks every app foreground
                             await scheduleInactivityNudge()
                         }
+                        .task {
+                            // Reconcile the fasting Live Activity at launch (TheKnackKit
+                            // SessionClock): ends an orphaned card left after an app kill,
+                            // adopts a surviving one. Fixes the lingering/frozen LA bug.
+                            await LiveActivityManager.reconcileOnLaunch(hasActiveFast: FastingManager().isActive)
+                        }
                         .onOpenURL { url in
                             handleDeepLink(url)
                         }

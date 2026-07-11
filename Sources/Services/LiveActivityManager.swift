@@ -1,6 +1,7 @@
 import ActivityKit
 import Foundation
 import OSLog
+import SessionClock
 
 private let logger = Logger(subsystem: "com.theknack.lumifaste", category: "LiveActivity")
 
@@ -114,5 +115,24 @@ enum LiveActivityManager {
             currentActivity = nil
             logger.info("All Live Activities ended")
         }
+    }
+
+    // MARK: - Launch reconcile (TheKnackKit SessionClock)
+
+    /// Reconcile Live Activities at launch via TheKnackKit's `SessionClock`.
+    ///
+    /// Fixes the orphan bug: after an app kill, `currentActivity` (in-memory) is
+    /// nil, so `endLiveActivity()` early-returns and a stale card lingers on the
+    /// Lock Screen forever. This ends orphans when no fast is active, adopts the
+    /// survivor when one is, and re-acquires the in-memory handle so subsequent
+    /// `update`/`end` calls work after relaunch. Call once from app launch.
+    @MainActor
+    static func reconcileOnLaunch(hasActiveFast: Bool) async {
+        await LiveActivityReconciler.reconcile(
+            FastingActivityAttributes.self,
+            hasActiveSession: hasActiveFast
+        )
+        currentActivity = hasActiveFast ? Activity<FastingActivityAttributes>.activities.first : nil
+        logger.info("Live Activity reconcile-on-launch complete (activeFast: \(hasActiveFast))")
     }
 }
