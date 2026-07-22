@@ -59,7 +59,9 @@ final class FastingSession {
     func complete() {
         let end = Date.now
         endDate = end
-        actualDuration = end.timeIntervalSince(startDate) - totalPausedDuration
+        // Clamp through ClockGuard (matching live elapsedTime) so a backward device-clock
+        // move can never persist a negative duration into history and skew weekly stats.
+        actualDuration = ClockGuard.safeElapsedTime(since: startDate, pausedDuration: totalPausedDuration)
         stageReached = FastingStage.stage(for: actualDuration).rawValue
         isCompleted = true
     }

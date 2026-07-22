@@ -31,6 +31,13 @@ fastlane/api_key.json
 
 # App Store screenshots (large PNGs, don't track in git)
 fastlane/screenshots/
+.asc/shots/raw/
+.asc/shots/final/
+
+# Archive/export build logs
+build-archive.log
+build-export.log
+build-upload.log
 
 # build artifacts (2026-07-03)
 build_sim/

@@ -22,6 +22,25 @@ final class DataController: @unchecked Sendable {
 
     private init() {}
 
+    // MARK: - iCloud Sync Status
+
+    private static let cloudSyncAvailableKey = "lf_cloud_sync_available"
+
+    /// Records whether the CloudKit-backed store opened successfully at launch.
+    /// Written once from `LumifasteApp.init` so UI can reflect the real sync state
+    /// instead of a hardcoded "Enabled" label. Nonisolated + UserDefaults-backed so it
+    /// is safe to call from the App's `init` before the main actor is established.
+    nonisolated static func setCloudSyncAvailable(_ available: Bool) {
+        UserDefaults.standard.set(available, forKey: cloudSyncAvailableKey)
+    }
+
+    /// Whether fasting data is actually syncing via iCloud (CloudKit store opened).
+    /// Defaults to `true` if unset so a fresh install shows the optimistic state until
+    /// the first launch has recorded the real result.
+    var cloudSyncAvailable: Bool {
+        UserDefaults.standard.object(forKey: Self.cloudSyncAvailableKey) as? Bool ?? true
+    }
+
     // MARK: - Save with Error Handling
 
     /// Save the given ModelContext. Returns true on success.
@@ -101,13 +120,23 @@ final class DataController: @unchecked Sendable {
             try context.delete(model: WeightEntry.self)
             try context.save()
 
-            // Clear UserDefaults fasting state
+            // Clear UserDefaults fasting state. These MUST match the real keys written by
+            // FastingManager / ReviewPromptManager — the previous list used stale key
+            // names (lf_completed_fasts_count, lf_soft_paywall_shown, lf_has_requested_review)
+            // that never existed, so the counters survived a full data wipe.
             let keysToRemove = [
+                // Active fast state
                 "lf_fasting_active", "lf_fasting_start", "lf_fasting_end",
                 "lf_fasting_plan", "lf_fasting_paused", "lf_fasting_pause_start",
                 "lf_fasting_paused_total", "lf_fasting_water",
-                "lf_completed_fasts_count", "lf_has_requested_review",
-                "lf_last_review_request_date", "lf_soft_paywall_shown",
+                // Completion counter + soft-paywall trigger (FastingManager keys)
+                "lf_total_completed_fasts", "lf_soft_paywall_triggered",
+                // Streak freeze state (FastingManager keys)
+                "lf_streak_freeze_count", "lf_streak_freeze_last_date", "lf_streak_freeze_last_refill",
+                // Review-prompt cadence (ReviewPromptManager keys)
+                "lf_review_positive_count", "lf_review_session_count", "lf_review_last_request_at",
+                // Cached streak used by widgets/notifications
+                "lf_current_streak_cache",
             ]
             for key in keysToRemove {
                 UserDefaults.standard.removeObject(forKey: key)

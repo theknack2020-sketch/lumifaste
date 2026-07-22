@@ -1,0 +1,14 @@
+{
+  "bg": "linear-gradient(165deg,#0C2A1B 0%,#124A30 55%,#1E6B45 100%)",
+  "ink": "#EAF6EF",
+  "font": "-apple-system, 'SF Pro Display', 'Helvetica Neue', sans-serif",
+  "headlineWeight": 800,
+  "grainOpacity": 0.05,
+  "panelPalette": [
+    { "name": "forest-dark", "bg": "linear-gradient(160deg,#0A2417 0%,#123F29 60%,#1D5E3E 100%)", "ink": "#EAF6EF" },
+    { "name": "amber-warm", "bg": "linear-gradient(165deg,#FBF3E6 0%,#F5E0BE 58%,#EAC58C 100%)", "ink": "#4A3312" },
+    { "name": "mint-light", "bg": "linear-gradient(165deg,#F1FAF4 0%,#D6F0E1 55%,#B6E4CD 100%)", "ink": "#153A29" },
+    { "name": "ocean", "bg": "linear-gradient(165deg,#EEF6FA 0%,#D2E8F1 55%,#B1D8E7 100%)", "ink": "#183846" },
+    { "name": "sage", "bg": "linear-gradient(165deg,#F4F8EE 0%,#E1EED0 58%,#CBE0AE 100%)", "ink": "#2E3A1C" }
+  ]
+}

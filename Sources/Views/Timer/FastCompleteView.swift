@@ -12,6 +12,7 @@ struct FastCompleteView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(ReviewPromptManager.self) private var reviewPrompt
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var isRegular: Bool {
         sizeClass == .regular
@@ -270,7 +271,9 @@ struct FastCompleteView: View {
             errorMessage = "Couldn't save your mood and notes. Your fast was recorded, but these details may be lost."
             showError = true
         }
-        ReviewRequestManager.recordCompletedFast()
+        // A completed fast is a genuine positive moment — the only place we ask for
+        // a review (honest pre-prompt, gated by ReviewPromptManager's cadence).
+        reviewPrompt.trackPositiveAction()
     }
 
     // MARK: - Personalized congratulation based on fast length

@@ -161,6 +161,7 @@ private struct BreathingGlowModifier: ViewModifier {
     let isActive: Bool
     let color: Color
     @State private var phase: CGFloat = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
@@ -169,6 +170,11 @@ private struct BreathingGlowModifier: ViewModifier {
                 radius: isActive ? 20 + 10 * phase : 0
             )
             .onChange(of: isActive) { _, newValue in
+                // Honor Reduce Motion — hold a static glow instead of breathing forever.
+                guard !reduceMotion else {
+                    phase = newValue ? 0.5 : 0
+                    return
+                }
                 if newValue {
                     withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
                         phase = 1
@@ -180,10 +186,13 @@ private struct BreathingGlowModifier: ViewModifier {
                 }
             }
             .onAppear {
-                if isActive {
-                    withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
-                        phase = 1
-                    }
+                guard isActive else { return }
+                guard !reduceMotion else {
+                    phase = 0.5
+                    return
+                }
+                withAnimation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                    phase = 1
                 }
             }
     }

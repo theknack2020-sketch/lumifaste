@@ -1,7 +1,8 @@
 import Foundation
 import SwiftData
 
-/// Manual weight log entry — stored on device only (K004).
+/// Manual weight log entry — persisted in the CloudKit-backed SwiftData store, so it
+/// syncs to the user's own private iCloud (never collected by the developer).
 @Model
 final class WeightEntry {
     var id: UUID = UUID()

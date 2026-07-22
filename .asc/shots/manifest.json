@@ -1,0 +1,45 @@
+{
+  "panels": [
+    {
+      "id": "01-lockscreen",
+      "caption": "Your fast on the Lock Screen",
+      "sub": "Live Activity + Dynamic Island timer — no app needed",
+      "uiState": "liveactivity",
+      "bgVariant": "forest-dark",
+      "accent": "halo",
+      "settle": 2
+    },
+    {
+      "id": "02-timer",
+      "caption": "Five fasting stages, live",
+      "sub": "Fed to autophagy, tracked in real time",
+      "uiState": "timer",
+      "bgVariant": "amber-warm",
+      "settle": 4
+    },
+    {
+      "id": "03-insights",
+      "caption": "Watch your streak grow",
+      "sub": "Streaks, charts and 14-day momentum",
+      "uiState": "insights",
+      "bgVariant": "mint-light",
+      "settle": 5
+    },
+    {
+      "id": "04-history",
+      "caption": "Every fast, remembered",
+      "sub": "Your complete fasting journey, searchable",
+      "uiState": "history",
+      "bgVariant": "ocean",
+      "settle": 4
+    },
+    {
+      "id": "05-learn",
+      "caption": "Fat burning to autophagy",
+      "sub": "Understand every stage of your fast",
+      "uiState": "learn",
+      "bgVariant": "sage",
+      "settle": 4
+    }
+  ]
+}

@@ -3,12 +3,14 @@ import SwiftUI
 
 // MARK: - OnboardingView
 
-/// Premium 6-page onboarding — personalized quiz → plan recommendation → notifications → launch.
+/// Premium 7-page onboarding — personalized quiz → plan recommendation → Live Activity
+/// showcase → notifications → launch.
 /// Dark-themed with distinct green-progression gradients per page, capsule page dots,
 /// haptic feedback on every interaction, and polished entrance animations.
 struct OnboardingView: View {
     @Environment(ThemeManager.self) private var themeManager
     @Environment(\.horizontalSizeClass) private var sizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var isRegular: Bool {
         sizeClass == .regular
     }
@@ -29,7 +31,7 @@ struct OnboardingView: View {
     @State private var checkmarkScale: CGFloat = 0.2
     @State private var readyContentOpacity: Double = 0
 
-    private let totalPages = 6
+    private let totalPages = 7
 
     // MARK: - Body
 
@@ -40,19 +42,20 @@ struct OnboardingView: View {
                 goalPage.tag(1)
                 experiencePage.tag(2)
                 planPreviewPage.tag(3)
-                notificationPage.tag(4)
-                getStartedPage.tag(5)
+                liveActivityPage.tag(4)
+                notificationPage.tag(5)
+                getStartedPage.tag(6)
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .interactiveDismissDisabled()
             .onChange(of: currentPage) { _, newPage in
                 HapticManager.shared.selectionChanged()
-                if newPage == 4 {
+                if newPage == 5 {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         bellBounce += 1
                     }
                 }
-                if newPage == 5 {
+                if newPage == 6 {
                     triggerReadyAnimations()
                 }
             }
@@ -109,8 +112,8 @@ struct OnboardingView: View {
                         )
                     )
                     .frame(width: 180, height: 180)
-                    .scaleEffect(heroGlowPulse ? 1.2 : 0.85)
-                    .opacity(heroGlowPulse ? 0.9 : 0.35)
+                    .scaleEffect(reduceMotion ? 1.0 : (heroGlowPulse ? 1.2 : 0.85))
+                    .opacity(reduceMotion ? 0.7 : (heroGlowPulse ? 0.9 : 0.35))
 
                 Image(systemName: "leaf.fill")
                     .font(.adaptiveDisplay(size: 72, weight: .regular, design: .default, isRegular: isRegular))
@@ -119,6 +122,8 @@ struct OnboardingView: View {
                     .shadow(color: themeManager.selectedTheme.accent.opacity(0.5), radius: 24)
             }
             .onAppear {
+                // Honor Reduce Motion — hold the glow static instead of pulsing forever.
+                guard !reduceMotion else { return }
                 withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                     heroGlowPulse = true
                 }
@@ -339,7 +344,138 @@ struct OnboardingView: View {
     }
 
     // =========================================================================
-    // MARK: - Page 5: Notifications
+    // MARK: - Page 5: Live Activity signature feature
+
+    // =========================================================================
+
+    /// Showcases Lumifaste's signature differentiator — the fasting timer live on
+    /// the Lock Screen and in the Dynamic Island. No top competitor offers this, so
+    /// it earns its own onboarding beat (activation + conversion priming).
+    private var liveActivityPage: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 56)
+
+            Text("Your fast, always in sight")
+                .font(.adaptiveDisplay(size: 28, weight: .bold, design: .rounded, isRegular: isRegular))
+                .multilineTextAlignment(.center)
+                .slideIn(from: .trailing, delay: 0.1)
+
+            Text("Your fasting timer, live on your Lock Screen and Dynamic Island")
+                .font(.adaptiveSubheadline(isRegular: isRegular))
+                .foregroundStyle(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .padding(.top, 6)
+                .padding(.horizontal, 8)
+                .slideIn(from: .trailing, delay: 0.2)
+
+            Spacer().frame(height: 32)
+
+            // Lock Screen card mock
+            liveActivityLockScreenMock
+                .entranceAnimation(delay: 0.3)
+
+            Spacer().frame(height: 20)
+
+            // Dynamic Island pill mock
+            liveActivityDynamicIslandMock
+                .entranceAnimation(delay: 0.45)
+
+            Spacer().frame(height: 24)
+
+            Text("Glance at your progress, current stage, and time left — without ever unlocking your phone.")
+                .font(.adaptiveDetail(isRegular: isRegular))
+                .foregroundStyle(.white.opacity(0.4))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+                .entranceAnimation(delay: 0.55)
+
+            Spacer()
+
+            onboardingPrimaryButton("Nice!") { advancePage() }
+
+            capsulePageIndicator
+                .padding(.top, 20)
+                .padding(.bottom, 16)
+        }
+        .padding(.horizontal, 24)
+        .background(pageGradient(for: 4))
+    }
+
+    /// A miniature Lock Screen Live Activity card — mirrors the real widget layout.
+    private var liveActivityLockScreenMock: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.12), lineWidth: 5)
+                Circle()
+                    .trim(from: 0, to: 0.68)
+                    .stroke(themeManager.selectedTheme.accentGradient, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(themeManager.selectedTheme.accent)
+            }
+            .frame(width: 52, height: 52)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Fasting · Fat Burning")
+                    .font(.adaptiveDetail(isRegular: isRegular).weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                Text("11:12:44")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                Text("of 16:00 · 4h 47m left")
+                    .font(.adaptiveBadge(isRegular: isRegular))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+            Spacer()
+            Image(systemName: "leaf.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(themeManager.selectedTheme.accent.opacity(0.9))
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(.black.opacity(0.55))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                )
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Lock Screen widget preview showing a fasting timer at 11 hours 12 minutes, Fat Burning stage")
+    }
+
+    /// A miniature Dynamic Island (expanded pill) mock.
+    private var liveActivityDynamicIslandMock: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "leaf.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(themeManager.selectedTheme.accent)
+            Text("Fat Burning")
+                .font(.adaptiveBadge(isRegular: isRegular).weight(.semibold))
+                .foregroundStyle(.white.opacity(0.8))
+            Spacer()
+            Text("11:12:44")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 12)
+        .frame(maxWidth: 260)
+        .background(
+            Capsule(style: .continuous)
+                .fill(.black)
+                .overlay(Capsule(style: .continuous).stroke(.white.opacity(0.12), lineWidth: 1))
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Dynamic Island preview showing the fasting timer")
+    }
+
+    // =========================================================================
+    // MARK: - Page 6: Notifications
 
     // =========================================================================
 
@@ -436,7 +572,7 @@ struct OnboardingView: View {
                 .padding(.bottom, 16)
         }
         .padding(.horizontal, 24)
-        .background(pageGradient(for: 4))
+        .background(pageGradient(for: 5))
     }
 
     // =========================================================================
@@ -531,7 +667,7 @@ struct OnboardingView: View {
                 .padding(.bottom, 16)
         }
         .padding(.horizontal, 24)
-        .background(pageGradient(for: 5))
+        .background(pageGradient(for: 6))
         .fullScreenCover(isPresented: $showTrialPaywall) {
             PaywallView()
         }
@@ -692,6 +828,7 @@ struct OnboardingView: View {
         case 2: [Color(red: 0.03, green: 0.17, blue: 0.17), Color(red: 0.01, green: 0.04, blue: 0.04)]
         case 3: [Color(red: 0.04, green: 0.21, blue: 0.14), Color(red: 0.01, green: 0.06, blue: 0.04)]
         case 4: [Color(red: 0.03, green: 0.12, blue: 0.21), Color(red: 0.01, green: 0.03, blue: 0.06)]
+        case 5: [Color(red: 0.05, green: 0.18, blue: 0.19), Color(red: 0.01, green: 0.05, blue: 0.05)]
         default: [Color(red: 0.06, green: 0.24, blue: 0.12), Color(red: 0.02, green: 0.07, blue: 0.04)]
         }
 
