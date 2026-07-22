@@ -8,6 +8,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(SubscriptionManager.self) private var subscriptionManager
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(ReviewPromptManager.self) private var reviewPrompt
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var isRegular: Bool {
@@ -736,30 +737,36 @@ struct SettingsView: View {
     // MARK: - iCloud Sync
 
     private var iCloudSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        // Reflect the REAL sync state recorded at launch, not a hardcoded label. If the
+        // CloudKit store failed to open (no iCloud account, provisioning issue), the app
+        // runs on a local-only store — say so honestly instead of claiming "Enabled".
+        let syncing = DataController.shared.cloudSyncAvailable
+        return VStack(alignment: .leading, spacing: 8) {
             sectionHeader("iCloud")
 
             glassCard {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
-                        Image(systemName: "cloud.fill")
+                        Image(systemName: syncing ? "cloud.fill" : "cloud.slash.fill")
                             .font(.system(.title3))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(syncing ? .green : .secondary)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("iCloud Sync")
                                 .font(.system(.body, design: .rounded, weight: .medium))
-                            Text("Enabled")
+                            Text(syncing ? "Enabled" : "Unavailable")
                                 .font(.system(.caption))
-                                .foregroundStyle(.green)
+                                .foregroundStyle(syncing ? .green : .secondary)
                         }
                         Spacer()
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                        Image(systemName: syncing ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                            .foregroundStyle(syncing ? .green : .secondary)
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("iCloud Sync enabled")
+                    .accessibilityLabel(syncing ? "iCloud Sync enabled" : "iCloud Sync unavailable")
 
-                    Text("Your fasting data syncs automatically across all your devices via iCloud.")
+                    Text(syncing
+                        ? "Your fasting data syncs automatically across all your devices via iCloud."
+                        : "iCloud sync is currently unavailable — your data is saved safely on this device. Sign in to iCloud in Settings to sync across your devices.")
                         .font(.system(.caption))
                         .foregroundStyle(.tertiary)
                 }
@@ -865,7 +872,9 @@ struct SettingsView: View {
 
                     Button {
                         HapticManager.shared.lightTap()
-                        ReviewRequestManager.requestReviewIfAppropriate()
+                        // Explicit user intent to rate → open the native prompt directly
+                        // (iOS still caps it at 3/365).
+                        reviewPrompt.requestReviewDirectly()
                     } label: {
                         HStack {
                             Label("Rate Lumifaste", systemImage: "star")
@@ -1323,4 +1332,5 @@ struct HealthDisclaimerView: View {
         .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
+        .environment(ReviewPromptManager())
 }

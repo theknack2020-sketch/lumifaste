@@ -172,12 +172,20 @@ final class FastingManager {
         session.complete()
         context.insert(session)
 
-        // Save with error handling
-        do {
-            try context.save()
-        } catch {
-            logger.error("Failed to save completed fast session: \(error.localizedDescription)")
+        // Persist through DataController so a save failure surfaces the user-facing Save
+        // Error alert instead of silently losing the completed fast. On failure, keep the
+        // active fast intact (don't advance the counter, end the LA, or wipe state) so the
+        // user can retry — critical on a storage-full device.
+        guard DataController.shared.save(context, operation: "save completed fast") else {
+            context.delete(session)
+            return nil
         }
+
+        // End the Live Activity the moment the fast completes — otherwise the Lock
+        // Screen / Dynamic Island card lingers (counting past the goal) until the next
+        // cold-launch reconcile or the next startFast. cancelFast() already does this;
+        // the happy path must too.
+        LiveActivityManager.endLiveActivity()
 
         // Cancel pending fasting notifications
         Task { @MainActor in
@@ -244,6 +252,11 @@ final class FastingManager {
         isPaused = true
         pauseStartDate = Date.now
 
+        // End the Live Activity while paused — it self-ticks from the immutable start
+        // date, so leaving it up would keep counting elapsed/remaining on the Lock Screen
+        // and Dynamic Island while the in-app timer shows "Paused". Resume restarts it.
+        LiveActivityManager.endLiveActivity()
+
         Task { @MainActor in
             NotificationManager.shared.cancelAllFastingNotifications()
         }
@@ -256,12 +269,26 @@ final class FastingManager {
         isPaused = false
         pauseStartDate = nil
 
-        // Reschedule notifications from now based on remaining effective time
-        if let start = startDate {
-            let plan = currentPlan
-            Task { @MainActor in
-                NotificationManager.shared.scheduleFastingNotifications(startDate: start, plan: plan)
-            }
+        guard let start = startDate else { return }
+        let plan = currentPlan
+        // Restart the Live Activity with a start shifted forward by all paused time, so
+        // its self-ticking elapsed/remaining match the app's effective (pause-excluded)
+        // time and its goal lands at the true completion moment.
+        let shiftedStart = start.addingTimeInterval(totalPausedDuration)
+        let stage = currentStage
+        LiveActivityManager.startLiveActivity(
+            plan: plan.rawValue,
+            startDate: shiftedStart,
+            targetSeconds: Int(plan.fastingDuration),
+            currentStage: stage.rawValue,
+            stageEmoji: stage.emoji
+        )
+
+        // Reschedule notifications anchored at the shifted start so every trigger
+        // (milestones, goal, eating window) fires at the real completion time — not
+        // early by the accumulated pause duration.
+        Task { @MainActor in
+            NotificationManager.shared.scheduleFastingNotifications(startDate: shiftedStart, plan: plan)
         }
     }
 
@@ -473,6 +500,19 @@ final class FastingManager {
     static var lastFreezeDate: Date? {
         get { UserDefaults.standard.object(forKey: lastFreezeDateKey) as? Date }
         set { UserDefaults.standard.set(newValue, forKey: lastFreezeDateKey) }
+    }
+
+    /// Read-only: whether a single 1-day streak gap can currently be shown as bridged,
+    /// WITHOUT consuming anything. True if a freeze is available to spend, or one was spent
+    /// within the last 7 days (already covering the current gap). Pure — safe to call
+    /// during SwiftUI body evaluation, unlike `useStreakFreeze()`.
+    static var canBridgeStreakGap: Bool {
+        if streakFreezeCount > 0 { return true }
+        if let last = lastFreezeDate {
+            let days = Calendar.current.dateComponents([.day], from: last, to: Date.now).day ?? 0
+            return days < 7
+        }
+        return false
     }
 
     /// Use a streak freeze if available. Max 1 per 7 days.

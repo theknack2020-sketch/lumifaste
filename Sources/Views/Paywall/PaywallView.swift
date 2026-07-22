@@ -319,7 +319,7 @@ struct PaywallView: View {
             Divider().opacity(0.3)
 
             // Comparison rows — spec: History, Charts, Themes, Export, Custom Plans, Challenges, Journal, Streak, Notifications, Achievements
-            ComparisonRow(feature: "Fasting history", freeValue: .limited("7 days"), proValue: .check("Unlimited"))
+            ComparisonRow(feature: "Fasting history", freeValue: .limited("7 fasts"), proValue: .check("Unlimited"))
             ComparisonRow(feature: "Charts & stats", freeValue: .limited("Basic"), proValue: .check("Full"))
             ComparisonRow(feature: "Themes", freeValue: .limited("3"), proValue: .check("8"))
             ComparisonRow(feature: "CSV export", freeValue: .missing, proValue: .check("Export"))
@@ -329,7 +329,7 @@ struct PaywallView: View {
             ComparisonRow(feature: "Streak protection", freeValue: .missing, proValue: .check("Freeze"))
             ComparisonRow(feature: "Smart alerts", freeValue: .limited("Basic"), proValue: .check("All"))
             ComparisonRow(feature: "Achievements", freeValue: .limited("5"), proValue: .check("13"))
-            ComparisonRow(feature: "Recipes", freeValue: .limited("10"), proValue: .check("20"))
+            ComparisonRow(feature: "Recipes", freeValue: .limited("12"), proValue: .check("20"))
         }
         .padding(16)
         .background(
@@ -353,42 +353,22 @@ struct PaywallView: View {
         .accessibilityLabel("Pro comparison table. Unlimited history, full charts, 8 themes, CSV export, custom plans, all challenges, and full journal with Pro.")
     }
 
-    // MARK: - Social Proof
+    // MARK: - Trust Banner
 
+    /// Honest value statement — never a fabricated subscriber count. The app has no
+    /// meaningful paid-user base to cite, and the brand promises "No tricks", so this
+    /// states a true differentiator instead of invented social proof (App Store 2.3.1).
     private var socialProofBanner: some View {
-        HStack(spacing: 10) {
-            // People stack icon
-            ZStack {
-                ForEach(0 ..< 3, id: \.self) { i in
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    [Color.blue, Color.purple, Color.green][i],
-                                    [Color.cyan, Color.pink, Color.teal][i],
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 26, height: 26)
-                        .overlay(
-                            Image(systemName: "person.fill")
-                                .font(.adaptiveBadge(isRegular: isRegular))
-                                .foregroundStyle(.white)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color(.systemBackground), lineWidth: 2)
-                        )
-                        .offset(x: CGFloat(i) * 16)
-                }
-            }
-            .frame(width: 60, alignment: .leading)
+        HStack(spacing: 12) {
+            Image(systemName: "hand.raised.fill")
+                .font(.adaptiveSubheadline(isRegular: isRegular))
+                .foregroundStyle(themeManager.selectedTheme.accent)
+                .frame(width: 30, alignment: .center)
 
-            Text("Join 10,000+ fasters who chose Pro")
+            Text("No ads, no data selling — your fasting stays private, on your device.")
                 .font(.adaptiveDetail(isRegular: isRegular).weight(.medium))
                 .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -398,7 +378,7 @@ struct PaywallView: View {
                 .fill(.ultraThinMaterial)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Join 10,000 plus fasters who chose Pro")
+        .accessibilityLabel("No ads, no data selling. Your fasting stays private on your device.")
     }
 
     // MARK: - Products (Price Anchoring: Monthly first, Yearly with badge)
@@ -855,15 +835,11 @@ private struct ProductCard: View {
 enum SoftPaywallReason {
     case completedFasts(count: Int)
     case historyLimit
-    case featureLocked(feature: String)
-    case thirdFast
 
     var icon: String {
         switch self {
         case .completedFasts: "trophy.fill"
         case .historyLimit: "clock.badge.checkmark"
-        case .featureLocked: "lock.fill"
-        case .thirdFast: "flame.fill"
         }
     }
 
@@ -873,10 +849,6 @@ enum SoftPaywallReason {
             "You've completed \(count) fasts! 🎉"
         case .historyLimit:
             "Your history is full"
-        case let .featureLocked(feature):
-            "Unlock \(feature)"
-        case .thirdFast:
-            "You're on a roll! 🔥"
         }
     }
 
@@ -886,17 +858,13 @@ enum SoftPaywallReason {
             "You're building a great habit. Unlock deeper insights to take your fasting further."
         case .historyLimit:
             "Free accounts can view the last 7 fasts. Upgrade to see your complete fasting journey."
-        case let .featureLocked(feature):
-            "\(feature) is a Premium feature. Upgrade to unlock everything."
-        case .thirdFast:
-            "3 fasts completed — you're serious about fasting. Premium helps you go further."
         }
     }
 
     /// 3 key benefits shown on each soft paywall variant
     var benefits: [(icon: String, text: String)] {
         switch self {
-        case .completedFasts, .thirdFast:
+        case .completedFasts:
             [
                 ("sparkles", "Understand what happens in each fasting stage"),
                 ("chart.bar.fill", "Get detailed reports after every fast"),
@@ -907,12 +875,6 @@ enum SoftPaywallReason {
                 ("clock.badge.checkmark", "Unlimited fasting history — all your fasts, forever"),
                 ("chart.xyaxis.line", "Trend charts to visualize your progress over time"),
                 ("square.and.arrow.up", "Export your data as CSV for personal records"),
-            ]
-        case .featureLocked:
-            [
-                ("lock.open.fill", "Full access to all Premium features"),
-                ("paintpalette.fill", "All 8 beautiful themes to personalize your app"),
-                ("scalemass.fill", "Weight tracking with trend visualization"),
             ]
         }
     }
@@ -1001,7 +963,10 @@ struct SoftPaywallView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.adaptiveDetail(isRegular: isRegular))
-                        Text(subscriptionManager.isEligibleForTrial ? "Start 7-Day Free Trial" : "Unlock Premium")
+                        // Product-driven, eligibility-aware label — trial length comes
+                        // from the actual product, never a hardcoded "7-Day" promise
+                        // (guards against config drift; consistent with the full paywall).
+                        Text(subscriptionManager.ctaLabel(for: subscriptionManager.yearlyProduct))
                             .font(.adaptiveSubheadline(isRegular: isRegular).weight(.bold))
                     }
 

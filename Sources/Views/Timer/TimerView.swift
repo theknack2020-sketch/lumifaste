@@ -65,55 +65,52 @@ struct TimerView: View {
         allSessions.filter(\.isCompleted).count
     }
 
-    /// Current streak — used for streak reminder notifications.
-    /// If there's a gap of exactly 1 day and a streak freeze is available (Pro only),
-    /// auto-uses it to maintain the streak.
+    /// Current streak — PURE (read-only). Bridges a single 1-day gap when the user has
+    /// active freeze protection (a freeze available, or one spent within the last 7 days
+    /// already covering this gap). Never mutates persisted state — consuming a freeze
+    /// happens once in `consumeStreakFreezeIfNeeded()` from a lifecycle hook, NOT here.
+    /// (`body` re-evaluates every second via TimelineView, so mutating here would burn a
+    /// purchased Pro freeze with no user intent and make the streak flicker.)
     private var currentStreak: Int {
+        streakValue(bridging: subscriptionManager.isSubscribed && FastingManager.canBridgeStreakGap)
+    }
+
+    /// Strict consecutive-day streak, optionally bridging one 1-day gap. Pure.
+    private func streakValue(bridging: Bool) -> Int {
         let calendar = Calendar.current
         var streak = 0
         var checkDate = calendar.startOfDay(for: .now)
-        var usedFreeze = false
-
-        let completedDays = Set(
-            allSessions
-                .filter(\.isCompleted)
-                .map { calendar.startOfDay(for: $0.startDate) }
+        var usedBridge = false
+        let daySet = Set(
+            allSessions.filter(\.isCompleted).map { calendar.startOfDay(for: $0.startDate) }
         )
-        .sorted(by: >)
 
-        // Build a quick-lookup set
-        let daySet = Set(completedDays)
-
-        // Walk backward from today
         while true {
             if daySet.contains(checkDate) {
                 streak += 1
                 guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
                 checkDate = prev
+            } else if bridging, !usedBridge, streak > 0,
+                      let prev = calendar.date(byAdding: .day, value: -1, to: checkDate),
+                      daySet.contains(prev) {
+                usedBridge = true
+                checkDate = prev
             } else {
-                // Gap day — try streak freeze if Pro and haven't used one in this calculation
-                if !usedFreeze,
-                   subscriptionManager.isSubscribed,
-                   FastingManager.streakFreezeCount > 0,
-                   streak > 0
-                {
-                    // Check if the previous day has a fast (gap is exactly 1 day)
-                    if let prev = calendar.date(byAdding: .day, value: -1, to: checkDate),
-                       daySet.contains(prev)
-                    {
-                        // Use the freeze to bridge this gap
-                        if FastingManager.useStreakFreeze() {
-                            usedFreeze = true
-                            // Skip this gap day, continue counting
-                            checkDate = prev
-                            continue
-                        }
-                    }
-                }
                 break
             }
         }
         return streak
+    }
+
+    /// Consume one streak freeze if the displayed streak is bridging a fresh gap. Called
+    /// from a lifecycle hook, never from `body`. `useStreakFreeze()` self-guards to at most
+    /// one per 7 days, and the `streakFreezeCount > 0` check prevents a double-spend.
+    private func consumeStreakFreezeIfNeeded() {
+        guard subscriptionManager.isSubscribed, FastingManager.streakFreezeCount > 0 else { return }
+        // A fresh bridge is in effect only if bridging raises the streak above the strict
+        // consecutive count.
+        guard streakValue(bridging: true) > streakValue(bridging: false) else { return }
+        _ = FastingManager.useStreakFreeze()
     }
 
     // MARK: - Motivational Quotes
@@ -419,6 +416,9 @@ struct TimerView: View {
                 }
                 // Auto-refill streak freeze on Mondays for Pro users
                 FastingManager.refillStreakFreezeIfNeeded(isPremium: subscriptionManager.isSubscribed)
+                // Consume a freeze here (a lifecycle hook), never during body rendering, if
+                // the displayed streak is bridging a fresh gap.
+                consumeStreakFreezeIfNeeded()
                 // Fetch today's step count from Apple Health
                 Task {
                     await HealthKitManager.shared.fetchTodaySteps()

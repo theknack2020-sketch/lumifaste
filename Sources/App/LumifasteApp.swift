@@ -11,28 +11,45 @@ struct LumifasteApp: App {
     @State private var subscriptionManager = SubscriptionManager()
     @State private var themeManager = ThemeManager()
     @State private var dataController = DataController.shared
+    @State private var reviewPrompt = ReviewPromptManager()
     @AppStorage("lf_onboarding_complete") private var hasCompletedOnboarding = false
     @AppStorage("lf_appearance_mode") private var appearanceMode: String = AppearanceMode.system.rawValue
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        #if DEBUG
+            // Store-shots pipeline: apply demo launch state before the first view renders.
+            ScreenshotTour.applyLaunchStateIfNeeded()
+        #endif
+
+        let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
         do {
-            let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
             let config = ModelConfiguration(schema: schema, cloudKitDatabase: .automatic)
             modelContainer = try ModelContainer(for: schema, configurations: [config])
+            DataController.setCloudSyncAvailable(true)
         } catch {
-            logger.error("ModelContainer init failed: \(error.localizedDescription)")
-            logger.warning("Falling back to local-only store")
+            // CloudKit-backed store failed to open (e.g. no iCloud account, container
+            // provisioning issue). Fall back to a LOCAL-ONLY store WITHOUT deleting the
+            // on-disk data — the previous implementation wiped the user's database here,
+            // which silently destroyed their history. Preserve the file so it re-syncs
+            // once CloudKit is available again.
+            logger.error("CloudKit ModelContainer init failed: \(error.localizedDescription)")
+            logger.warning("Falling back to local-only store (data preserved)")
+            DataController.setCloudSyncAvailable(false)
             do {
-                let schema = Schema([FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self])
                 let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-                let storeURL = config.url
-                try? FileManager.default.removeItem(at: storeURL)
-                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("wal"))
-                try? FileManager.default.removeItem(at: storeURL.appendingPathExtension("shm"))
                 modelContainer = try ModelContainer(for: schema, configurations: [config])
             } catch {
-                fatalError("[Lumifaste] Cannot create ModelContainer: \(error)")
+                // Last resort: the on-disk store is unreadable even locally. Launch with an
+                // in-memory store so the app still opens; the disk file is left untouched so
+                // a future successful open can recover it. Never delete user data on launch.
+                logger.error("Local-only store also failed: \(error.localizedDescription); using in-memory store")
+                do {
+                    let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                    modelContainer = try ModelContainer(for: schema, configurations: [config])
+                } catch {
+                    fatalError("[Lumifaste] Cannot create any ModelContainer: \(error)")
+                }
             }
         }
 
@@ -51,9 +68,6 @@ struct LumifasteApp: App {
             Self.handleBackgroundRefresh(refreshTask)
         }
 
-        // Initialize TelemetryDeck analytics
-        TelemetryService.initialize()
-
         // Initial clock checkpoint
         _ = ClockGuard.checkClockIntegrity()
         _ = ClockGuard.checkTimezoneChange()
@@ -71,9 +85,21 @@ struct LumifasteApp: App {
                         .environment(subscriptionManager)
                         .environment(themeManager)
                         .environment(dataController)
+                        .environment(reviewPrompt)
                         .task {
                             await subscriptionManager.checkSubscriptionStatus()
                         }
+                        .task {
+                            // Count this launch toward the review-prompt session gate
+                            // (never asks on the first runs).
+                            reviewPrompt.trackSessionStart()
+                        }
+                        #if DEBUG
+                        .task {
+                            // Store-shots pipeline: seed demo history for filled-content shots.
+                            DemoSeeder.seedIfNeeded(into: modelContainer.mainContext)
+                        }
+                        #endif
                         .task {
                             // Schedule inactivity nudge (#13) — checks every app foreground
                             await scheduleInactivityNudge()

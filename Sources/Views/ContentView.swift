@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Environment(ThemeManager.self) private var themeManager
+    @Environment(ReviewPromptManager.self) private var reviewPrompt
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab = 0
 
@@ -10,6 +11,10 @@ struct ContentView: View {
     }
 
     @State private var fastingStatusManager = FastingManager()
+
+    #if DEBUG
+        @State private var showScreenshotPaywall = false
+    #endif
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -79,6 +84,31 @@ struct ContentView: View {
                     selectedTab = tab
                 }
             }
+            // Honest review pre-prompt — surfaced by ReviewPromptManager only after a
+            // completed fast and once the cadence gate allows it (never after friction).
+            .sheet(isPresented: Binding(
+                get: { reviewPrompt.pendingPrePrompt },
+                set: { reviewPrompt.pendingPrePrompt = $0 }
+            )) {
+                ReviewPrePromptView(
+                    onLove: { reviewPrompt.lovedIt() },
+                    onFeedback: { reviewPrompt.notForMe() }
+                )
+            }
+            #if DEBUG
+            .onAppear {
+                // Store-shots pipeline: route to the requested tab / paywall.
+                selectedTab = ScreenshotTour.initialTab
+                if ScreenshotTour.showsPaywall {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        showScreenshotPaywall = true
+                    }
+                }
+            }
+            .fullScreenCover(isPresented: $showScreenshotPaywall) {
+                PaywallView()
+            }
+            #endif
 
             // Global fasting status indicator — visible on non-timer tabs (#13)
             if fastingStatusManager.isActive, selectedTab != 0 {
@@ -190,4 +220,5 @@ private struct FastingStatusBar: View {
         .modelContainer(for: [FastingSession.self, WeightEntry.self, FastingJournal.self, MealEntry.self], inMemory: true)
         .environment(SubscriptionManager())
         .environment(ThemeManager())
+        .environment(ReviewPromptManager())
 }

@@ -1,19 +1,5 @@
-Lumifaste 1.1 Build 7 — Eat Smarter, Fast Better 🍃
+Your fasting Live Activity now stays perfectly in sync — even after you close and reopen the app, the Lock Screen and Dynamic Island timer keeps ticking and reconciles automatically.
 
-NEW
-• 20 Fasting-Friendly Recipes — breaking fast, meals, snacks & drinks with nutrition info
-• Meal Logging — track what you eat with emoji categories
-• Step Counter — daily steps from Apple Health on your timer
-• Circadian Rhythm Fast — new 13:11 plan aligned with daylight
-• Dark & Tinted app icon variants
+New: a guided onboarding that shows off the Lock Screen and Dynamic Island timer, so you see Lumifaste's signature feature from day one.
 
-IMPROVED
-• Richer Insights empty state with feature preview badges
-• Premium stage card design with accent bars and glow
-• Gradient progress bar with stage endpoint icons
-• Settings visual upgrade — Pro section glow, deeper theme shadows
-• Dynamic Type support across all screens
-• Paywall now shows 12 feature comparison rows
-• Better entrance animations on Settings
-
-No ads. No tricks. Just results.
+Plus reliability improvements and refinements throughout.
