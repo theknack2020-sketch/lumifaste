@@ -44,3 +44,6 @@ build_sim/
 build_sim26/
 build_output/
 *.xcarchive
+
+# Secret patterns (TheKnack global law §2): never commit keys, certificates or env files
+api_key*
